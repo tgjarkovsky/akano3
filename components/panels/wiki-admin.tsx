@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React from "react"
 import { IconPlus, IconEdit, IconTrash, IconX, IconCheck, IconBook } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAdminCrud } from "@/components/panels/use-admin-crud"
 import { WikiLinksAdmin } from "@/components/panels/wiki-links-admin"
 import { WikiArticle } from "@/lib/types"
 import { romanNumeral } from "@/lib/utils"
@@ -39,89 +40,28 @@ function slugify(s: string) {
 }
 
 export function WikiAdminPanel() {
-  const [articles, setArticles]     = useState<WikiArticle[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [editing, setEditing]       = useState<WikiArticle | null>(null)
-  const [creating, setCreating]     = useState(false)
-  const [form, setForm]             = useState<ArticleForm>(EMPTY_FORM)
-  const [deleteTarget, setDeleteTarget] = useState<WikiArticle | null>(null)
-  const [saving, setSaving]         = useState(false)
-  const [error, setError]           = useState("")
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    const res = await fetch("/api/wiki?admin=1")
-    if (res.ok) setArticles(await res.json())
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { load() }, [load])
-
-  function startCreate() {
-    setForm(EMPTY_FORM)
-    setEditing(null)
-    setCreating(true)
-    setError("")
-  }
-
-  function startEdit(a: WikiArticle) {
-    setForm({
+  const {
+    items: articles, loading, editing, creating, form, setForm,
+    deleteTarget, setDeleteTarget, saving, error,
+    startCreate, startEdit, cancelForm, saveForm, confirmDelete,
+  } = useAdminCrud<WikiArticle, ArticleForm>({
+    listUrl: "/api/wiki?admin=1",
+    collectionUrl: "/api/wiki",
+    itemUrl: id => `/api/wiki/${id}`,
+    emptyForm: EMPTY_FORM,
+    toForm: a => ({
       slug: a.slug, title: a.title, content: a.content,
       category: a.category, kaichiRequired: a.kaichiRequired, sortOrder: a.sortOrder,
-    })
-    setEditing(a)
-    setCreating(false)
-    setError("")
-  }
-
-  function cancelForm() {
-    setCreating(false)
-    setEditing(null)
-    setForm(EMPTY_FORM)
-    setError("")
-  }
+    }),
+    validate: f => (!f.title.trim() || !f.category.trim() || !f.slug.trim())
+      ? "Název, kategorie a slug jsou povinné." : null,
+  })
 
   function handleTitleChange(title: string) {
     setForm(f => ({
       ...f, title,
       slug: f.slug || slugify(title),
     }))
-  }
-
-  async function saveForm() {
-    if (!form.title.trim() || !form.category.trim() || !form.slug.trim()) {
-      setError("Název, kategorie a slug jsou povinné.")
-      return
-    }
-    setSaving(true)
-    setError("")
-    try {
-      const payload = { ...form }
-      let res: Response
-      if (editing) {
-        res = await fetch(`/api/wiki/${editing.id}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      } else {
-        res = await fetch("/api/wiki", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      }
-      if (!res.ok) { setError(await res.text()); return }
-      await load()
-      cancelForm()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return
-    await fetch(`/api/wiki/${deleteTarget.id}`, { method: "DELETE" })
-    setDeleteTarget(null)
-    await load()
   }
 
   const categories = [...new Set(articles.map(a => a.category))]
