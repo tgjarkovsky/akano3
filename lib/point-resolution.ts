@@ -66,7 +66,7 @@ export function teamDeltaOf(entry: { resolvedCharacterIds?: string[]; resolvedTe
   return d
 }
 
-const REVERSAL_PREFIX = "Storno: "
+export const REVERSAL_PREFIX = "Storno: "
 
 // Correcting counter-entry for a log row. Source fields are filled in by the caller.
 export function buildReversal(
@@ -75,10 +75,18 @@ export function buildReversal(
   return {
     targetType: entry.targetType,
     targetId: entry.targetId,
+    reversesId: entry.id,
     amount: -entry.amount,
     actionType: "correction" as const,
     note: `${REVERSAL_PREFIX}${entry.id}${entry.note ? ` (${entry.note})` : ""}`,
   }
+}
+
+// Recipients of a reversal: exactly the characters the original credited,
+// regardless of how team/circle mappings have changed since.
+export function reversalCredits(original: { resolvedCharacterIds?: string[]; resolvedTeamIds: string[] }) {
+  const resolvedCharacterIds = resolvedCharsOf(original)
+  return { resolvedCharacterIds, resolvedTeamIds: teamsOfChars(resolvedCharacterIds) }
 }
 
 export function isReversal(entry: Pick<PointEntry, "actionType" | "note">): boolean {
