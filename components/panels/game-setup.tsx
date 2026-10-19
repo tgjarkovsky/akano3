@@ -8,9 +8,13 @@ import { Switch } from "@/components/ui/switch"
 import { useGame } from "@/lib/game-context"
 import { UNITS, CIRCLES } from "@/lib/data"
 import { getTeamName } from "@/lib/utils"
+import type { PoolRefillMode } from "@/lib/peer-pool"
 
 export function GameSetupPanel() {
-  const { lessonWindowActive, lessonWindowEnd, toggleLesson } = useGame()
+  const { lessonWindowActive, lessonWindowEnd, toggleLesson, characters, refillPeerPools } = useGame()
+  const [refillAmount, setRefillAmount] = useState(10)
+  const [refillMode, setRefillMode] = useState<PoolRefillMode>("add")
+  const poolTotal = characters.reduce((sum, c) => sum + (c.role === "student" || c.role === "ruze" ? c.peerPointPool : 0), 0)
   const [duration, setDuration] = useState(30)
   const [timeLeft, setTimeLeft] = useState("")
 
@@ -72,7 +76,24 @@ export function GameSetupPanel() {
       {section("POOL BODŮ PRO STUDENTY",
         <div style={{ color:"var(--c-text-muted)", fontSize:"0.85rem" }}>
           <p>Výchozí pool: <strong style={{color:"var(--c-text)"}}>20 bodů</strong> na hráče</p>
-          <p style={{marginTop:6, color:"var(--c-text-muted)", fontSize:"0.75rem"}}>Ruční doplnění poolu — k dispozici v plné verzi.</p>
+          <p style={{marginTop:6}}>Zbývá všem hráčům dohromady: <strong style={{color:"var(--c-text)"}}>{poolTotal} bodů</strong></p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:12, flexWrap:"wrap" }}>
+            <select value={refillMode} onChange={e => setRefillMode(e.target.value as PoolRefillMode)}
+              style={{ backgroundColor:"var(--c-input)", border:"1px solid var(--c-input-border)", color:"var(--c-text)",
+                borderRadius:6, padding:"6px 8px" }}>
+              <option value="add">přidat</option>
+              <option value="set">nastavit na</option>
+            </select>
+            <Input type="number" value={refillAmount} onChange={e => setRefillAmount(Number(e.target.value))}
+              min={1} max={100} style={{ width:80, backgroundColor:"var(--c-input)",
+                border:"1px solid var(--c-input-border)", color:"var(--c-text)" }} />
+            <button onClick={() => refillPeerPools(refillAmount, refillMode)}
+              disabled={!Number.isInteger(refillAmount) || refillAmount < 1 || refillAmount > 100}
+              style={{ backgroundColor:"var(--c-accent)", color:"var(--c-bg)", border:"none", borderRadius:6,
+                padding:"7px 14px", fontSize:"0.85rem", cursor:"pointer" }}>
+              Doplnit pool všem hráčům
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { sql } from "@/lib/db"
 import { getActiveRunId } from "@/lib/runs"
 import { CHARACTERS, CIRCLES, TEAMS, UNITS } from "@/lib/data"
 import { validateConfigBody } from "@/lib/request-validation"
+import { parsePoolRefill } from "@/lib/peer-pool"
 
 // GM-only: manage team→unit, circle members, specializations
 
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
       | { action: "setTeamUnit"; teamId: string; unitId: string }
       | { action: "setCircleMembers"; circleId: string; memberIds: string[] }
       | { action: "setSpecialization"; characterId: string; specialization: string | null }
+      | { action: "refillPeerPool"; amount: number; mode: string }
 
     const runId = await getActiveRunId()
 
@@ -35,6 +37,13 @@ export async function POST(req: Request) {
       }
     } else if (body.action === "setSpecialization") {
       await sql`UPDATE character_state SET specialization = ${body.specialization} WHERE character_id = ${body.characterId} AND run_id = ${runId}`
+    } else if (body.action === "refillPeerPool") {
+      const refill = parsePoolRefill(body)
+      if (typeof refill === "string") return new Response(refill, { status: 400 })
+      const playerIds = CHARACTERS.filter(c => c.role === "student" || c.role === "ruze").map(c => c.id)
+      await sql`UPDATE character_state
+        SET peer_point_pool = CASE WHEN ${refill.mode} = 'add' THEN peer_point_pool + ${refill.amount}::int ELSE ${refill.amount}::int END
+        WHERE run_id = ${runId} AND character_id = ANY(${playerIds}::text[])`
     } else {
       return new Response("Bad request", { status: 400 })
     }
