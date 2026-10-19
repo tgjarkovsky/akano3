@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React from "react"
 import { IconArrowRight, IconCheck, IconEdit, IconPlus, IconTrash, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAdminCrud } from "@/components/panels/use-admin-crud"
 import { WikiArticle, WikiLinkAdmin } from "@/lib/types"
 import { romanNumeral } from "@/lib/utils"
 
@@ -28,82 +29,24 @@ type LinkForm = { fromSlug: string; toSlug: string; label: string; kaichiRequire
 const EMPTY_FORM: LinkForm = { fromSlug: "", toSlug: "", label: "", kaichiRequired: 0 }
 
 export function WikiLinksAdmin({ articles }: { articles: WikiArticle[] }) {
-  const [links, setLinks]       = useState<WikiLinkAdmin[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [editing, setEditing]   = useState<WikiLinkAdmin | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [form, setForm]         = useState<LinkForm>(EMPTY_FORM)
-  const [deleteTarget, setDeleteTarget] = useState<WikiLinkAdmin | null>(null)
-  const [saving, setSaving]     = useState(false)
-  const [error, setError]       = useState("")
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    const res = await fetch("/api/wiki/links")
-    if (res.ok) setLinks(await res.json())
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { load() }, [load])
+  const {
+    items: links, loading, editing, creating, form, setForm,
+    deleteTarget, setDeleteTarget, saving, error,
+    startCreate, startEdit, cancelForm, saveForm, confirmDelete,
+  } = useAdminCrud<WikiLinkAdmin, LinkForm>({
+    listUrl: "/api/wiki/links",
+    collectionUrl: "/api/wiki/links",
+    itemUrl: id => `/api/wiki/links/${id}`,
+    emptyForm: EMPTY_FORM,
+    toForm: l => ({ fromSlug: l.fromSlug, toSlug: l.toSlug, label: l.label, kaichiRequired: l.kaichiRequired }),
+    validate: f => {
+      if (!f.fromSlug || !f.toSlug || !f.label.trim()) return "Oba články a popisek jsou povinné."
+      if (f.fromSlug === f.toSlug) return "Vazba článku na sebe sama nedává smysl."
+      return null
+    },
+  })
 
   const titleOf = (slug: string) => articles.find(a => a.slug === slug)?.title ?? slug
-
-  function startCreate() {
-    setForm(EMPTY_FORM)
-    setEditing(null)
-    setCreating(true)
-    setError("")
-  }
-
-  function startEdit(l: WikiLinkAdmin) {
-    setForm({ fromSlug: l.fromSlug, toSlug: l.toSlug, label: l.label, kaichiRequired: l.kaichiRequired })
-    setEditing(l)
-    setCreating(false)
-    setError("")
-  }
-
-  function cancelForm() {
-    setCreating(false)
-    setEditing(null)
-    setForm(EMPTY_FORM)
-    setError("")
-  }
-
-  async function saveForm() {
-    if (!form.fromSlug || !form.toSlug || !form.label.trim()) {
-      setError("Oba články a popisek jsou povinné.")
-      return
-    }
-    if (form.fromSlug === form.toSlug) {
-      setError("Vazba článku na sebe sama nedává smysl.")
-      return
-    }
-    setSaving(true)
-    setError("")
-    try {
-      const res = editing
-        ? await fetch(`/api/wiki/links/${editing.id}`, {
-            method: "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
-          })
-        : await fetch("/api/wiki/links", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
-          })
-      if (!res.ok) { setError(await res.text()); return }
-      await load()
-      cancelForm()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return
-    await fetch(`/api/wiki/links/${deleteTarget.id}`, { method: "DELETE" })
-    setDeleteTarget(null)
-    await load()
-  }
 
   const articleOptions = [...articles].sort((a, b) => a.title.localeCompare(b.title, "cs"))
 
