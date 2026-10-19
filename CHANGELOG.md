@@ -1,5 +1,6 @@
 ## [2026-10-18] - ROADMAP.md: vize, uživatelé, směry (dotazník preferencí, vzhled), co ne
 ## [2026-10-15] - wiki admin: společný hook useAdminCrud pro CRUD seznam článků a vazeb
+## [2026-10-15] - Storno skupinového záznamu vrací body přesně těm postavám, které je dostaly
 ## [2026-10-13] - game-context: jeden helper pro volání API (sendJson/callApi), markFetchFailure a teamDeltaOf v assignPoints
 ## [2026-10-15] - StudentDashboard rozdělen na komponenty záložek (components/views/student/), bez změny chování
 ## [2026-10-13] - claim lekce ověřuje okno a duplicitu, body zapisuje server

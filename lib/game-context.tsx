@@ -29,7 +29,7 @@ export interface GameCtx {
   setCurrentUser: (char: Character | null) => void
   login:         (code: string) => Character | null
   logout:        () => void
-  assignPoints:  (entry: Omit<PointEntry, "id" | "timestamp" | "resolvedTeamIds" | "resolvedCharacterIds">) => void
+  assignPoints:  (entry: Omit<PointEntry, "id" | "timestamp" | "resolvedTeamIds" | "resolvedCharacterIds"> & { reversesId?: string }) => void
   updateKaichi:  (characterId: string, level?: number) => void
   triggerAlarm:  (type: AlarmState["type"], message: string) => void
   dismissAlarm:  () => void
@@ -255,7 +255,7 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     setCurrentUser(null)
   }, [])
 
-  const assignPoints = useCallback(async (entry: Omit<PointEntry, "id" | "timestamp" | "resolvedTeamIds" | "resolvedCharacterIds">) => {
+  const assignPoints = useCallback(async (entry: Omit<PointEntry, "id" | "timestamp" | "resolvedTeamIds" | "resolvedCharacterIds"> & { reversesId?: string }) => {
     {
       const res = await callApi("/api/points", entry, "Chyba při zadávání bodů")
       if (!res) return
