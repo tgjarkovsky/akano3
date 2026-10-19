@@ -7,8 +7,9 @@ import { ACTION_LABELS } from "@/lib/constants"
 import { characterHistory } from "@/lib/character-history"
 
 export function HistoryTab({ studentId }: { studentId: string }) {
-  const { pointLog } = useGame()
-  const history = useMemo(() => characterHistory(pointLog, studentId), [pointLog, studentId])
+  const { pointLog, characters } = useGame()
+  const points = characters.find(c => c.id === studentId)?.points ?? 0
+  const history = useMemo(() => characterHistory(pointLog, studentId, points), [pointLog, studentId, points])
 
   return (
     <>

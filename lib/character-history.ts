@@ -10,22 +10,22 @@ export type HistoryItem = {
 }
 
 // Entries that credited the character, newest first, with the running total
-// accumulated up to and including each entry.
-export function characterHistory(log: PointEntry[], characterId: string): HistoryItem[] {
+// accumulated up to and including each entry. The log may be truncated, so the total is anchored at currentPoints and computed backwards.
+export function characterHistory(log: PointEntry[], characterId: string, currentPoints: number): HistoryItem[] {
   const mine = log
     .filter(e => resolvedCharsOf(e).includes(characterId))
-    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-  let total = 0
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  let total = currentPoints
   return mine
     .map(entry => {
-      total += entry.amount
+      const runningTotal = total
+      total -= entry.amount
       return {
         entry,
         amount: entry.amount,
-        runningTotal: total,
+        runningTotal,
         reversed: isReversed(entry, log),
         isReversal: isReversal(entry),
       }
     })
-    .reverse()
 }
