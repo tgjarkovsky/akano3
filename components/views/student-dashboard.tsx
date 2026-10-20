@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react"
 import { IconUsers, IconTrophy, IconList, IconChartLine, IconBooks } from "@tabler/icons-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useGame } from "@/lib/game-context"
+import { standingOf } from "@/lib/standing"
 import { ScoreboardComponent } from "@/components/panels/scoreboard"
 import { ChartsPanel } from "@/components/panels/charts"
 import { WikiPanel } from "@/components/panels/wiki"
@@ -25,6 +26,12 @@ export function StudentDashboard() {
   const team     = teams.find(t => t.id === student?.teamId)
   const teamRank = useMemo(() => [...teams].sort((a,b)=>b.points-a.points).findIndex(t=>t.id===student?.teamId) + 1, [teams, student?.teamId])
 
+  const playerStanding = useMemo(
+    () => standingOf(student?.id ?? "", characters.filter(c => c.role === "student" || c.role === "ruze")),
+    [characters, student?.id],
+  )
+  const teamStanding = useMemo(() => standingOf(student?.teamId ?? "", teams), [teams, student?.teamId])
+
   const [sbView, setSbView] = useState<"table" | "chart">("table")
   const [sbMode, setSbMode] = useState<"students" | "teams" | "units" | "circles">("teams")
 
@@ -32,7 +39,7 @@ export function StudentDashboard() {
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
-      <StudentHeader student={student} team={team} teamRank={teamRank} />
+      <StudentHeader student={student} team={team} teamRank={teamRank} playerStanding={playerStanding} teamStanding={teamStanding} />
 
       <Tabs defaultValue="scoreboard" style={{ flex:1, display:"flex", flexDirection:"column" }}>
         <TabsList style={{
