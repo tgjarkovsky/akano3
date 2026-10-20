@@ -1,3 +1,4 @@
+## [2026-10-19] - Nastavení: GM může hráčům doplnit pool bodů na dary (přidat / nastavit na)
 ## [2026-10-18] - ROADMAP.md: vize, uživatelé, směry (dotazník preferencí, vzhled), co ne
 ## [2026-10-15] - wiki admin: společný hook useAdminCrud pro CRUD seznam článků a vazeb
 ## [2026-10-15] - Storno skupinového záznamu vrací body přesně těm postavám, které je dostaly

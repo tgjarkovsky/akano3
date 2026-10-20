@@ -49,5 +49,6 @@ export function validateConfigBody(body: unknown, ids: ConfigIds): string | null
     if (body.specialization !== null && typeof body.specialization !== "string") return "Invalid specialization"
     return null
   }
+  if (body.action === "refillPeerPool") return null
   return "Unknown action"
 }
