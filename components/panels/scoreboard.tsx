@@ -6,6 +6,7 @@ import { useGame } from "@/lib/game-context"
 import { UNITS, CIRCLES } from "@/lib/data"
 import { resolvedCharsOf, charTeam } from "@/lib/utils"
 import { unitPoints, circlePoints } from "@/lib/score-aggregation"
+import { rankShifts, formatShift } from "@/lib/rank-shift"
 import { TeamDot } from "@/components/shared/team-icon"
 
 type ScoreMode = "students" | "teams" | "units" | "circles"
@@ -64,6 +65,11 @@ export function ScoreboardComponent({
     return { team, char }
   }, [pointLog])
 
+  const shifts = useMemo(() => {
+    if (mode !== "students" && mode !== "teams") return {}
+    return rankShifts(rows, pointLog, mode, new Date(Date.now() - 30 * 60000), charTeam)
+  }, [mode, rows, pointLog])
+
   const fontSize = compact ? "0.9rem" : "1.1rem"
   const ptSize   = compact ? "1.1rem" : "1.7rem"
 
@@ -114,6 +120,13 @@ export function ScoreboardComponent({
               <span style={{ flex:1, fontWeight:600, color:"var(--c-text)", fontSize }}>
                 {row.name}
               </span>
+              {(mode === "students" || mode === "teams") && (
+                <span style={{
+                  fontFamily:"var(--font-mono)", fontSize:"0.78rem", fontWeight:700,
+                  color: (shifts[row.id] ?? 0) > 0 ? "var(--teal-700)" : (shifts[row.id] ?? 0) < 0 ? "var(--oxblood-500)" : "var(--c-text-faint)",
+                  minWidth:32, textAlign:"right",
+                }}>{formatShift(shifts[row.id] ?? 0)}</span>
+              )}
               {change !== 0 && (
                 <span style={{
                   fontFamily:"var(--font-mono)", fontSize:"0.78rem", fontWeight:700,
