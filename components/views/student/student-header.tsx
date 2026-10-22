@@ -2,11 +2,14 @@
 
 import { romanNumeral } from "@/lib/utils"
 import { TeamIcon } from "@/components/shared/team-icon"
+import type { Standing } from "@/lib/standing"
 import type { Character, Team } from "@/lib/types"
 
 const specColors: Record<string, string> = { combat:"#e05252", tactical:"#5268e0", support:"#52d4b4" }
 
-export function StudentHeader({ student, team, teamRank }: { student: Character; team?: Team; teamRank: number }) {
+export function StudentHeader({ student, team, teamRank, playerStanding, teamStanding }: {
+  student: Character; team?: Team; teamRank: number; playerStanding: Standing | null; teamStanding: Standing | null
+}) {
   const specColor = student.specialization ? specColors[student.specialization] : null
   return (
     <div style={{ position:"sticky", top:0, zIndex:20, backgroundColor:"var(--c-topbar)", borderBottom:"1px solid var(--c-border)", padding:"14px 28px 12px", }}>
@@ -30,7 +33,8 @@ export function StudentHeader({ student, team, teamRank }: { student: Character;
         <div style={{ textAlign:"right", flexShrink:0 }}>
           <p style={{ fontSize:"0.6rem", color:"var(--c-text-muted)", letterSpacing:"0.1em", marginBottom:1 }}>TVÉ BODY</p>
           <p style={{ fontSize:"2.8rem", fontWeight:900, fontFamily:"monospace", color:"var(--c-accent)", lineHeight:1 }}>{student.points ?? 0}</p>
-          <p style={{ fontSize:"0.68rem", color:"var(--c-text-muted)", marginTop:2 }}>tým {team?.points ?? 0} b.</p>
+          {playerStanding && <p style={{ fontSize:"0.68rem", color:"var(--c-text-muted)", marginTop:2 }}>{playerStanding.rank}. z {playerStanding.total}</p>}
+          <p style={{ fontSize:"0.68rem", color:"var(--c-text-muted)", marginTop:2 }}>tým {team?.points ?? 0} b.{teamStanding && ` · tým ${teamStanding.rank}. z ${teamStanding.total}`}</p>
         </div></div>
     </div>
   )

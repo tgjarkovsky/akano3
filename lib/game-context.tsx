@@ -6,6 +6,7 @@ import { TEAMS, CHARACTERS, UNITS, CIRCLES } from "./data"
 import { ALARM_COLORS } from "./constants"
 import { getTeamName, romanNumeral, charTeam } from "./utils"
 import { teamDeltaOf } from "./point-resolution"
+import type { PoolRefillMode } from "./peer-pool"
 
 type CharStateRow = { character_id: string; kaichi_level: number; peer_point_pool: number; lesson_claimed_this_window: boolean; specialization: string | null }
 type TeamUnitRow = { team_id: string; unit_id: string }
@@ -38,6 +39,7 @@ export interface GameCtx {
   toggleLesson:  (active: boolean, durationMin?: number) => void
   giftPoints:    (fromId: string, toId: string, amount: number) => void
   claimLesson:   (studentId: string) => void
+  refillPeerPools: (amount: number, mode: PoolRefillMode) => Promise<void>
   addToast:      (msg: string, type?: Toast["type"]) => void
   activeRunId:   number | null
   runs:          RunSummary[]
@@ -354,6 +356,12 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     } catch { addToast("Chyba sítě", "error") }
   }, [lessonWindowActive, addToast, fetchGameState])
 
+  const refillPeerPools = useCallback(async (amount: number, mode: PoolRefillMode) => {
+    if (!await callApi("/api/config", { action:"refillPeerPool", amount, mode }, "Chyba při doplnění poolu")) return
+    addToast(mode === "add" ? `Pool všem hráčům +${amount}` : `Pool všech hráčů nastaven na ${amount}`, "success")
+    fetchGameState()
+  }, [callApi, addToast, fetchGameState])
+
   const setActiveRun = useCallback(async (runId: number) => {
     if (!await callApi("/api/runs", { action:"setActive", runId }, "Chyba při přepínání běhu", "PATCH")) return
     addToast("Aktivní běh přepnut")
@@ -371,13 +379,13 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     lessonWindowActive, lessonWindowEnd, qrCodes, toasts, currentUser, setCurrentUser, login, logout,
     assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
-    toggleLesson, giftPoints, claimLesson, addToast,
+    toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
     activeRunId, runs, setActiveRun, createRun,
   }), [teams, characters, pointLog, alarmState, broadcastActive,
     lessonWindowActive, lessonWindowEnd, qrCodes, toasts, currentUser,
     login, logout, assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
-    toggleLesson, giftPoints, claimLesson, addToast,
+    toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
     activeRunId, runs, setActiveRun, createRun])
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

@@ -8,6 +8,7 @@ import {
 } from "recharts"
 import { useGame } from "@/lib/game-context"
 import { formatDateTime, teamDeltaOf } from "@/lib/utils"
+import { rankShifts, formatShift } from "@/lib/rank-shift"
 import { TEAM_ICONS } from "@/lib/data"
 import { TeamIcon } from "@/components/shared/team-icon"
 import { useAlarmSound } from "@/components/shared/alarm-banner"
@@ -72,6 +73,10 @@ export function DisplayScreen() {
   const students = useMemo(() =>
     characters.filter(c => c.role === "student" || c.role === "ruze").sort((a,b) => b.points - a.points)
   , [characters])
+
+  const shifts = useMemo(
+    () => rankShifts(students, pointLog, "students", new Date(Date.now() - 30 * 60000)),
+    [students, pointLog])
 
   const timeData = useMemo(() => {
     const sortedLog = [...pointLog].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime())
@@ -180,6 +185,11 @@ export function DisplayScreen() {
                       fontSize:"clamp(0.85rem,1.5vw,1.5rem)",
                       color: i === 0 ? "#d4a017" : i === 1 ? "#c0c0c0" : i === 2 ? "#cd7f32" : "rgba(224,176,128,0.35)",
                     }}>{i + 1}</span>
+                    <span style={{
+                      minWidth:"3ch", fontFamily:"var(--font-mono)", fontWeight:700,
+                      fontSize:"clamp(0.7rem,1.1vw,1.1rem)",
+                      color: (shifts[s.id] ?? 0) > 0 ? "#5fd0c0" : (shifts[s.id] ?? 0) < 0 ? "#ff8a80" : "rgba(255,255,255,0.35)",
+                    }}>{formatShift(shifts[s.id] ?? 0)}</span>
                     {s.teamId && <TeamIcon teamId={s.teamId} size={22} strokeWidth={1.5} />}
                     <span style={{
                       flex:1, minWidth:0, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
