@@ -8,6 +8,9 @@ import { Switch } from "@/components/ui/switch"
 import { useGame } from "@/lib/game-context"
 import { UNITS, CIRCLES } from "@/lib/data"
 import { getTeamName } from "@/lib/utils"
+import { summarizeLessonClaims } from "@/lib/lesson-summary"
+import { TeamDot } from "@/components/shared/team-icon"
+import type { Character } from "@/lib/types"
 import type { PoolRefillMode } from "@/lib/peer-pool"
 
 export function GameSetupPanel() {
@@ -29,6 +32,19 @@ export function GameSetupPanel() {
     }, 1000)
     return () => clearInterval(interval)
   }, [lessonWindowEnd, toggleLesson])
+
+  const summary = summarizeLessonClaims(characters)
+
+  const nameList = (title: string, list: Character[]) => (
+    <div style={{ flex:1 }}>
+      <p style={{ color:"var(--c-text-muted)", fontSize:"0.75rem", marginBottom:6 }}>{title} ({list.length})</p>
+      {list.map(c => (
+        <div key={c.id} style={{ display:"flex", alignItems:"center", gap:6, color:"var(--c-text)", fontSize:"0.85rem", marginBottom:3 }}>
+          <TeamDot color="" teamId={c.teamId} />{c.name}
+        </div>
+      ))}
+    </div>
+  )
 
   const section = (title: string, children: React.ReactNode) => (
     <div style={{ backgroundColor:"var(--c-bg-section)", border:"1px solid var(--c-border)",
@@ -60,6 +76,17 @@ export function GameSetupPanel() {
               min={5} max={120} style={{ width:80, backgroundColor:"var(--c-input)",
                 border:"1px solid var(--c-input-border)", color:"var(--c-text)" }} />
           </div>
+          {lessonWindowActive && (
+            <div style={{ marginTop:16 }}>
+              <p style={{ color:"var(--c-text)", fontSize:"0.9rem", marginBottom:10 }}>
+                Uplatnilo {summary.claimed.length} z {summary.total} hráčů
+              </p>
+              <div style={{ display:"flex", gap:16 }}>
+                {nameList("Uplatnili", summary.claimed)}
+                {nameList("Ještě ne", summary.pending)}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
