@@ -5,11 +5,11 @@ import {
   IconPlus, IconDashboard, IconList, IconChartLine, IconStar,
   IconQrcode, IconBell, IconSettings, IconTrophy, IconRepeat, IconBook,
 } from "@tabler/icons-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useGame } from "@/lib/game-context"
-import { ScoreboardComponent } from "@/components/panels/scoreboard"
+import { ScoreboardComponent, type ScoreMode } from "@/components/panels/scoreboard"
 import { PointAssignmentForm } from "@/components/panels/point-assignment"
+import { PointAssignmentSheet, DashboardTabsList, SectionCard, type DashboardTab } from "@/components/shared/dashboard-parts"
 import { TransactionLog } from "@/components/panels/transaction-log"
 import { ChartsPanel } from "@/components/panels/charts"
 import { KaichiPanel } from "@/components/panels/kaichi"
@@ -19,10 +19,22 @@ import { GameSetupPanel } from "@/components/panels/game-setup"
 import { RunSetupPanel } from "@/components/panels/run-setup"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 
+const tabs: DashboardTab[] = [
+  { value:"overview", label:"Přehled",       Icon:IconDashboard },
+  { value:"points",   label:"Zadávání bodů", Icon:IconPlus },
+  { value:"log",      label:"Log",           Icon:IconList },
+  { value:"charts",   label:"Grafy",         Icon:IconChartLine },
+  { value:"kaichi",   label:"Kaichi",        Icon:IconStar },
+  { value:"qr",       label:"QR kódy",       Icon:IconQrcode },
+  { value:"alarm",    label:"Alarm",         Icon:IconBell },
+  { value:"runs",     label:"Běhy",          Icon:IconRepeat },
+  { value:"wiki",     label:"Wiki",          Icon:IconBook },
+  { value:"settings", label:"Nastavení",     Icon:IconSettings },
+]
+
 export function GMDashboard() {
   const { teams, alarmState, qrCodes, runs, activeRunId, setActiveRun } = useGame()
-  const [sbMode,    setSbMode]    = useState<"students" | "teams" | "units" | "circles">("teams")
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sbMode,    setSbMode]    = useState<ScoreMode>("teams")
 
   const sorted    = useMemo(() => [...teams].sort((a,b) => b.points - a.points), [teams])
   const leader    = sorted[0]
@@ -86,48 +98,11 @@ export function GMDashboard() {
             </div>
           )}
         </div>
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger
-            render={<button />}
-            style={{ backgroundColor:"var(--c-teal)", color:"#F4ECDF", fontWeight:700,
-              padding:"8px 16px", borderRadius:6, border:"none", cursor:"pointer",
-              display:"flex", alignItems:"center", gap:6, fontSize:"0.875rem" }}
-          >
-            <IconPlus size={16} /> Zadat body
-          </SheetTrigger>
-          <SheetContent style={{ backgroundColor:"var(--c-bg)", borderLeft:"1px solid var(--c-border)", minWidth:380 }}>
-            <SheetHeader>
-              <SheetTitle style={{ color:"var(--c-text)" }}>Zadat body</SheetTitle>
-            </SheetHeader>
-            <div style={{ marginTop:20 }}>
-              <PointAssignmentForm onClose={() => setSheetOpen(false)} canCorrect />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <PointAssignmentSheet canCorrect />
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList style={{ backgroundColor:"var(--c-bg-section)", border:"1px solid var(--c-border)",
-          marginBottom:20, flexWrap:"wrap", height:"auto", gap:2 }}>
-          {[
-            ["overview","Přehled",IconDashboard],
-            ["points","Zadávání bodů",IconPlus],
-            ["log","Log",IconList],
-            ["charts","Grafy",IconChartLine],
-            ["kaichi","Kaichi",IconStar],
-            ["qr","QR kódy",IconQrcode],
-            ["alarm","Alarm",IconBell],
-            ["runs","Běhy",IconRepeat],
-            ["wiki","Wiki",IconBook],
-            ["settings","Nastavení",IconSettings],
-          ].map(([v,label,Icon]) => (
-            <TabsTrigger key={v as string} value={v as string}
-              style={{ color:"var(--c-text-muted)", fontSize:"0.8rem", display:"flex", alignItems:"center", gap:5 }}>
-              {React.createElement(Icon as React.ElementType, {size:13})}
-              {label as string}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <DashboardTabsList tabs={tabs} wrap />
 
         <TabsContent value="overview">
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:12, marginBottom:24 }}>
@@ -136,14 +111,12 @@ export function GMDashboard() {
             {statCard(IconBell,   "Alarm",         alarmState.active ? "AKTIVNÍ" : "Klid", alarmState.active ? "#D96A5C" : "#5BBF87")}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-            <div style={{ backgroundColor:"var(--c-bg-section)", border:"1px solid var(--c-border)", borderRadius:10, padding:20 }}>
-              <p style={{ color:"var(--c-accent)", fontSize:"0.8rem", letterSpacing:"0.08em", marginBottom:12 }}>ŽEBŘÍČEK TÝMŮ</p>
+            <SectionCard title="ŽEBŘÍČEK TÝMŮ">
               <ScoreboardComponent mode={sbMode} compact showModeToggle onModeChange={setSbMode} />
-            </div>
-            <div style={{ backgroundColor:"var(--c-bg-section)", border:"1px solid var(--c-border)", borderRadius:10, padding:20 }}>
-              <p style={{ color:"var(--c-accent)", fontSize:"0.8rem", letterSpacing:"0.08em", marginBottom:12 }}>POSLEDNÍCH 5 AKCÍ</p>
+            </SectionCard>
+            <SectionCard title="POSLEDNÍCH 5 AKCÍ">
               <TransactionLog maxRows={5} />
-            </div>
+            </SectionCard>
           </div>
         </TabsContent>
 
