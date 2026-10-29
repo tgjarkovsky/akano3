@@ -15,7 +15,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { buildReversal, isReversal, isReversed } from "@/lib/point-resolution"
+import { downloadText } from "@/lib/download"
+import { buildReversal,isReversal, isReversed } from "@/lib/point-resolution"
 import type { PointEntry } from "@/lib/types"
 
 // Růže masquerade: her entries display a fake teacher (deterministic per entry
@@ -73,12 +74,7 @@ export function TransactionLog({
        ACTION_LABELS[e.actionType], getTargetName(e.targetType, e.targetId),
        e.resolvedTeamIds.map(getTeamName).join("|"), e.amount, e.note ?? ""].join(",")
     )
-    const blob = new Blob([[header, ...rows].join("\n")], { type:"text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a"); a.href = url
-    a.download = "akano3-log.csv"
-    document.body.appendChild(a); a.click(); document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadText("akano3-log.csv", [header, ...rows].join("\n"))
   }
 
   const confirmReversal = () => {
