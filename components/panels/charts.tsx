@@ -7,7 +7,7 @@ import {
 } from "recharts"
 import { IconShield } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
-import { formatDateTime, teamDeltaOf } from "@/lib/utils"
+import { teamTimeline, formatTimeOnly } from "@/lib/team-timeline"
 import { TEAM_ICONS } from "@/lib/data"
 import type { Team } from "@/lib/types"
 
@@ -29,26 +29,7 @@ function EndLabel({ cx, cy, index, lastIndex, team }: {
 export function ChartsPanel({ singleTeamId }: { singleTeamId?: string }) {
   const { teams, pointLog } = useGame()
 
-  const timeData = useMemo(() => {
-    const sortedLog = [...pointLog].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime())
-    const buckets: Record<string, Record<string, number>> = {}
-    const runningTotals: Record<string, number> = {}
-    const deltas = sortedLog.map(teamDeltaOf)
-    teams.forEach(t => {
-      const loggedSum = deltas.reduce((s,d) => s + (d[t.id] ?? 0), 0)
-      runningTotals[t.id] = t.points - loggedSum
-    })
-    sortedLog.forEach((e, i) => {
-      const d = deltas[i]
-      for (const tid in d) runningTotals[tid] = (runningTotals[tid] ?? 0) + d[tid]
-      const key = formatDateTime(e.timestamp)
-      if (!buckets[key]) buckets[key] = { time: key as any }
-      teams.forEach(t => { buckets[key][t.id] = runningTotals[t.id] ?? 0 })
-    })
-    return Object.values(buckets)
-  }, [teams, pointLog])
-
-  const formatTimeOnly = (val: string) => val?.slice(-5) ?? val
+  const timeData = useMemo(() => teamTimeline(teams, pointLog), [teams, pointLog])
 
   const displayTeams = singleTeamId ? teams.filter(t => t.id === singleTeamId) : teams
   const lastIndex = timeData.length - 1

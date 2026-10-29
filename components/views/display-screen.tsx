@@ -7,7 +7,7 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer,
 } from "recharts"
 import { useGame } from "@/lib/game-context"
-import { formatDateTime, teamDeltaOf } from "@/lib/utils"
+import { teamTimeline, formatTimeOnly } from "@/lib/team-timeline"
 import { rankShifts, formatShift } from "@/lib/rank-shift"
 import { TEAM_ICONS } from "@/lib/data"
 import { TeamIcon } from "@/components/shared/team-icon"
@@ -78,26 +78,7 @@ export function DisplayScreen() {
     () => rankShifts(students, pointLog, "students", new Date(Date.now() - 30 * 60000)),
     [students, pointLog])
 
-  const timeData = useMemo(() => {
-    const sortedLog = [...pointLog].sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime())
-    const runningTotals: Record<string, number> = {}
-    const deltas = sortedLog.map(teamDeltaOf)
-    teams.forEach(t => {
-      const loggedSum = deltas.reduce((s,d) => s + (d[t.id] ?? 0), 0)
-      runningTotals[t.id] = t.points - loggedSum
-    })
-    const buckets: Record<string, Record<string, number>> = {}
-    sortedLog.forEach((e, i) => {
-      const d = deltas[i]
-      for (const tid in d) runningTotals[tid] = (runningTotals[tid] ?? 0) + d[tid]
-      const key = formatDateTime(e.timestamp)
-      if (!buckets[key]) buckets[key] = { time: key as any }
-      teams.forEach(t => { buckets[key][t.id] = runningTotals[t.id] ?? 0 })
-    })
-    return Object.values(buckets)
-  }, [teams, pointLog])
-
-  const formatTimeOnly = (val: string) => val?.slice(-5) ?? val
+  const timeData = useMemo(() => teamTimeline(teams, pointLog), [teams, pointLog])
 
   if (alarmState.active) {
     return (
