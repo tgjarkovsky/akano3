@@ -9,7 +9,7 @@ import { unitPoints, circlePoints } from "@/lib/score-aggregation"
 import { rankShifts, formatShift } from "@/lib/rank-shift"
 import { TeamDot } from "@/components/shared/team-icon"
 
-type ScoreMode = "students" | "teams" | "units" | "circles"
+export type ScoreMode ="students" | "teams" | "units" | "circles"
 
 export function ScoreboardComponent({
   mode = "teams",
