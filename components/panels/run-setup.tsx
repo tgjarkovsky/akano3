@@ -7,6 +7,7 @@ import { useGame } from "@/lib/game-context"
 import { TEAMS, UNITS, CIRCLES, CHARACTERS } from "@/lib/data"
 import { getTeamName } from "@/lib/utils"
 import { buildStandingsCsv } from "@/lib/standings-csv"
+import { downloadText } from "@/lib/download"
 
 const SPECIALIZATIONS = [
   { value: "", label: "—" },
@@ -44,21 +45,14 @@ export function RunSetupPanel() {
   const { runs, activeRunId, setActiveRun, createRun, teams, characters } = useGame()
   const [newRunName, setNewRunName] = useState("")
   const [creating, setCreating] = useState(false)
-  const [savingTeam, setSavingTeam] = useState<string | null>(null)
-  const [savingCircle, setSavingCircle] = useState<string | null>(null)
-  const [savingSpec, setSavingSpec] = useState<string | null>(null)
+  const [saving, setSaving] = useState<string | null>(null)
 
   const students = CHARACTERS.filter(c => c.role === "student" || c.role === "ruze")
 
   const handleExportResults = () => {
     const runName = runs.find(r => r.id === activeRunId)?.name ?? "beh"
     const csv = buildStandingsCsv({ characters, teams, units: UNITS, circles: CIRCLES })
-    const blob = new Blob(["﻿" + csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a"); a.href = url
-    a.download = `akano3-vysledky-${runName.replace(/[^\p{L}\p{N}]+/gu, "-")}.csv`
-    document.body.appendChild(a); a.click(); document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadText(`akano3-vysledky-${runName.replace(/[^\p{L}\p{N}]+/gu, "-")}.csv`, "﻿" + csv)
   }
 
   const handleCreateRun = async () => {
@@ -69,35 +63,24 @@ export function RunSetupPanel() {
     setCreating(false)
   }
 
-  const handleSetTeamUnit = async (teamId: string, unitId: string) => {
-    setSavingTeam(teamId)
+  const saveConfig = async (key: string, payload: Record<string, unknown>) => {
+    setSaving(key)
     await fetch("/api/config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "setTeamUnit", teamId, unitId }),
+      body: JSON.stringify(payload),
     })
-    setSavingTeam(null)
+    setSaving(null)
   }
 
-  const handleSetCircle = async (circleId: string, memberIds: string[]) => {
-    setSavingCircle(circleId)
-    await fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "setCircleMembers", circleId, memberIds }),
-    })
-    setSavingCircle(null)
-  }
+  const handleSetTeamUnit = (teamId: string, unitId: string) =>
+    saveConfig(`team:${teamId}`, { action: "setTeamUnit", teamId, unitId })
 
-  const handleSetSpec = async (characterId: string, specialization: string) => {
-    setSavingSpec(characterId)
-    await fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "setSpecialization", characterId, specialization: specialization || null }),
-    })
-    setSavingSpec(null)
-  }
+  const handleSetCircle = (circleId: string, memberIds: string[]) =>
+    saveConfig(`circle:${circleId}`, { action: "setCircleMembers", circleId, memberIds })
+
+  const handleSetSpec = (characterId: string, specialization: string) =>
+    saveConfig(`spec:${characterId}`, { action: "setSpecialization", characterId, specialization: specialization || null })
 
   return (
     <div style={{ maxWidth: 640 }}>
@@ -184,12 +167,12 @@ export function RunSetupPanel() {
               <div key={staticTeam.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--c-text)", fontSize: "0.85rem", minWidth: 120 }}>
                   {getTeamName(staticTeam.id)}
-                  {savingTeam === staticTeam.id && <span style={{ color: "var(--c-text-muted)", fontSize: "0.75rem", marginLeft: 6 }}>ukládám…</span>}
+                  {saving === `team:${staticTeam.id}` &&<span style={{ color: "var(--c-text-muted)", fontSize: "0.75rem", marginLeft: 6 }}>ukládám…</span>}
                 </span>
                 <select
                   value={currentUnitId}
                   onChange={e => handleSetTeamUnit(staticTeam.id, e.target.value)}
-                  disabled={savingTeam === staticTeam.id}
+                  disabled={saving === `team:${staticTeam.id}`}
                   style={selectStyle}
                 >
                   {UNITS.map(u => (
@@ -212,7 +195,7 @@ export function RunSetupPanel() {
               <div key={circle.id}>
                 <p style={{ color: "var(--c-accent)", fontSize: "0.8rem", marginBottom: 6, fontWeight: 600 }}>
                   {circle.name}
-                  {savingCircle === circle.id && <span style={{ color: "var(--c-text-muted)", fontSize: "0.72rem", marginLeft: 6 }}>ukládám…</span>}
+                  {saving === `circle:${circle.id}` &&<span style={{ color: "var(--c-text-muted)", fontSize: "0.72rem", marginLeft: 6 }}>ukládám…</span>}
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {students.map(student => {
@@ -254,12 +237,12 @@ export function RunSetupPanel() {
               <div key={student.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--c-text)", fontSize: "0.85rem", minWidth: 160 }}>
                   {student.name}
-                  {savingSpec === student.id && <span style={{ color: "var(--c-text-muted)", fontSize: "0.75rem", marginLeft: 6 }}>ukládám…</span>}
+                  {saving === `spec:${student.id}` &&<span style={{ color: "var(--c-text-muted)", fontSize: "0.75rem", marginLeft: 6 }}>ukládám…</span>}
                 </span>
                 <select
                   value={currentSpec ?? ""}
                   onChange={e => handleSetSpec(student.id, e.target.value)}
-                  disabled={savingSpec === student.id}
+                  disabled={saving === `spec:${student.id}`}
                   style={selectStyle}
                 >
                   {SPECIALIZATIONS.map(s => (
