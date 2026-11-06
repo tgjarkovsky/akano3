@@ -2,11 +2,11 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-  IconArrowLeft, IconCheck, IconChecks, IconArrowBackUp, IconEye, IconEyeOff, IconAlertTriangle, IconLoader2,
+  IconArrowLeft, IconCheck, IconChecks, IconArrowBackUp, IconEye, IconEyeOff, IconAlertTriangle, IconLoader2, IconPlus,
 } from "@tabler/icons-react"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { useGame } from "@/lib/game-context"
-import { DOC_FIELDS, VISIBILITY_LABELS, type DocEntityType } from "@/lib/doc-fields"
+import { DOC_FIELDS, VISIBILITY_LABELS, countSections, appendSection, type DocEntityType } from "@/lib/doc-fields"
 import { statusOf, STATUS_LABELS, type StatusAction } from "@/lib/doc-status"
 import type { TextRecord } from "@/lib/docs-store"
 import { WikiRenderer } from "@/components/shared/wiki-renderer"
@@ -47,6 +47,7 @@ export function TextEditor({ entityType, entityId, field, onSelect, onBack }: {
   const [keepStatus, setKeepStatus] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [acting, setActing] = useState<StatusAction | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Refs drží poslední hodnoty pro ukládání z časovače a při přepnutí.
   const recordsRef = useRef(records); recordsRef.current = records
@@ -285,15 +286,38 @@ export function TextEditor({ entityType, entityId, field, onSelect, onBack }: {
           </div>
         )}
 
+        {fieldDef.sections && !loading && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.82rem", color: "var(--c-text-muted)" }}>
+              {(() => { const n = countSections(draft); return n === 1 ? "1 legenda" : n >= 2 && n <= 4 ? `${n} legendy` : `${n} legend` })()}
+            </span>
+            <button className="tool-btn" onClick={() => {
+              const { body, cursor } = appendSection(draft, fieldDef.sections!.singular)
+              setDrafts(d => ({ ...d, [field]: body }))
+              setDirty(d => d.has(field) ? d : new Set(d).add(field))
+              requestAnimationFrame(() => {
+                const ta = textareaRef.current
+                if (!ta) return
+                ta.focus(); ta.setSelectionRange(cursor, cursor); ta.scrollTop = ta.scrollHeight
+              })
+            }}>
+              <IconPlus size={14} /> Další {fieldDef.sections.singular}
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <p style={{ color: "var(--c-text-muted)", display: "flex", alignItems: "center", gap: 6 }}><IconLoader2 size={16} className="spin" /> Načítám…</p>
         ) : (
           <textarea
+            ref={textareaRef}
             key={`${entityType}:${entityId}:${field}`}
             className="doc-textarea"
             aria-label={`${entity?.name ?? ""}, ${fieldDef.label}`}
             value={draft}
-            placeholder="Piš sem. Funguje markdown: # nadpis, **tučně**, *kurzíva*, - odrážky."
+            placeholder={fieldDef.sections
+              ? "## Název první legendy\n\nText legendy…\n\n## Název druhé legendy\n\n…"
+              : "Piš sem. Funguje markdown: # nadpis, **tučně**, *kurzíva*, - odrážky."}
             onChange={e => {
               const v = e.target.value
               setDrafts(d => ({ ...d, [field]: v }))

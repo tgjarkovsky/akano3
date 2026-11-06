@@ -10,11 +10,13 @@ export type DocField = {
   /** krátká nápověda pro autora */
   hint: string
   visibility: Visibility
+  /** pole s více oddíly (např. víc legend): každý začíná nadpisem „## Název“ */
+  sections?: { singular: string }
 }
 
 export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
   character: [
-    { key: "legends",     label: "Legendy",       hint: "Důležité momenty ze života postavy, ve 3. osobě.", visibility: "private" },
+    { key: "legends",     label: "Legendy",       hint: "Důležité momenty ze života postavy, ve 3. osobě. Každou legendu začni nadpisem ## Název.", visibility: "private", sections: { singular: "legenda" } },
     { key: "inner_world", label: "Vnitřní svět",  hint: "Jak postava přemýšlí, v 1. osobě.",               visibility: "private" },
     { key: "summary",     label: "Shrnutí",       hint: "To nejdůležitější v bodech.",                     visibility: "private" },
     { key: "why_hunter",  label: "Proč lovcem",   hint: "Proč se potřebuji stát lovcem?",                  visibility: "private" },
@@ -58,3 +60,18 @@ export function isDocField(type: unknown, field: unknown): boolean {
 }
 
 export const docKey = (type: DocEntityType, entityId: string, field: string) => `${type}:${entityId}:${field}`
+
+/** Počet oddílů (nadpisů „## “) v textu pole s více oddíly. */
+export function countSections(body: string): number {
+  return body.split("\n").filter(l => /^## \S/.test(l)).length
+}
+
+/** Text s připojeným dalším oddílem; vrací i pozici kurzoru za nadpisem. */
+export function appendSection(body: string, singular: string): { body: string; cursor: number } {
+  const n = countSections(body) + 1
+  const title = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} ${n}`
+  const trimmed = body.replace(/\s+$/, "")
+  const prefix = trimmed ? `${trimmed}\n\n` : ""
+  const next = `${prefix}## ${title}\n\n`
+  return { body: next, cursor: next.length }
+}

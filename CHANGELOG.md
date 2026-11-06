@@ -1,3 +1,4 @@
+## [2026-11-06] - Texty: víc legend v jednom poli (nadpis ## na legendu), tlačítko Další legenda a počet legend
 ## [2026-11-06] - Příprava → Texty: matice postupu všech textů (postavy, týmy, jednotky, role, kruhy, specializace a původy), editor se stromem, automatickým ukládáním a náhledem pro hráče, stavy Hotovo / Schváleno, ochrana proti přepsání cizí úpravy, role jednotek ve trojicích A/B, rod postavy
 ## [2026-11-06] - Příprava → Pravidla: povolené hodnoty specializace, původu a kruhu postavy a jednotky týmu (napevno / kterákoli až na X); obsazení zakázané volby zamyká, kontroly hlásí porušení, server je odmítne, tlačítko doplní pevné hodnoty
 ## [2026-11-06] - Přímý přechod Příprava ↔ Velín ve stejné záložce (bez nového přihlášení)
