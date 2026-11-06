@@ -65,7 +65,8 @@ týmů). Nové tabulky drží jen texty a obsazení.
 character_cores (
   character_id TEXT PRIMARY KEY,
   gender TEXT NOT NULL,    -- 'm' | 'f'
-  legends TEXT, inner_world TEXT, summary TEXT, relationships TEXT,
+  legends TEXT, inner_world TEXT, summary TEXT,
+  -- vztahy jsou strukturované v tabulce relationships, viz 2026-11-06-priprava-a-spis-design.md
   why_hunter TEXT, other_wants TEXT, stands_out TEXT,
   allowed_specializations TEXT[] NOT NULL,  -- podmnožina combat/tactical/support
   allowed_origins TEXT[] NOT NULL,          -- podmnožina tří původů
