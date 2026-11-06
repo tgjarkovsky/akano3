@@ -20,7 +20,12 @@ export function useSetupSave() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        addToast(res.status === 401 ? "Příprava není přihlášená, změna se neuložila" : "Změnu se nepodařilo uložit", "error")
+        addToast(
+          res.status === 401 ? "Příprava není přihlášená, změna se neuložila"
+          : res.status === 409 ? await res.text()
+          : "Změnu se nepodařilo uložit",
+          "error",
+        )
         return false
       }
       await refreshGameState()
@@ -49,19 +54,23 @@ export function SectionTitle({ children, note }: { children: React.ReactNode; no
 }
 
 /** Tři (nebo víc) vzájemně výlučných tlačítek. Vybrané je plné, ostatní obrysové. */
-export function Segmented<T extends string>({ label, options, value, onChange, busy }: {
+export function Segmented<T extends string>({ label, options, value, onChange, busy, allowed }: {
   label: string
   options: { value: T; label: string }[]
   value: T | undefined
   onChange: (v: T) => void
   busy?: boolean
+  /** povolené hodnoty podle pravidel; null = všechny */
+  allowed?: readonly string[] | null
 }) {
   return (
     <div role="radiogroup" aria-label={label} className="seg" style={{ opacity: busy ? 0.55 : 1 }}>
       {options.map(o => {
         const on = o.value === value
+        const blocked = !!allowed && !allowed.includes(o.value)
         return (
-          <button key={o.value} type="button" role="radio" aria-checked={on} disabled={busy}
+          <button key={o.value} type="button" role="radio" aria-checked={on} disabled={busy || (blocked && !on)}
+            title={blocked ? "Zakázáno pravidlem" : undefined}
             onClick={() => { if (!on) onChange(o.value) }}
             className={on ? "seg-item seg-on" : "seg-item"}>
             {o.label}

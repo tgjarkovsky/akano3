@@ -663,3 +663,38 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   100% { box-shadow: 0 0 0 3px transparent; }
 }
 .flash { animation: flash-ring 1.6s ease-out; }
+
+/* ── Příprava: pravidla obsazení ───────────────────────────────────── */
+.rule-table { border: 1px solid var(--c-border); border-radius: 10px; overflow: hidden; }
+.rule-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) auto;
+  gap: 14px; align-items: center;
+  padding: 8px 14px; border-top: 1px solid var(--c-border);
+}
+.rule-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rule-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 32px; padding: 0 10px; border-radius: 16px; cursor: pointer;
+  border: 1px dashed var(--c-border-mid); background: transparent;
+  color: var(--c-text-faint); font-size: 0.8rem; text-decoration: line-through;
+}
+.rule-chip-on {
+  border-style: solid; border-color: var(--c-border-str);
+  background-color: var(--c-bg-section); color: var(--c-text); text-decoration: none;
+}
+.rule-chip:hover { border-color: var(--c-accent); }
+.rule-badge {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: 0.78rem; padding: 3px 9px; border-radius: 12px; border: 1px solid;
+}
+.rule-reset {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--c-border-mid); background: transparent; color: var(--c-text-muted);
+}
+@media (max-width: 899px) {
+  .rule-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; }
+  .rule-row > span:last-child { justify-content: flex-start; }
+}
+.seg-item:disabled:not(.seg-on) { text-decoration: line-through; color: var(--c-text-faint); cursor: not-allowed; opacity: 0.6; }

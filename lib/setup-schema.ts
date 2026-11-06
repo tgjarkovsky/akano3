@@ -16,6 +16,18 @@ export function ensureSetupColumns(): Promise<void> {
     const has = (t: string, c: string) => rows.some(r => r.table_name === t && r.column_name === c)
     if (!has("character_state", "origin")) await sql`ALTER TABLE character_state ADD COLUMN IF NOT EXISTS origin TEXT`
     if (!has("team_units", "triplet"))     await sql`ALTER TABLE team_units ADD COLUMN IF NOT EXISTS triplet TEXT`
+    // Pravidla obsazení (lib/assignment-rules.ts) platí ve všech bězích, proto bez run_id.
+    await sql`
+      CREATE TABLE IF NOT EXISTS assignment_rules (
+        subject_type TEXT NOT NULL,
+        subject_id   TEXT NOT NULL,
+        property     TEXT NOT NULL,
+        allowed      TEXT[] NOT NULL,
+        updated_by   TEXT,
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (subject_type, subject_id, property)
+      )
+    `
   })().catch(err => { ready = null; throw err })
   return ready
 }

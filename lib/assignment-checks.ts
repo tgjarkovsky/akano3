@@ -1,4 +1,5 @@
 import type { UnitSlots } from "./unit-slots.ts"
+import { allowedValues, describeRule, type RuleOption, type RuleProperty } from "./assignment-rules.ts"
 
 // Kontroly obsazení běhu v Přípravě. Chyby blokují zveřejnění dokumentů
 // (až bude), varování jen upozorňují.
@@ -29,8 +30,22 @@ export function checkAssignment(input: {
   /** týmy, které nejsou v žádném slotu ani v přetečení (bez platné jednotky) */
   unplacedTeamIds: readonly string[]
   players: readonly CheckCharacter[]
+  /** pravidla obsazení (lib/assignment-rules.ts); bez nich se porušení nekontroluje */
+  rules?: Map<string, string[]>
+  optionsFor?: (p: RuleProperty) => readonly RuleOption[]
 }): AssignmentIssue[] {
   const issues: AssignmentIssue[] = []
+  const rules = input.rules
+  const optionsFor = input.optionsFor
+  const violation = (subjectType: "character" | "team", id: string, property: RuleProperty, value: string | undefined) => {
+    if (!rules || !optionsFor || value === undefined) return null
+    const allowed = allowedValues(rules, subjectType, id, property)
+    if (allowed === null || allowed.includes(value)) return null
+    const options = optionsFor(property)
+    const label = options.find(o => o.value === value)?.label ?? value
+    const rule = describeRule(allowed, options).text
+    return `${label} porušuje pravidlo (${rule.charAt(0).toLowerCase()}${rule.slice(1)})`
+  }
 
   for (const s of input.slots) {
     const unit = input.unitName(s.unitId)
@@ -45,6 +60,13 @@ export function checkAssignment(input: {
       })
     }
   }
+  for (const s of input.slots) {
+    for (const teamId of [s.A, s.B, ...s.overflow]) {
+      if (!teamId) continue
+      const v = violation("team", teamId, "unit", s.unitId)
+      if (v) issues.push({ level: "error", message: `${input.teamName(teamId)}: jednotka ${v}`, target: { type: "team", id: teamId } })
+    }
+  }
   for (const teamId of input.unplacedTeamIds) {
     issues.push({ level: "error", message: `${input.teamName(teamId)} není v žádné jednotce`, target: { type: "team", id: teamId } })
   }
@@ -56,6 +78,12 @@ export function checkAssignment(input: {
     if (missing.length > 0) {
       issues.push({ level: "error", message: `${c.name}: chybí ${missing.join(" a ")}`, target: { type: "character", id: c.id } })
     }
+    const broken = [
+      violation("character", c.id, "specialization", c.specialization),
+      violation("character", c.id, "origin", c.origin),
+      ...c.circleIds.map(id => violation("character", c.id, "circle", id)),
+    ].filter(Boolean)
+    for (const v of broken) issues.push({ level: "error", message: `${c.name}: ${v}`, target: { type: "character", id: c.id } })
     // Postava je vždy právě v jednom kruhu.
     if (c.circleIds.length === 0) {
       issues.push({ level: "error", message: `${c.name}: není v žádném kruhu`, target: { type: "character", id: c.id } })

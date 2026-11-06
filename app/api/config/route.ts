@@ -8,6 +8,10 @@ import { configActionNeedsAdmin } from "@/lib/config-auth"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { computeUnitSlots, planTeamMove, type TeamPlacement } from "@/lib/unit-slots"
 import type { Triplet } from "@/lib/types"
+import { indexRules, isAllowed, allowedValues, describeRule, type RuleProperty, type RuleSubject } from "@/lib/assignment-rules"
+import { ruleOptionsFor, PROPERTY_LABELS } from "@/lib/rule-options"
+import { getRules } from "@/lib/rules-store"
+import { getTeamName, getCharName } from "@/lib/utils"
 
 // Obsazení běhu (jednotky, kruhy, specializace, původ) jen z Přípravy s heslem.
 // Tým je vždy v jedné jednotce (placeTeam), postava vždy v jednom kruhu (setCharacterCircle).
@@ -37,6 +41,17 @@ export async function POST(req: Request) {
     const runId = await getActiveRunId()
     await ensureSetupColumns()
 
+    // Pravidla obsazení (Příprava → Pravidla): hodnotu mimo povolené odmítni s vysvětlením.
+    const rules = configActionNeedsAdmin(body.action) ? indexRules(await getRules()) : null
+    const ruleBlock = (subjectType: RuleSubject, id: string, property: RuleProperty, value: string | null) => {
+      if (!rules || value === null || isAllowed(rules, subjectType, id, property, value)) return null
+      const options = ruleOptionsFor(property)
+      const who = subjectType === "team" ? getTeamName(id) : getCharName(id)
+      const label = options.find(o => o.value === value)?.label ?? value
+      const rule = describeRule(allowedValues(rules, subjectType, id, property), options).text
+      return new Response(`${who}: ${PROPERTY_LABELS[property].toLowerCase()} ${label} nedovoluje pravidlo (${rule})`, { status: 409 })
+    }
+
     if (body.action === "placeTeam") {
       // Přesun do slotu jednotky; obsazený slot se vymění (lib/unit-slots.ts).
       const rows = await sql`SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${runId} ORDER BY team_id`
@@ -46,20 +61,30 @@ export async function POST(req: Request) {
       if (!placements.some(p => p.teamId === body.teamId)) return new Response("Tým nemá v běhu záznam", { status: 404 })
       const slots = computeUnitSlots(UNITS.map(u => u.id), placements)
       const writes = planTeamMove(slots, body.teamId, { unitId: body.unitId, triplet: body.triplet })
+      for (const w of writes) {
+        const blocked = ruleBlock("team", w.teamId, "unit", w.unitId)
+        if (blocked) return blocked
+      }
       if (writes.length > 0) {
         await sql.transaction(writes.map(w =>
           sql`UPDATE team_units SET unit_id = ${w.unitId}, triplet = ${w.triplet} WHERE team_id = ${w.teamId} AND run_id = ${runId}`
         ))
       }
     } else if (body.action === "setOrigin") {
+      const blocked = ruleBlock("character", body.characterId, "origin", body.origin)
+      if (blocked) return blocked
       await sql`UPDATE character_state SET origin = ${body.origin} WHERE character_id = ${body.characterId} AND run_id = ${runId}`
     } else if (body.action === "setCharacterCircle") {
+      const blocked = ruleBlock("character", body.characterId, "circle", body.circleId)
+      if (blocked) return blocked
       // Postava je vždy právě v jednom kruhu: smazat všechna členství, vložit jedno.
       await sql.transaction([
         sql`DELETE FROM circle_members WHERE character_id = ${body.characterId} AND run_id = ${runId}`,
         sql`INSERT INTO circle_members (circle_id, character_id, run_id) VALUES (${body.circleId}, ${body.characterId}, ${runId})`,
       ])
     } else if (body.action === "setSpecialization") {
+      const blocked = ruleBlock("character", body.characterId, "specialization", body.specialization)
+      if (blocked) return blocked
       await sql`UPDATE character_state SET specialization = ${body.specialization} WHERE character_id = ${body.characterId} AND run_id = ${runId}`
     } else if (body.action === "refillPeerPool") {
       const refill = parsePoolRefill(body)

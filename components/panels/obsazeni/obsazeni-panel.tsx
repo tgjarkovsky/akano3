@@ -8,6 +8,9 @@ import { computeUnitSlots } from "@/lib/unit-slots"
 import { checkAssignment, charactersWithIssues } from "@/lib/assignment-checks"
 import type { Specialization, Origin, Triplet } from "@/lib/types"
 import { useSetupSave } from "./shared"
+import { useRules } from "@/components/panels/pravidla/rules-context"
+import { pendingFixedValues } from "@/lib/assignment-rules"
+import { ruleOptionsFor } from "@/lib/rule-options"
 import { RunBar } from "./run-bar"
 import { UnitBoard } from "./unit-board"
 import { CharacterTable } from "./character-table"
@@ -19,6 +22,7 @@ import { ChecksPanel } from "./checks-panel"
 export function ObsazeniPanel() {
   const { teams, characters } = useGame()
   const { save, pending } = useSetupSave()
+  const { index: rules, pending: rulesPending, applyFixed } = useRules()
 
   const players = useMemo(
     () => characters.filter(c => (c.role === "student" || c.role === "ruze") && c.teamId),
@@ -41,7 +45,9 @@ export function ObsazeniPanel() {
   const issues = useMemo(() => checkAssignment({
     slots, unplacedTeamIds, players,
     unitName: getUnitName, teamName: getTeamName,
-  }), [slots, unplacedTeamIds, players])
+    rules, optionsFor: ruleOptionsFor,
+  }), [slots, unplacedTeamIds, players, rules])
+  const fixedPending = useMemo(() => pendingFixedValues(rules, players).length, [rules, players])
 
   const unitsWithIssues = useMemo(
     () => new Set(issues.filter(i => i.target.type === "unit").map(i => i.target.id)),
@@ -67,10 +73,11 @@ export function ObsazeniPanel() {
       <div className="obsazeni-grid">
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 28 }}>
           <UnitBoard slots={slots} unplacedTeamIds={unplacedTeamIds} characters={players}
-            unitsWithIssues={unitsWithIssues} pendingTeamId={pendingTeamId} onMove={moveTeam} />
+            unitsWithIssues={unitsWithIssues} pendingTeamId={pendingTeamId} onMove={moveTeam} rules={rules} />
           <CharacterTable slots={slots} unplacedTeamIds={unplacedTeamIds} players={players}
             withIssues={withIssues} pending={pending}
-            onSpec={setSpec} onOrigin={setOrigin} onCircle={setCircle} />
+            onSpec={setSpec} onOrigin={setOrigin} onCircle={setCircle}
+            rules={rules} fixedPending={fixedPending} applyingFixed={rulesPending === "apply-fixed"} onApplyFixed={applyFixed} />
         </div>
         <aside className="obsazeni-aside"><ChecksPanel issues={issues} /></aside>
       </div>

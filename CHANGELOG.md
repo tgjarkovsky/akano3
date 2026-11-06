@@ -1,3 +1,4 @@
+## [2026-11-06] - Příprava → Pravidla: povolené hodnoty specializace, původu a kruhu postavy a jednotky týmu (napevno / kterákoli až na X); obsazení zakázané volby zamyká, kontroly hlásí porušení, server je odmítne, tlačítko doplní pevné hodnoty
 ## [2026-11-06] - Přímý přechod Příprava ↔ Velín ve stejné záložce (bez nového přihlášení)
 ## [2026-11-06] - Příprava, Běhy a obsazení: nástěnka jednotek s trojicemi A/B (přetažení i výběr, obsazené místo se vymění), tabulka postav se specializací, původem (Místní, Příbuzní, Cizí) a jedním kruhem, panel kontrol; nový běh přebírá celé obsazení
 ## [2026-11-06] - Heslo Přípravy v databázi (scrypt otisk): nastavení při první návštěvě, změna v Přehledu, platí i pro /api/admin/*; ADMIN_TOKEN zůstává jen jako záložní heslo pro curl

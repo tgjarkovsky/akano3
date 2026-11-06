@@ -19,6 +19,7 @@ ručně.
 | R5 | Co se určuje na každý běh | Tým → jednotka + trojice, postava → role v trojici, postava → kruh, postava → specializace + původ. Tým je vždy v právě jedné jednotce a postava vždy v právě jednom kruhu. |
 | R6 | Osobní informace | Patří k roli, ne k dvojici postava × role. Jinak by texty rostly kombinatoricky. |
 | R7 | Specializace a původ | Obojí jsou tři možnosti, každá s krátkým veřejným textem. Postava má seznam povolených hodnot: jednu (pevná), dvě („tyhle, ale tuhle ne“) nebo tři (volná). |
+| R7b | Kde jsou pravidla | Tabulka `assignment_rules` (postava: specializace, původ, kruh; tým: jednotka), editor v Příprava → Pravidla. Pole `allowed_*` v `character_cores` odpadají. |
 | R8 | Kde žijí texty | V databázi aplikace s editorem v GM panelu. Dnes jsou rozházené po Google Drive. Jednorázově se převedou. |
 | R9 | Forma pro hráče | Přehledně a interaktivně v aplikaci a zároveň vytisknutelné. |
 | R10 | Gender | Je pevně daný v jádru postavy (m / ž). Jedinou postavu s možností obou pohlaví řešíme zvlášť a později. |

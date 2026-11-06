@@ -8,6 +8,8 @@ import { getUnitName } from "@/lib/utils"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import type { UnitSlots } from "@/lib/unit-slots"
 import type { Character, Specialization, Origin } from "@/lib/types"
+import { allowedValues } from "@/lib/assignment-rules"
+import { IconLock, IconWand } from "@tabler/icons-react"
 import { SectionTitle, Segmented } from "./shared"
 
 type Filter = { kind: "all" } | { kind: "issues" } | { kind: "circle"; id: string }
@@ -21,9 +23,14 @@ type Props = {
   onSpec: (characterId: string, v: Specialization) => void
   onOrigin: (characterId: string, v: Origin) => void
   onCircle: (characterId: string, circleId: string) => void
+  rules: Map<string, string[]>
+  /** kolik pevných hodnot z pravidel postavám ještě chybí */
+  fixedPending: number
+  applyingFixed: boolean
+  onApplyFixed: () => void
 }
 
-export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle }: Props) {
+export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, fixedPending, applyingFixed, onApplyFixed }: Props) {
   const [filter, setFilter] = useState<Filter>({ kind: "all" })
   const [query, setQuery] = useState("")
 
@@ -78,6 +85,12 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
         <button style={chip(filter.kind === "issues")} onClick={() => setFilter({ kind: "issues" })}>
           Chybí něco ({players.filter(p => withIssues.has(p.id)).length})
         </button>
+        {fixedPending > 0 && (
+          <button onClick={onApplyFixed} disabled={applyingFixed} title="Nastaví hodnoty, které pravidla určují napevno"
+            style={{ ...chip(true), display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", opacity: applyingFixed ? 0.6 : 1 }}>
+            <IconWand size={14} /> {applyingFixed ? "Doplňuji…" : `Doplnit pevné hodnoty (${fixedPending})`}
+          </button>
+        )}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
         <span style={{ fontSize: "0.78rem", color: "var(--c-text-faint)", alignSelf: "center", marginRight: 2 }}>Kruhy:</span>
@@ -112,6 +125,12 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
               {rows.map(c => {
                 const issue = withIssues.has(c.id)
                 const circleBusy = pending === `circle:${c.id}`
+                const specAllowed = allowedValues(rules, "character", c.id, "specialization")
+                const originAllowed = allowedValues(rules, "character", c.id, "origin")
+                const circleAllowed = allowedValues(rules, "character", c.id, "circle")
+                const lock = (a: string[] | null) => a?.length === 1
+                  ? <IconLock size={11} aria-label="napevno podle pravidla" style={{ marginLeft: 4, verticalAlign: "-1px" }} />
+                  : null
                 return (
                   <div key={c.id} id={`postava-${c.id}`} className="char-row" role="row" data-issue={issue ? "true" : undefined}>
                     <span role="cell" style={{ minWidth: 0 }}>
@@ -119,19 +138,19 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                       {c.nickname && <span style={{ display: "block", fontSize: "0.78rem", fontStyle: "italic", color: "var(--c-text-muted)" }}>„{c.nickname}“</span>}
                     </span>
                     <span role="cell">
-                      <span className="cell-label">Specializace</span>
+                      <span className="cell-label">Specializace{lock(specAllowed)}</span>
                       <Segmented label={`Specializace ${c.name}`} options={SPECIALIZATION_OPTIONS}
-                        value={c.specialization} busy={pending === `spec:${c.id}`}
+                        value={c.specialization} busy={pending === `spec:${c.id}`} allowed={specAllowed}
                         onChange={v => onSpec(c.id, v)} />
                     </span>
                     <span role="cell">
-                      <span className="cell-label">Původ</span>
+                      <span className="cell-label">Původ{lock(originAllowed)}</span>
                       <Segmented label={`Původ ${c.name}`} options={ORIGIN_OPTIONS}
-                        value={c.origin} busy={pending === `origin:${c.id}`}
+                        value={c.origin} busy={pending === `origin:${c.id}`} allowed={originAllowed}
                         onChange={v => onOrigin(c.id, v)} />
                     </span>
                     <span role="cell">
-                      <span className="cell-label">Kruh</span>
+                      <span className="cell-label">Kruh{lock(circleAllowed)}</span>
                       <select value={c.circleIds.length === 1 ? c.circleIds[0] : ""}
                         disabled={circleBusy} aria-label={`Kruh ${c.name}`} className="circle-select"
                         data-empty={c.circleIds.length !== 1 ? "true" : undefined}
@@ -139,7 +158,10 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                         <option value="" disabled>
                           {c.circleIds.length > 1 ? `${c.circleIds.length} kruhy, vyber jeden` : "Vybrat kruh…"}
                         </option>
-                        {CIRCLES.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                        {CIRCLES.map(x => {
+                          const blocked = !!circleAllowed && !circleAllowed.includes(x.id)
+                          return <option key={x.id} value={x.id} disabled={blocked}>{x.name}{blocked ? " (zakázáno)" : ""}</option>
+                        })}
                       </select>
                     </span>
                   </div>
