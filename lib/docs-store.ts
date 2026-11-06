@@ -239,7 +239,8 @@ export async function importTexts(
       VALUES (${t.entityType}, ${t.entityId}, ${t.field}, ${t.body}, ${by})
       ON CONFLICT (entity_type, entity_id, field) DO UPDATE SET
         body = EXCLUDED.body,
-        changed_after_approval = doc_texts.changed_after_approval OR doc_texts.status = 'approved',
+        -- status bývá NULL (rozepsané); „x OR NULL“ by dalo NULL do povinného sloupce
+        changed_after_approval = doc_texts.changed_after_approval OR COALESCE(doc_texts.status = 'approved', FALSE),
         status = NULL,
         version = doc_texts.version + 1,
         updated_by = EXCLUDED.updated_by,

@@ -18,6 +18,7 @@ export async function POST(req: Request) {
     return Response.json(await importTexts(parsed.value.texts, parsed.value.genders, by))
   } catch (err) {
     console.error("[priprava/texts/import]", err)
-    return new Response("Server error", { status: 500 })
+    // Jen za heslem Přípravy: skutečný text chyby pomůže, když import selže.
+    return new Response(`Chyba serveru při importu: ${err instanceof Error ? err.message : String(err)}`, { status: 500 })
   }
 }
