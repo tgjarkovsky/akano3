@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react"
 import {
   IconPlus, IconDashboard, IconList, IconChartLine, IconStar,
-  IconQrcode, IconBell, IconSettings, IconTrophy, IconExternalLink,
+  IconQrcode, IconBell, IconSettings, IconTrophy, IconClipboardList,
 } from "@tabler/icons-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useGame } from "@/lib/game-context"
@@ -80,12 +80,14 @@ export function GMDashboard() {
               </span>
             </div>
           )}
-          <a href="/priprava" target="_blank" rel="noopener" style={{
-            display:"flex", alignItems:"center", gap:5, color:"var(--c-text-muted)",
-            fontSize:"0.8rem", textDecoration:"none", border:"1px solid var(--c-border)",
-            borderRadius:6, padding:"4px 10px",
+          {/* Přechod do Přípravy ve stejné záložce; heslo Přípravy se drží
+              v sessionStorage záložky, takže zpět do ní není potřeba se znovu přihlašovat. */}
+          <a href="/priprava" style={{
+            display:"flex", alignItems:"center", gap:6, color:"var(--c-text)",
+            fontSize:"0.85rem", fontWeight:600, textDecoration:"none", border:"1px solid var(--c-border-mid)",
+            borderRadius:6, padding:"6px 12px", minHeight:36, boxSizing:"border-box",
           }}>
-            Příprava <IconExternalLink size={13} />
+            <IconClipboardList size={15} /> Příprava
           </a>
         </div>
         <PointAssignmentSheet canCorrect />

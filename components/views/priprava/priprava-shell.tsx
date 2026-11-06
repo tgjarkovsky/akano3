@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -58,6 +58,10 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
           }}>Příprava</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Velín ve stejné záložce; zpět do Přípravy bez nového přihlášení. */}
+          <a href="/character/GM1" title="Řízení hry" style={{ ...chip, color: "var(--c-text)", fontWeight: 600, textDecoration: "none" }}>
+            <IconBroadcast size={14} /> Velín
+          </a>
           <button onClick={onChangeOrganizer} title="Změnit jméno" style={chip}>
             <IconUser size={14} /> <span className="priprava-hide-narrow">{organizer}</span>
           </button>
