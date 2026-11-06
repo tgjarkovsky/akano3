@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
+import { IconFileImport } from "@tabler/icons-react"
 import { DOC_FIELDS, docKey } from "@/lib/doc-fields"
 import { countStatuses, STATUS_LABELS, type DocStatus } from "@/lib/doc-status"
 import { getOrganizer } from "@/lib/admin-client"
@@ -18,10 +19,11 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "mine", label: "Moje" },
 ]
 
-export function TextMatrix({ category, onCategory, onOpen }: {
+export function TextMatrix({ category, onCategory, onOpen, onImport }: {
   category: Category
   onCategory: (c: Category) => void
   onOpen: (e: DocEntity, field: string) => void
+  onImport: () => void
 }) {
   const { loaded, meta, roles, statusOfField } = useTexty()
   const [filter, setFilter] = useState<Filter>("all")
@@ -60,8 +62,9 @@ export function TextMatrix({ category, onCategory, onOpen }: {
     <div>
       <div className="texty-progress">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
-          <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--c-text)" }}>
+          <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--c-text)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             Schváleno {all.approved} z {all.total} textů
+            <button className="tool-btn" onClick={onImport} style={{ fontWeight: 400 }}><IconFileImport size={15} /> Import</button>
           </span>
           <span style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.8rem", color: "var(--c-text-muted)" }}>
             {(["empty", "draft", "done", "approved"] as DocStatus[]).map(s => (

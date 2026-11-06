@@ -50,3 +50,6 @@ next-env.d.ts
 AkanoFin02.png
 .superpowers/
 .codex/
+
+# Importy textů z Google Drive (obsahují tajné texty postav, do gitu nepatří)
+/import/

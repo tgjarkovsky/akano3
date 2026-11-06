@@ -1,0 +1,23 @@
+import { requireAdmin } from "@/lib/admin-password"
+import { parseImport } from "@/lib/doc-validation"
+import { DOC_IDS } from "@/lib/doc-ids"
+import { importTexts } from "@/lib/docs-store"
+
+export const dynamic = "force-dynamic"
+
+// POST /api/priprava/texts/import { texts: [...], genders?: [...], by? }
+// Přepíše texty ze souboru importu (viz parseImport). Vrací počty.
+export async function POST(req: Request) {
+  const denied = await requireAdmin(req)
+  if (denied) return denied
+  try {
+    const raw = await req.json().catch(() => null) as { by?: unknown } | null
+    const parsed = parseImport(raw, DOC_IDS)
+    if (!parsed.ok) return new Response(parsed.error, { status: 400 })
+    const by = typeof raw?.by === "string" ? raw.by.slice(0, 80) : null
+    return Response.json(await importTexts(parsed.value.texts, parsed.value.genders, by))
+  } catch (err) {
+    console.error("[priprava/texts/import]", err)
+    return new Response("Server error", { status: 500 })
+  }
+}

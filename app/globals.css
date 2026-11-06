@@ -842,3 +842,25 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   .editor-narrow-nav .editor-back { margin-bottom: 0; }
   .role-names { grid-template-columns: 1fr; }
 }
+
+/* ── Příprava: import textů ───────────────────────────────────────── */
+.import-drop {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  min-height: 56px; padding: 0 18px; border: 2px dashed var(--c-border-str); border-radius: 10px;
+  color: var(--c-text); font-size: 0.95rem;
+}
+.import-drop:hover { border-color: var(--c-accent); background-color: var(--c-bg-section); }
+.import-result {
+  display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+  border: 1px solid var(--c-success); color: var(--c-text);
+  background-color: color-mix(in srgb, var(--c-success) 12%, transparent);
+}
+.import-list { list-style: none; margin: 14px 0 0; padding: 0; border: 1px solid var(--c-border); border-radius: 10px; overflow: hidden; }
+.import-item { padding: 10px 14px; border-top: 1px solid var(--c-border); }
+.import-item:first-child { border-top: none; }
+.import-item[data-off] { opacity: 0.45; }
+.import-name { border: none; background: transparent; color: var(--c-text); cursor: pointer; padding: 4px 0; font-size: 0.92rem; display: inline-flex; align-items: center; text-align: left; }
+.import-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0 28px; }
+.import-chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--c-border-mid); color: var(--c-text-muted); }
+.import-chip-over { border-color: color-mix(in srgb, var(--destructive) 55%, transparent); color: var(--destructive); }
+.import-preview { margin: 10px 0 4px 28px; padding: 6px 16px; border-radius: 8px; background-color: var(--c-bg-card); color: var(--c-text); max-height: 520px; overflow-y: auto; }

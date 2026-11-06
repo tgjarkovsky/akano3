@@ -213,3 +213,45 @@ export async function setGender(characterId: string, gender: "m" | "f" | null) {
     ON CONFLICT (character_id) DO UPDATE SET gender = EXCLUDED.gender
   `
 }
+
+// ── Hromadný import ────────────────────────────────────────────────────
+
+/**
+ * Přepíše texty z importu. Změněný text se vrací do stavu rozepsané (schválený
+ * dostane příznak změněno po schválení), stejný text se nechá být.
+ */
+export async function importTexts(
+  texts: { entityType: DocEntityType; entityId: string; field: string; body: string }[],
+  genders: { characterId: string; gender: "m" | "f" }[],
+  by: string | null,
+): Promise<{ created: number; updated: number; unchanged: number; genders: number }> {
+  await ensureDocTables()
+  const existing = await sql`SELECT entity_type, entity_id, field, body FROM doc_texts`
+  const current = new Map(existing.map(r => [`${r.entity_type}:${r.entity_id}:${r.field}`, r.body as string]))
+  let created = 0, updated = 0, unchanged = 0
+  const queries = []
+  for (const t of texts) {
+    const prev = current.get(`${t.entityType}:${t.entityId}:${t.field}`)
+    if (prev === t.body) { unchanged++; continue }
+    if (prev === undefined) created++; else updated++
+    queries.push(sql`
+      INSERT INTO doc_texts (entity_type, entity_id, field, body, updated_by)
+      VALUES (${t.entityType}, ${t.entityId}, ${t.field}, ${t.body}, ${by})
+      ON CONFLICT (entity_type, entity_id, field) DO UPDATE SET
+        body = EXCLUDED.body,
+        changed_after_approval = doc_texts.changed_after_approval OR doc_texts.status = 'approved',
+        status = NULL,
+        version = doc_texts.version + 1,
+        updated_by = EXCLUDED.updated_by,
+        updated_at = NOW()
+    `)
+  }
+  for (const g of genders) {
+    queries.push(sql`
+      INSERT INTO character_meta (character_id, gender) VALUES (${g.characterId}, ${g.gender})
+      ON CONFLICT (character_id) DO UPDATE SET gender = EXCLUDED.gender
+    `)
+  }
+  if (queries.length > 0) await sql.transaction(queries)
+  return { created, updated, unchanged, genders: genders.length }
+}

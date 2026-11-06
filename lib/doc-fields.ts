@@ -19,6 +19,8 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
     { key: "legends",     label: "Legendy",       hint: "Důležité momenty ze života postavy, ve 3. osobě. Každou legendu začni nadpisem ## Název.", visibility: "private", sections: { singular: "legenda" } },
     { key: "inner_world", label: "Vnitřní svět",  hint: "Jak postava přemýšlí, v 1. osobě.",               visibility: "private" },
     { key: "summary",     label: "Shrnutí",       hint: "To nejdůležitější v bodech.",                     visibility: "private" },
+    { key: "relationships", label: "Vztahy",      hint: "Zatím jako text: pod ### jménem popis vztahu. Později se převede na strukturované vztahy.", visibility: "private" },
+    { key: "questions",   label: "Otázky",        hint: "Otázky, které hráči pomůžou rozvinout hru.",       visibility: "private" },
     { key: "why_hunter",  label: "Proč lovcem",   hint: "Proč se potřebuji stát lovcem?",                  visibility: "private" },
     { key: "other_wants", label: "Co dalšího chci", hint: "Co dalšího chci, mimo to stát se lovcem?",      visibility: "private" },
     { key: "stands_out",  label: "Čím vystupuju", hint: "Čím vystupuju z řady?",                           visibility: "private" },

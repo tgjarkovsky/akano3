@@ -104,3 +104,48 @@ export function parseRoleInput(raw: unknown, unitIds: readonly string[]): Ok<Rol
   }
   return { ok: true, value: { unitId: raw.unitId, triplet: raw.triplet, key: raw.key, nameM, nameF } }
 }
+
+// ── Hromadný import textů (např. z Google dokumentu) ─────────────────────
+
+export const MAX_IMPORT_ITEMS = 2000
+
+export type ImportText = { entityType: DocEntityType; entityId: string; field: string; body: string }
+export type ImportGender = { characterId: string; gender: "m" | "f" }
+export type ImportPayload = { texts: ImportText[]; genders: ImportGender[] }
+
+/**
+ * Ověří soubor importu. Role se importovat nedají (jejich id vzniká až
+ * v databázi). Duplicitní pole v jednom souboru jsou chyba.
+ */
+export function parseImport(raw: unknown, ids: DocIds): Ok<ImportPayload> | Err {
+  if (!isObj(raw)) return { ok: false, error: "Soubor není objekt JSON" }
+  if (!Array.isArray(raw.texts)) return { ok: false, error: "Chybí seznam texts" }
+  const gendersRaw = raw.genders ?? []
+  if (!Array.isArray(gendersRaw)) return { ok: false, error: "genders musí být seznam" }
+  if (raw.texts.length + gendersRaw.length > MAX_IMPORT_ITEMS) return { ok: false, error: "Import je příliš velký" }
+
+  const texts: ImportText[] = []
+  const seen = new Set<string>()
+  for (const [i, t] of raw.texts.entries()) {
+    const where = `texts[${i}]`
+    if (!isObj(t)) return { ok: false, error: `${where}: není objekt` }
+    if (!isDocEntityType(t.entityType) || t.entityType === "role") return { ok: false, error: `${where}: nepodporovaný typ` }
+    if (!isKnownEntity(t.entityType, t.entityId, ids)) return { ok: false, error: `${where}: neznámá entita ${String(t.entityId)}` }
+    if (!isDocField(t.entityType, t.field)) return { ok: false, error: `${where}: neznámé pole ${String(t.field)}` }
+    if (typeof t.body !== "string" || t.body.length > MAX_TEXT_LENGTH) return { ok: false, error: `${where}: neplatný text` }
+    const key = `${t.entityType}:${t.entityId}:${t.field}`
+    if (seen.has(key)) return { ok: false, error: `${where}: pole ${key} je v souboru dvakrát` }
+    seen.add(key)
+    texts.push({ entityType: t.entityType, entityId: t.entityId as string, field: t.field as string, body: t.body })
+  }
+
+  const genders: ImportGender[] = []
+  for (const [i, g] of gendersRaw.entries()) {
+    if (!isObj(g) || typeof g.characterId !== "string" || !ids.characterIds.includes(g.characterId)) {
+      return { ok: false, error: `genders[${i}]: neznámá postava` }
+    }
+    if (g.gender !== "m" && g.gender !== "f") return { ok: false, error: `genders[${i}]: rod musí být m nebo f` }
+    genders.push({ characterId: g.characterId, gender: g.gender })
+  }
+  return { ok: true, value: { texts, genders } }
+}
