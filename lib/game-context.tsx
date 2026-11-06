@@ -7,13 +7,16 @@ import { ALARM_COLORS } from "./constants"
 import { getTeamName, romanNumeral, charTeam } from "./utils"
 import { teamDeltaOf } from "./point-resolution"
 import type { PoolRefillMode } from "./peer-pool"
+import { adminHeaders } from "./admin-client"
 
 type CharStateRow = { character_id: string; kaichi_level: number; peer_point_pool: number; lesson_claimed_this_window: boolean; specialization: string | null }
 type TeamUnitRow = { team_id: string; unit_id: string }
 type CircleMemberRow = { circle_id: string; character_id: string }
 
+// V Přípravě s sebou nese heslo, aby prošly akce obsazení a běhů.
+// Ve Velínu a u hráčů je adminHeaders() prázdné.
 function sendJson(url: string, body: unknown, method = "POST"): Promise<Response> {
-  return fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+  return fetch(url, { method, headers: { "Content-Type": "application/json", ...adminHeaders() }, body: JSON.stringify(body) })
 }
 
 export interface GameCtx {

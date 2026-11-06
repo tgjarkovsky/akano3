@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db"
+import { adminGuard } from "@/lib/admin-auth"
 import type { WikiLinkAdmin } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -18,8 +19,10 @@ async function missingSlugs(fromSlug: string, toSlug: string): Promise<string[]>
   return [fromSlug, toSlug].filter(s => !found.has(s))
 }
 
-// GET /api/wiki/links — všechny vazby (GM use)
-export async function GET() {
+// GET /api/wiki/links — všechny vazby (Příprava, s heslem)
+export async function GET(req: Request) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const rows = await sql`
       SELECT * FROM wiki_links ORDER BY from_slug, to_slug, id
@@ -33,6 +36,8 @@ export async function GET() {
 
 // POST /api/wiki/links — create link
 export async function POST(req: Request) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const body = await req.json() as {
       fromSlug: string; toSlug: string; label: string; kaichiRequired: number

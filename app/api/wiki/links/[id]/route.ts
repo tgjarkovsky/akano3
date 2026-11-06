@@ -1,7 +1,10 @@
 import { sql } from "@/lib/db"
+import { adminGuard } from "@/lib/admin-auth"
 
 // PUT /api/wiki/links/[id] — update link
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const { id } = await params
     const body = await req.json() as {
@@ -33,7 +36,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 // DELETE /api/wiki/links/[id] — delete link
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const { id } = await params
     await sql`DELETE FROM wiki_links WHERE id = ${Number(id)}`

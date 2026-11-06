@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { adminFetch } from "@/lib/admin-client"
 
 type Options<T extends { id: string | number }, F> = {
   listUrl: string
@@ -25,7 +26,7 @@ export function useAdminCrud<T extends { id: string | number }, F>({
 
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await fetch(listUrl)
+    const res = await adminFetch(listUrl)
     if (res.ok) setItems(await res.json())
     setLoading(false)
   }, [listUrl])
@@ -64,7 +65,7 @@ export function useAdminCrud<T extends { id: string | number }, F>({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       }
-      const res = await fetch(editing ? itemUrl(editing.id) : collectionUrl, init)
+      const res = await adminFetch(editing ? itemUrl(editing.id) : collectionUrl, init)
       if (!res.ok) { setError(await res.text()); return }
       await load()
       cancelForm()
@@ -75,7 +76,7 @@ export function useAdminCrud<T extends { id: string | number }, F>({
 
   async function confirmDelete() {
     if (!deleteTarget) return
-    await fetch(itemUrl(deleteTarget.id), { method: "DELETE" })
+    await adminFetch(itemUrl(deleteTarget.id), { method: "DELETE" })
     setDeleteTarget(null)
     await load()
   }

@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db"
 import { CHARACTERS } from "@/lib/data"
 import { getActiveRunId } from "@/lib/runs"
+import { adminGuard } from "@/lib/admin-auth"
 
 export const dynamic = "force-dynamic"
 
@@ -15,6 +16,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const { name } = await req.json() as { name: string }
     if (!name?.trim()) return new Response("Název je povinný", { status: 400 })
@@ -63,6 +66,8 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const body = await req.json() as { action: "setActive"; runId: number }
     if (body.action !== "setActive") return new Response("Bad request", { status: 400 })

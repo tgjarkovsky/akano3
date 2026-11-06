@@ -501,3 +501,40 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 ::-webkit-scrollbar       { width:6px; height:6px; }
 ::-webkit-scrollbar-track { background:rgba(0,0,0,.04); }
 ::-webkit-scrollbar-thumb { background:rgba(112,16,16,.28); border-radius:3px; }
+/* ── Příprava: levé menu na šířce, záložky nahoře na telefonu ───────── */
+.priprava-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+.priprava-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--c-border);
+}
+.priprava-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.priprava-nav-item:hover { background-color: var(--c-bg-section); }
+@media (max-width: 767px) {
+  .priprava-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .priprava-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--c-border);
+  }
+  .priprava-nav-item { flex-shrink: 0; }
+  .priprava-hide-narrow { display: none; }
+}

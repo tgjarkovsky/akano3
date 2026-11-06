@@ -1,8 +1,11 @@
 import { sql } from "@/lib/db"
+import { adminGuard } from "@/lib/admin-auth"
 import { validateWikiArticleInput } from "@/lib/wiki-validation"
 
 // PUT /api/wiki/[id] — update article
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const { id } = await params
     const numId = Number(id)
@@ -31,7 +34,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 // DELETE /api/wiki/[id] — delete article
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const { id } = await params
     await sql`DELETE FROM wiki_articles WHERE id = ${Number(id)}`

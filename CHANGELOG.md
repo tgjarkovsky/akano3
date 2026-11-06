@@ -1,3 +1,4 @@
+## [2026-11-06] - Příprava (/priprava): samostatná stránka s heslem pro běhy, obsazení a knihovnu; Velín bez záložek Běhy a Wiki, zápisy běhů, obsazení a knihovny jen s heslem
 ## [2026-10-29] - GM a učitelský přehled: sdílené PointAssignmentSheet, DashboardTabsList a SectionCard, typ ScoreMode ze scoreboard.tsx
 ## [2026-10-20] - GM vidí v Nastavení, kdo si v otevřeném okně uplatnil body za hodinu
 ## [2026-10-19] - Nastavení: GM může hráčům doplnit pool bodů na dary (přidat / nastavit na)

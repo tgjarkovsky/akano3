@@ -3,12 +3,19 @@ import { getActiveRunId } from "@/lib/runs"
 import { CHARACTERS, CIRCLES, TEAMS, UNITS } from "@/lib/data"
 import { validateConfigBody } from "@/lib/request-validation"
 import { parsePoolRefill } from "@/lib/peer-pool"
+import { adminGuard } from "@/lib/admin-auth"
+import { configActionNeedsAdmin } from "@/lib/config-auth"
 
-// GM-only: manage team→unit, circle members, specializations
+// Obsazení běhu (jednotky, kruhy, specializace) jen z Přípravy s heslem.
+// Doplnění poolu darů volá Velín během hry.
 
 export async function POST(req: Request) {
   try {
     const raw: unknown = await req.json().catch(() => null)
+    if (configActionNeedsAdmin((raw as { action?: unknown } | null)?.action)) {
+      const denied = adminGuard(req)
+      if (denied) return denied
+    }
     const error = validateConfigBody(raw, {
       teamIds: TEAMS.map(t => t.id),
       unitIds: UNITS.map(u => u.id),

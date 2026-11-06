@@ -8,6 +8,7 @@ import { TEAMS, UNITS, CIRCLES, CHARACTERS } from "@/lib/data"
 import { getTeamName } from "@/lib/utils"
 import { buildStandingsCsv } from "@/lib/standings-csv"
 import { downloadText } from "@/lib/download"
+import { adminFetch } from "@/lib/admin-client"
 
 const SPECIALIZATIONS = [
   { value: "", label: "—" },
@@ -42,7 +43,7 @@ function section(title: string, children: React.ReactNode) {
 }
 
 export function RunSetupPanel() {
-  const { runs, activeRunId, setActiveRun, createRun, teams, characters } = useGame()
+  const { runs, activeRunId, setActiveRun, createRun, teams, characters, addToast } = useGame()
   const [newRunName, setNewRunName] = useState("")
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
@@ -65,12 +66,18 @@ export function RunSetupPanel() {
 
   const saveConfig = async (key: string, payload: Record<string, unknown>) => {
     setSaving(key)
-    await fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-    setSaving(null)
+    try {
+      const res = await adminFetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) addToast(res.status === 401 ? "Příprava není přihlášená, změna se neuložila" : "Změnu se nepodařilo uložit", "error")
+    } catch {
+      addToast("Chyba sítě", "error")
+    } finally {
+      setSaving(null)
+    }
   }
 
   const handleSetTeamUnit = (teamId: string, unitId: string) =>

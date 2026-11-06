@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db"
 import { getActiveRunId } from "@/lib/runs"
+import { adminGuard } from "@/lib/admin-auth"
 import { gateLinks, type RawLink } from "@/lib/wiki-links"
 import { validateWikiArticleInput } from "@/lib/wiki-validation"
 import type { WikiArticle } from "@/lib/types"
@@ -16,7 +17,7 @@ function rowToArticle(r: Record<string, unknown>): WikiArticle {
 
 // GET /api/wiki?characterId=X  — { articles, links } podle kaichi postavy
 // GET /api/wiki?kaichi=N        — { articles, links } pro zadaný stupeň (knihovní view)
-// GET /api/wiki?admin=1         — všechny články (GM use)
+// GET /api/wiki?admin=1         — všechny články (Příprava, s heslem)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -25,6 +26,8 @@ export async function GET(req: Request) {
     const kaichiParam = searchParams.get("kaichi")
 
     if (admin) {
+      const denied = adminGuard(req)
+      if (denied) return denied
       const rows = await sql`
         SELECT * FROM wiki_articles ORDER BY category, sort_order, id
       `
@@ -66,6 +69,8 @@ export async function GET(req: Request) {
 
 // POST /api/wiki — create article
 export async function POST(req: Request) {
+  const denied = adminGuard(req)
+  if (denied) return denied
   try {
     const parsed = validateWikiArticleInput(await req.json().catch(() => null))
     if (!parsed.ok) return new Response(parsed.error, { status: 400 })

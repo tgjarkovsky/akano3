@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react"
 import {
   IconPlus, IconDashboard, IconList, IconChartLine, IconStar,
-  IconQrcode, IconBell, IconSettings, IconTrophy, IconRepeat, IconBook,
+  IconQrcode, IconBell, IconSettings, IconTrophy, IconExternalLink,
 } from "@tabler/icons-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useGame } from "@/lib/game-context"
@@ -16,8 +16,6 @@ import { KaichiPanel } from "@/components/panels/kaichi"
 import { AlarmPanel } from "@/components/panels/alarm"
 import { QRPanel } from "@/components/panels/qr"
 import { GameSetupPanel } from "@/components/panels/game-setup"
-import { RunSetupPanel } from "@/components/panels/run-setup"
-import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 
 const tabs: DashboardTab[] = [
   { value:"overview", label:"Přehled",       Icon:IconDashboard },
@@ -27,13 +25,11 @@ const tabs: DashboardTab[] = [
   { value:"kaichi",   label:"Kaichi",        Icon:IconStar },
   { value:"qr",       label:"QR kódy",       Icon:IconQrcode },
   { value:"alarm",    label:"Alarm",         Icon:IconBell },
-  { value:"runs",     label:"Běhy",          Icon:IconRepeat },
-  { value:"wiki",     label:"Wiki",          Icon:IconBook },
   { value:"settings", label:"Nastavení",     Icon:IconSettings },
 ]
 
 export function GMDashboard() {
-  const { teams, alarmState, qrCodes, runs, activeRunId, setActiveRun } = useGame()
+  const { teams, alarmState, qrCodes, runs, activeRunId } = useGame()
   const [sbMode,    setSbMode]    = useState<ScoreMode>("teams")
 
   const sorted    = useMemo(() => [...teams].sort((a,b) => b.points - a.points), [teams])
@@ -71,32 +67,26 @@ export function GMDashboard() {
           <h1 style={{ color:"var(--c-text)", fontSize:"1.5rem", fontWeight:700 }}>
             Velitelský přehled
           </h1>
-          {runs.length > 0 && (
+          {/* Běh se přepíná v Přípravě, Velín ho jen ukazuje. */}
+          {activeRun && (
             <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <select
-                value={activeRunId ?? ""}
-                onChange={e => setActiveRun(Number(e.target.value))}
-                style={{
-                  backgroundColor:"var(--c-bg-card)", border:"1px solid var(--c-border)",
-                  borderRadius:6, color:"var(--c-text)", fontSize:"0.85rem",
-                  padding:"5px 10px", cursor:"pointer",
-                }}
-              >
-                {runs.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-              {activeRun && (
-                <span style={{
-                  backgroundColor:"rgba(47,125,79,0.15)", color:"var(--c-success)",
-                  border:"1px solid rgba(47,125,79,0.3)", fontSize:"0.72rem",
-                  padding:"3px 10px", borderRadius:20, fontWeight:700,
-                }}>
-                  AKTIVNÍ
-                </span>
-              )}
+              <span style={{ color:"var(--c-text)", fontSize:"0.9rem", fontWeight:600 }}>{activeRun.name}</span>
+              <span style={{
+                backgroundColor:"rgba(47,125,79,0.15)", color:"var(--c-success)",
+                border:"1px solid rgba(47,125,79,0.3)", fontSize:"0.72rem",
+                padding:"3px 10px", borderRadius:20, fontWeight:700,
+              }}>
+                AKTIVNÍ
+              </span>
             </div>
           )}
+          <a href="/priprava" target="_blank" rel="noopener" style={{
+            display:"flex", alignItems:"center", gap:5, color:"var(--c-text-muted)",
+            fontSize:"0.8rem", textDecoration:"none", border:"1px solid var(--c-border)",
+            borderRadius:6, padding:"4px 10px",
+          }}>
+            Příprava <IconExternalLink size={13} />
+          </a>
         </div>
         <PointAssignmentSheet canCorrect />
       </div>
@@ -128,8 +118,6 @@ export function GMDashboard() {
         <TabsContent value="kaichi"><KaichiPanel canEdit /></TabsContent>
         <TabsContent value="qr"><QRPanel /></TabsContent>
         <TabsContent value="alarm"><AlarmPanel /></TabsContent>
-        <TabsContent value="runs"><RunSetupPanel /></TabsContent>
-        <TabsContent value="wiki"><WikiAdminPanel /></TabsContent>
         <TabsContent value="settings"><GameSetupPanel /></TabsContent>
       </Tabs>
     </div>

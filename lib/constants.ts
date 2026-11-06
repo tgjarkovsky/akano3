@@ -21,3 +21,7 @@ export const ACTION_DEFAULT_PTS: Record<ActionType, number> = {
 export const ALARM_COLORS: Record<AlarmState["type"], string> = {
   evacuation: "#c0392b", battle: "#d4813a", assembly: "#c8a917", custom: "#7d1520",
 }
+
+// Organizátoři pro podpis „Hotovo / Schváleno“ u textů v Přípravě.
+// Kdo tu chybí, vybere „Jiné jméno“ a napíše se sám.
+export const ORGANIZERS: string[] = ["Tomáš"]
