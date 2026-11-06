@@ -21,6 +21,9 @@ ručně.
 | R7 | Specializace a původ | Obojí jsou tři možnosti, každá s krátkým veřejným textem. Postava má seznam povolených hodnot: jednu (pevná), dvě („tyhle, ale tuhle ne“) nebo tři (volná). |
 | R8 | Kde žijí texty | V databázi aplikace s editorem v GM panelu. Dnes jsou rozházené po Google Drive. Jednorázově se převedou. |
 | R9 | Forma pro hráče | Přehledně a interaktivně v aplikaci a zároveň vytisknutelné. |
+| R10 | Gender | Je pevně daný v jádru postavy (m / ž). Jedinou postavu s možností obou pohlaví řešíme zvlášť a později. |
+| R11 | Kde je potřeba rodová shoda | Jen v textech jednotky: veřejné, interní, osobní texty rolí. Týmy mají pevné postavy, kruhy nemají osobní texty. |
+| R12 | Jak vznikají šablony | Autor napíše normální text pro jedno konkrétní obsazení. AI v něm podle zadání nahradí proměnná jména a tvary značkami. Aplikace převod ověří zpětným vykreslením. |
 
 ## Vrstvy obsahu
 
@@ -47,8 +50,9 @@ Tři otázky jádra:
   neplatil. Do jádra patří vztahy k týmu (ten je pevný), k lidem mimo jednotku
   a k NPC. Vztahy uvnitř jednotky se píšou do osobních informací role.
 - **Texty týmu** platí ve všech bězích, takže nezmiňují jednotku.
-- **Osobní informace role** nesmí počítat s konkrétní postavou. Roli může
-  v různých bězích držet kdokoli z týmu, který trojici obsadí.
+- **Texty jednotky** nesmí počítat s konkrétní postavou. Roli může v různých
+  bězích držet kdokoli z týmu, který trojici obsadí. Jména a rodové tvary lidí
+  z jednotky se proto píšou šablonou, viz *Gender a šablony*.
 
 ## Datový model
 
@@ -60,6 +64,7 @@ týmů). Nové tabulky drží jen texty a obsazení.
 ```sql
 character_cores (
   character_id TEXT PRIMARY KEY,
+  gender TEXT NOT NULL,    -- 'm' | 'f'
   legends TEXT, inner_world TEXT, summary TEXT, relationships TEXT,
   why_hunter TEXT, other_wants TEXT, stands_out TEXT,
   allowed_specializations TEXT[] NOT NULL,  -- podmnožina combat/tactical/support
@@ -86,7 +91,9 @@ unit_roles (
   id SERIAL PRIMARY KEY,
   unit_id TEXT NOT NULL,
   triplet TEXT NOT NULL,   -- 'A' | 'B'
-  name TEXT NOT NULL,      -- „kapitán“, „ten tichej“…
+  key TEXT NOT NULL,       -- klíč pro šablony, např. 'kapitan'; unikátní v jednotce
+  name_m TEXT NOT NULL,    -- „kapitán“, „ten tichej“…
+  name_f TEXT NOT NULL,    -- „kapitánka“, „ta tichá“…
   personal_text TEXT,
   sort_order INT
 )
@@ -125,6 +132,55 @@ Validace ve stylu `lib/*-validation.ts`, s unit testem:
 - specializace a původ jsou v povolených hodnotách postavy,
 - každá obsazená role, tým, jednotka a kruh mají napsané texty (varování,
   ne chyba, ať jde obsazovat i s rozepsaným obsahem).
+
+## Gender a šablony
+
+Texty jednotky se píšou pro roli, ne pro postavu. V různých bězích je čte
+a v nich vystupuje pokaždé někdo jiný, s jiným jménem a rodem. Aplikace při
+skládání dokumentu obsazení zná, takže šablonu vykreslí správně sama.
+
+### Syntaxe
+
+| Značka | Výsledek | Kde smí být |
+|---|---|---|
+| `{@kapitan}` | jméno aktuálního držitele role | všechny texty jednotky |
+| `{@kapitan:role}` | název role ve správném rodě (`name_m` / `name_f`) | všechny texty jednotky |
+| `{@kapitan:řekl\|řekla}` | tvar podle držitele role | všechny texty jednotky |
+| `{byl\|byla}` | tvar podle čtenáře, tedy držitele role, které text patří | jen osobní text role |
+
+- Pořadí je vždy **mužský | ženský**.
+- Varianta smí být prázdná, takže jde psát jen přípona: `jediný{|á}`,
+  `{@kapitan:sám|sama}`.
+- Odkazovat lze jen na role vlastní jednotky. Postavy mimo jednotku a NPC se
+  píšou jménem, jejich rod se nemění.
+- Značky se v textu nevnořují.
+
+Parser a vykreslení: čistá funkce `lib/unit-template.ts`
+`(text, držitelé rolí, čtenář?) → text`, s unit testem.
+
+### Kontroly
+
+- neznámý klíč role,
+- značka bez `|` (kromě `{@klic}` a `{@klic:role}`),
+- `{…|…}` bez `@` mimo osobní text role,
+- neuzavřená závorka.
+
+Při ukládání v editoru jde o chybu, ne varování.
+
+### Postup psaní
+
+1. Autor napíše text normálně, pro jedno konkrétní obsazení: se skutečnými
+   jmény a rody.
+2. AI dostane text, jednotku, roli, které text patří, a mapování jmen na role.
+   Proměnná jména a tvary nahradí značkami. Postup popisuje skill
+   `.agents/skills/sablony-jednotek`.
+3. **Zpětné vykreslení**: šablona vykreslená se stejným obsazením, ze kterého
+   text vzešel, musí dát **přesně původní text**. Každý rozdíl je chyba
+   převodu.
+4. Autor si přečte verzi s opačnými rody. To je jediné ruční čtení.
+
+Editor proto potřebuje náhled s přepínačem rodu u každé role a pole
+„původní text“ pro kontrolu zpětného vykreslení.
 
 ## Skládání dokumentu
 
@@ -177,7 +233,8 @@ GM panel umí vytisknout dokumenty všech postav běhu najednou.
 ## GM panel
 
 - **Editor textů**: postavy, týmy, jednotky s rolemi, kruhy, specializace
-  a původy. Podobně jako `wiki-admin.tsx`.
+  a původy. Podobně jako `wiki-admin.tsx`. U textů jednotky náhled
+  s přepínačem rodů a kontrola zpětného vykreslení.
 - **Obsazení běhu**: tým → jednotka + trojice, postava → role, specializace,
   původ, kruhy. Pevné hodnoty předvyplněné a zamčené. Kontroly vidět přímo
   v tabulce.
@@ -191,7 +248,8 @@ edituje už jen v aplikaci a Drive přestává být zdrojem pravdy.
 
 ## Postup
 
-1. Migrace tabulek, `lib/character-doc.ts` a validace obsazení s testy.
+1. Migrace tabulek, `lib/character-doc.ts`, `lib/unit-template.ts`
+   a validace obsazení s testy.
 2. Obsazení běhu v GM panelu (rozšíření `run-setup.tsx`).
 3. Editor textů v GM panelu.
 4. Routa `/api/character-doc` a záložka „Moje postava“.
