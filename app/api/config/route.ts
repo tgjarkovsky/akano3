@@ -3,7 +3,7 @@ import { getActiveRunId } from "@/lib/runs"
 import { CHARACTERS, CIRCLES, TEAMS, UNITS } from "@/lib/data"
 import { validateConfigBody } from "@/lib/request-validation"
 import { parsePoolRefill } from "@/lib/peer-pool"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 import { configActionNeedsAdmin } from "@/lib/config-auth"
 
 // Obsazení běhu (jednotky, kruhy, specializace) jen z Přípravy s heslem.
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   try {
     const raw: unknown = await req.json().catch(() => null)
     if (configActionNeedsAdmin((raw as { action?: unknown } | null)?.action)) {
-      const denied = adminGuard(req)
+      const denied = await requireAdmin(req)
       if (denied) return denied
     }
     const error = validateConfigBody(raw, {

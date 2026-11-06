@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 import { TEAMS } from "@/lib/data"
 import { teamMemberIds, splitPointsWeighted } from "@/lib/utils"
 import { getActiveRunId } from "@/lib/runs"
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 // by splitting each team's total unevenly (random weights) across its members.
 // Re-running resets character_points for the run first, so it's idempotent-ish.
 export async function POST(req: Request) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
 
   try {

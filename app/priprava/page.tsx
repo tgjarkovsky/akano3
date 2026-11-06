@@ -4,15 +4,16 @@ import React, { useEffect, useState } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { GameProvider } from "@/lib/game-context"
 import { ErrorBoundary } from "@/components/shared/error-boundary"
-import { PripravaLogin, OrganizerPicker } from "@/components/views/priprava/priprava-login"
+import { PripravaLogin, OrganizerPicker, PasswordSetup } from "@/components/views/priprava/priprava-login"
 import { PripravaShell } from "@/components/views/priprava/priprava-shell"
-import { getAdminToken, setAdminToken, verifyAdminToken, getOrganizer, setOrganizer } from "@/lib/admin-client"
+import { getAdminToken, setAdminToken, verifyAdminToken, getOrganizer, setOrganizer, fetchPasswordSet } from "@/lib/admin-client"
 
 // Příprava hry: texty, běhy, obsazení, knihovna. Oddělená od Velínu
 // (/character/GM1), aby GM během hry nemohl omylem měnit přípravu.
-// Heslo = ADMIN_TOKEN, ověřuje ho server u každého zápisu.
+// Heslo se nastavuje při první návštěvě a ukládá se jako otisk v databázi.
+// Server ho ověřuje u každého zápisu.
 
-type Gate = "checking" | "login" | "organizer" | "ready"
+type Gate = "checking" | "offline" | "setup" | "login" | "organizer" | "ready"
 
 export default function PripravaPage() {
   const [gate, setGate] = useState<Gate>("checking")
@@ -28,12 +29,16 @@ export default function PripravaPage() {
     const token = getAdminToken()
     const name = getOrganizer()
     setOrganizerState(name)
-    if (!token) { setGate("login"); return }
-    // Heslo se mezitím na serveru mohlo změnit, ověř uložené znovu.
-    verifyAdminToken(token).then(err => {
+    ;(async () => {
+      const isSet = await fetchPasswordSet()
+      if (isSet === null) { setGate("offline"); return }
+      if (!isSet) { setAdminToken(null); setGate("setup"); return }
+      if (!token) { setGate("login"); return }
+      // Heslo se mezitím mohlo změnit, ověř uložené znovu.
+      const err = await verifyAdminToken(token)
       if (err) { setAdminToken(null); setGate("login") }
       else setGate(name ? "ready" : "organizer")
-    })
+    })()
   }, [])
 
   const handleLogin = (token: string) => {
@@ -56,6 +61,12 @@ export default function PripravaPage() {
     <ErrorBoundary>
       <div className="theme-ink" style={{ minHeight: "100vh", backgroundColor: "var(--c-bg)", color: "var(--c-text)" }}>
         {gate === "checking" && null}
+        {gate === "offline" && (
+          <p style={{ padding: 24, textAlign: "center", color: "var(--c-text-muted)" }}>
+            Server neodpovídá. Zkus stránku obnovit.
+          </p>
+        )}
+        {gate === "setup" && <PasswordSetup onDone={handleLogin} />}
         {gate === "login" && <PripravaLogin onLogin={handleLogin} />}
         {gate === "organizer" && <OrganizerPicker onPick={handlePick} />}
         {gate === "ready" && organizer && (

@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 import type { WikiLinkAdmin } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -21,7 +21,7 @@ async function missingSlugs(fromSlug: string, toSlug: string): Promise<string[]>
 
 // GET /api/wiki/links — všechny vazby (Příprava, s heslem)
 export async function GET(req: Request) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const rows = await sql`
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
 
 // POST /api/wiki/links — create link
 export async function POST(req: Request) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const body = await req.json() as {

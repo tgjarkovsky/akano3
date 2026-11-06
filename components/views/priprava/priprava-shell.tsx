@@ -5,7 +5,8 @@ import {
   IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
-import { adminFetch } from "@/lib/admin-client"
+import { adminFetch, setAdminToken } from "@/lib/admin-client"
+import { PasswordChange } from "@/components/views/priprava/priprava-login"
 import { RunSetupPanel } from "@/components/panels/run-setup"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 import { ToastContainer } from "@/components/shared/toast"
@@ -144,6 +145,8 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
         <IconInfoCircle size={14} />
         Texty postav, kontrola obsazení a tisk přibudou v dalších krocích.
       </p>
+
+      <PasswordChange onChanged={setAdminToken} />
     </div>
   )
 }

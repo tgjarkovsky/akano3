@@ -1,9 +1,9 @@
 import { sql } from "@/lib/db"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 
 // PUT /api/wiki/links/[id] — update link
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const { id } = await params
@@ -37,7 +37,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 // DELETE /api/wiki/links/[id] — delete link
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const { id } = await params

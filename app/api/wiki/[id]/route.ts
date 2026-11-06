@@ -1,10 +1,10 @@
 import { sql } from "@/lib/db"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 import { validateWikiArticleInput } from "@/lib/wiki-validation"
 
 // PUT /api/wiki/[id] — update article
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const { id } = await params
@@ -35,7 +35,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 // DELETE /api/wiki/[id] — delete article
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
   try {
     const { id } = await params

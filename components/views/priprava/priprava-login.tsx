@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useState } from "react"
-import { IconLock, IconArrowRight, IconUser } from "@tabler/icons-react"
-import { verifyAdminToken } from "@/lib/admin-client"
+import { IconLock, IconArrowRight, IconUser, IconKey, IconCheck } from "@tabler/icons-react"
+import { verifyAdminToken, savePassword } from "@/lib/admin-client"
 import { ORGANIZERS } from "@/lib/constants"
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-hash-rules"
 
 const panel: React.CSSProperties = {
   width: "100%", maxWidth: 380,
@@ -121,5 +122,136 @@ export function OrganizerPicker({ onPick }: { onPick: (name: string) => void }) 
         </form>
       </div>
     </Screen>
+  )
+}
+
+// ── Heslo: první nastavení a změna ───────────────────────────────────────
+
+/** Dvě pole (heslo + znovu) se společnou kontrolou. Vrací text chyby nebo null. */
+function checkPair(pw: string, again: string): string | null {
+  if ([...pw].length < MIN_PASSWORD_LENGTH) return `Heslo musí mít aspoň ${MIN_PASSWORD_LENGTH} znaků.`
+  if (pw.trim() !== pw) return "Heslo nesmí začínat ani končit mezerou."
+  if (pw !== again) return "Hesla se neshodují."
+  return null
+}
+
+function PasswordFields({ idPrefix, pw, again, setPw, setAgain, onEdit }: {
+  idPrefix: string; pw: string; again: string
+  setPw: (v: string) => void; setAgain: (v: string) => void; onEdit: () => void
+}) {
+  const label: React.CSSProperties = { display: "block", fontSize: "0.8rem", color: "var(--c-text-muted)", margin: "0 0 6px" }
+  return (
+    <>
+      <label htmlFor={`${idPrefix}-nove`} style={label}>Nové heslo</label>
+      <input id={`${idPrefix}-nove`} type="password" autoComplete="new-password"
+        value={pw} onChange={e => { setPw(e.target.value); onEdit() }} style={input} />
+      <p style={{ fontSize: "0.78rem", color: "var(--c-text-faint)", margin: "6px 0 14px" }}>
+        Aspoň {MIN_PASSWORD_LENGTH} znaků. Diakritika a mezery uvnitř jsou v pořádku.
+      </p>
+      <label htmlFor={`${idPrefix}-znovu`} style={label}>Heslo znovu</label>
+      <input id={`${idPrefix}-znovu`} type="password" autoComplete="new-password"
+        value={again} onChange={e => { setAgain(e.target.value); onEdit() }} style={input} />
+    </>
+  )
+}
+
+export function PasswordSetup({ onDone }: { onDone: (password: string) => void }) {
+  const [pw, setPw] = useState("")
+  const [again, setAgain] = useState("")
+  const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const bad = checkPair(pw, again)
+    if (bad) { setError(bad); return }
+    setSaving(true)
+    const err = await savePassword(pw)
+    setSaving(false)
+    if (err) { setError(err); return }
+    onDone(pw)
+  }
+
+  return (
+    <Screen>
+      <form onSubmit={submit} style={panel}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <IconKey size={22} color="var(--c-accent)" />
+          <h1 style={heading}>Nastav heslo</h1>
+        </div>
+        <p style={{ color: "var(--c-text-muted)", fontSize: "0.9rem", margin: "0 0 20px", lineHeight: 1.5 }}>
+          Příprava zatím heslo nemá. To, které teď zadáš, budou používat všichni organizátoři.
+          Změnit ho jde později v Přehledu.
+        </p>
+        <PasswordFields idPrefix="setup" pw={pw} again={again} setPw={setPw} setAgain={setAgain} onEdit={() => setError("")} />
+        {error && <p role="alert" style={{ color: "var(--destructive, #D96A5C)", fontSize: "0.85rem", margin: "8px 0 0" }}>{error}</p>}
+        <button type="submit" disabled={saving} style={{ ...primary, opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Ukládám…" : <>Nastavit a vstoupit <IconArrowRight size={16} /></>}
+        </button>
+      </form>
+    </Screen>
+  )
+}
+
+/** Změna hesla uvnitř Přípravy. Po úspěchu předá nové heslo, aby se záložka nemusela znovu přihlašovat. */
+export function PasswordChange({ onChanged }: { onChanged: (password: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [pw, setPw] = useState("")
+  const [again, setAgain] = useState("")
+  const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const bad = checkPair(pw, again)
+    if (bad) { setError(bad); return }
+    setSaving(true)
+    const err = await savePassword(pw)
+    setSaving(false)
+    if (err) { setError(err); return }
+    onChanged(pw)
+    setPw(""); setAgain(""); setOpen(false); setDone(true)
+  }
+
+  const box: React.CSSProperties = {
+    backgroundColor: "var(--c-bg-card)", border: "1px solid var(--c-border)", borderRadius: 10, padding: "16px 18px", maxWidth: 420,
+  }
+
+  if (!open) {
+    return (
+      <div style={{ ...box, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 2px", color: "var(--c-text)" }}>Heslo Přípravy</p>
+          <p style={{ color: done ? "var(--c-success)" : "var(--c-text-muted)", fontSize: "0.82rem", margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            {done ? <><IconCheck size={14} /> Heslo změněno. Ostatním organizátorům ho dej vědět.</> : "Společné pro všechny organizátory."}
+          </p>
+        </div>
+        <button onClick={() => { setOpen(true); setDone(false) }} style={{
+          display: "flex", alignItems: "center", gap: 6, minHeight: 40, padding: "0 14px",
+          backgroundColor: "transparent", border: "1px solid var(--c-border-mid)", borderRadius: 6,
+          color: "var(--c-text)", fontSize: "0.85rem", cursor: "pointer",
+        }}>
+          <IconKey size={14} /> Změnit heslo
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={submit} style={box}>
+      <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 12px", color: "var(--c-text)" }}>Nové heslo Přípravy</p>
+      <PasswordFields idPrefix="zmena" pw={pw} again={again} setPw={setPw} setAgain={setAgain} onEdit={() => setError("")} />
+      {error && <p role="alert" style={{ color: "var(--destructive, #D96A5C)", fontSize: "0.85rem", margin: "8px 0 0" }}>{error}</p>}
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button type="submit" disabled={saving} style={{ ...primary, marginTop: 0, flex: 1, opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Ukládám…" : "Uložit heslo"}
+        </button>
+        <button type="button" onClick={() => { setOpen(false); setPw(""); setAgain(""); setError("") }} style={{
+          minHeight: 44, padding: "0 14px", backgroundColor: "transparent", border: "1px solid var(--c-border-mid)",
+          borderRadius: 6, color: "var(--c-text-muted)", cursor: "pointer",
+        }}>Zrušit</button>
+      </div>
+    </form>
   )
 }

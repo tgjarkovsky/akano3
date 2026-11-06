@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { adminGuard } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/admin-password"
 import { validateLinks } from "@/lib/wiki-links"
 
 export const dynamic = "force-dynamic"
@@ -1645,7 +1645,7 @@ const LINKS = [
 ]
 
 export async function POST(req: Request) {
-  const denied = adminGuard(req)
+  const denied = await requireAdmin(req)
   if (denied) return denied
 
   try {
