@@ -2,6 +2,9 @@ import type { CSSProperties, ComponentType } from "react"
 
 export type Role = "gm" | "teacher" | "ruze" | "student" | "display" | "library"
 export type Specialization = "combat" | "tactical" | "support"
+// Původ podle evidence Shin Junkinu (článek knihovny „Původ“)
+export type Origin = "mistni" | "pribuzni" | "cizi"
+export type Triplet = "A" | "B"
 export type ActionType =
   | "mission_success" | "mission_fail" | "lesson" | "shidosei"
   | "informant" | "monster" | "simulation" | "qr_quest"
@@ -10,11 +13,13 @@ export type ActionType =
 export interface Team {
   id: string; name: string; unitId: string
   memberIds: string[]; points: number; color: string
+  /** Trojice v jednotce pro aktivní běh; undefined = ještě nepřiřazeno */
+  triplet?: Triplet
 }
 export interface Character {
   id: string; code: string; name: string; nickname?: string
   role: Role; teamId?: string; unitId?: string; circleIds: string[]
-  specialization?: Specialization; kaichiLevel: number
+  specialization?: Specialization; origin?: Origin; kaichiLevel: number
   points: number; peerPointPool: number; lessonClaimedThisWindow: boolean
 }
 export interface Circle  { id: string; name: string; memberIds: string[] }

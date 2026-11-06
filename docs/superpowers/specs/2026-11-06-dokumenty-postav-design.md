@@ -16,7 +16,7 @@ ručně.
 | R2 | Co je tým | Pevná trojice jader. Ve všech bězích jsou ty tři postavy spolu. Tým nemá role. |
 | R3 | Přesuny mezi běhy | Tým se přesouvá do jiné jednotky jako celek. Některé týmy zůstávají ve stejné jednotce, jiné ne. |
 | R4 | Role | Patří jednotce. Jednotka má 6 rolí ve dvou trojicích (A, B). Každý tým obsadí jednu trojici. |
-| R5 | Co se určuje na každý běh | Tým → jednotka + trojice, postava → role v trojici, postava → kruhy, postava → specializace + původ. |
+| R5 | Co se určuje na každý běh | Tým → jednotka + trojice, postava → role v trojici, postava → kruh, postava → specializace + původ. Tým je vždy v právě jedné jednotce a postava vždy v právě jednom kruhu. |
 | R6 | Osobní informace | Patří k roli, ne k dvojici postava × role. Jinak by texty rostly kombinatoricky. |
 | R7 | Specializace a původ | Obojí jsou tři možnosti, každá s krátkým veřejným textem. Postava má seznam povolených hodnot: jednu (pevná), dvě („tyhle, ale tuhle ne“) nebo tři (volná). |
 | R8 | Kde žijí texty | V databázi aplikace s editorem v GM panelu. Dnes jsou rozházené po Google Drive. Jednorázově se převedou. |

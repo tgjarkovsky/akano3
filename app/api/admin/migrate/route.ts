@@ -100,6 +100,10 @@ export async function POST(req: Request) {
       )
     `
 
+    // Obsazení běhu: původ postavy a trojice A/B týmu v jednotce
+    await sql`ALTER TABLE character_state ADD COLUMN IF NOT EXISTS origin TEXT`
+    await sql`ALTER TABLE team_units      ADD COLUMN IF NOT EXISTS triplet TEXT`
+
     return Response.json({ ok: true, message: "Migrace dokončena" })
   } catch (err) {
     console.error("[migrate]", err)

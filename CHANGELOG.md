@@ -1,3 +1,4 @@
+## [2026-11-06] - Příprava, Běhy a obsazení: nástěnka jednotek s trojicemi A/B (přetažení i výběr, obsazené místo se vymění), tabulka postav se specializací, původem (Místní, Příbuzní, Cizí) a jedním kruhem, panel kontrol; nový běh přebírá celé obsazení
 ## [2026-11-06] - Heslo Přípravy v databázi (scrypt otisk): nastavení při první návštěvě, změna v Přehledu, platí i pro /api/admin/*; ADMIN_TOKEN zůstává jen jako záložní heslo pro curl
 ## [2026-11-06] - Příprava (/priprava): samostatná stránka s heslem pro běhy, obsazení a knihovnu; Velín bez záložek Běhy a Wiki, zápisy běhů, obsazení a knihovny jen s heslem
 ## [2026-10-29] - GM a učitelský přehled: sdílené PointAssignmentSheet, DashboardTabsList a SectionCard, typ ScoreMode ze scoreboard.tsx

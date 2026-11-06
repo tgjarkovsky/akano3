@@ -9,8 +9,8 @@ import { teamDeltaOf } from "./point-resolution"
 import type { PoolRefillMode } from "./peer-pool"
 import { adminHeaders } from "./admin-client"
 
-type CharStateRow = { character_id: string; kaichi_level: number; peer_point_pool: number; lesson_claimed_this_window: boolean; specialization: string | null }
-type TeamUnitRow = { team_id: string; unit_id: string }
+type CharStateRow = { character_id: string; kaichi_level: number; peer_point_pool: number; lesson_claimed_this_window: boolean; specialization: string | null; origin?: string | null }
+type TeamUnitRow = { team_id: string; unit_id: string; triplet?: string | null }
 type CircleMemberRow = { circle_id: string; character_id: string }
 
 // V Přípravě s sebou nese heslo, aby prošly akce obsazení a běhů.
@@ -44,6 +44,8 @@ export interface GameCtx {
   claimLesson:   (studentId: string) => void
   refillPeerPools: (amount: number, mode: PoolRefillMode) => Promise<void>
   addToast:      (msg: string, type?: Toast["type"]) => void
+  /** Načte stav hry hned, bez čekání na další dvousekundový poll. */
+  refreshGameState: () => Promise<void>
   activeRunId:   number | null
   runs:          RunSummary[]
   setActiveRun:  (runId: number) => Promise<void>
@@ -83,6 +85,7 @@ function buildCharacters(
       peerPointPool: state?.peer_point_pool ?? c.peerPointPool,
       lessonClaimedThisWindow: state?.lesson_claimed_this_window ?? false,
       specialization: (state?.specialization as Character["specialization"]) ?? c.specialization,
+      origin: (state?.origin as Character["origin"]) ?? undefined,
       points: pointsByChar[c.id] ?? c.points,
       circleIds: circlesByChar[c.id] ?? c.circleIds,
       unitId: c.teamId ? (unitByTeam[c.teamId] ?? c.unitId) : c.unitId,
@@ -104,12 +107,17 @@ function buildTeams(
 ): Team[] {
   const pointsMap = teamPointsFromChars(chars)
   const unitMap: Record<string, string> = {}
-  for (const { team_id, unit_id } of teamUnits) unitMap[team_id] = unit_id
+  const tripletMap: Record<string, Team["triplet"]> = {}
+  for (const { team_id, unit_id, triplet } of teamUnits) {
+    unitMap[team_id] = unit_id
+    if (triplet === "A" || triplet === "B") tripletMap[team_id] = triplet
+  }
 
   return TEAMS.map(t => ({
     ...t,
     points: pointsMap[t.id] ?? 0,
     unitId: unitMap[t.id] ?? t.unitId,
+    triplet: tripletMap[t.id],
   }))
 }
 
@@ -383,12 +391,13 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
     toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
+    refreshGameState: fetchGameState,
     activeRunId, runs, setActiveRun, createRun,
   }), [teams, characters, pointLog, alarmState, broadcastActive,
     lessonWindowActive, lessonWindowEnd, qrCodes, toasts, currentUser,
     login, logout, assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
-    toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
+    toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast, fetchGameState,
     activeRunId, runs, setActiveRun, createRun])
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db"
 import { CHARACTERS } from "@/lib/data"
 import { getActiveRunId } from "@/lib/runs"
+import { ensureSetupColumns } from "@/lib/setup-schema"
 import { requireAdmin } from "@/lib/admin-password"
 
 export const dynamic = "force-dynamic"
@@ -23,16 +24,26 @@ export async function POST(req: Request) {
     if (!name?.trim()) return new Response("Název je povinný", { status: 400 })
 
     const oldRunId = await getActiveRunId()
+    await ensureSetupColumns()
 
-    // Copy team→unit mapping from current run
+    // Copy team→unit mapping (včetně trojice A/B) from current run
     const teamUnitRows = await sql`
-      SELECT team_id, unit_id FROM team_units WHERE run_id = ${oldRunId}
-    ` as { team_id: string; unit_id: string }[]
+      SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${oldRunId}
+    ` as { team_id: string; unit_id: string; triplet: string | null }[]
 
     const [newRun] = await sql`
       INSERT INTO runs (name, is_active) VALUES (${name.trim()}, FALSE) RETURNING id
     `
     const newRunId = newRun.id as number
+
+    // Obsazení postav (specializace, původ, kruhy) se přebírá jako výchozí bod
+    const prevStateRows = await sql`
+      SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${oldRunId}
+    ` as { character_id: string; specialization: string | null; origin: string | null }[]
+    const prevState = new Map(prevStateRows.map(r => [r.character_id, r]))
+    const circleRows = await sql`
+      SELECT circle_id, character_id FROM circle_members WHERE run_id = ${oldRunId}
+    ` as { circle_id: string; character_id: string }[]
 
     const pointChars = CHARACTERS.filter(c => c.role === "student" || c.role === "ruze")
 
@@ -44,8 +55,8 @@ export async function POST(req: Request) {
       // Stav postav: výchozí hodnoty
       ...CHARACTERS.map(c =>
         sql`
-          INSERT INTO character_state (character_id, run_id, kaichi_level, peer_point_pool, lesson_claimed_this_window, specialization)
-          VALUES (${c.id}, ${newRunId}, 0, 20, false, null)
+          INSERT INTO character_state (character_id, run_id, kaichi_level, peer_point_pool, lesson_claimed_this_window, specialization, origin)
+          VALUES (${c.id}, ${newRunId}, 0, 20, false, ${prevState.get(c.id)?.specialization ?? null}, ${prevState.get(c.id)?.origin ?? null})
         `
       ),
       // Alarm
@@ -54,7 +65,11 @@ export async function POST(req: Request) {
       sql`INSERT INTO game_config (run_id, lesson_window_active, lesson_window_end) VALUES (${newRunId}, false, null)`,
       // Přiřazení jednotek (zkopírovat z předchozího běhu)
       ...teamUnitRows.map(r =>
-        sql`INSERT INTO team_units (team_id, unit_id, run_id) VALUES (${r.team_id}, ${r.unit_id}, ${newRunId})`
+        sql`INSERT INTO team_units (team_id, unit_id, triplet, run_id) VALUES (${r.team_id}, ${r.unit_id}, ${r.triplet}, ${newRunId})`
+      ),
+      // Kruhy (zkopírovat z předchozího běhu)
+      ...circleRows.map(r =>
+        sql`INSERT INTO circle_members (circle_id, character_id, run_id) VALUES (${r.circle_id}, ${r.character_id}, ${newRunId})`
       ),
     ])
 

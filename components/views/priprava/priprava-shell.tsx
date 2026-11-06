@@ -7,7 +7,7 @@ import {
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
 import { PasswordChange } from "@/components/views/priprava/priprava-login"
-import { RunSetupPanel } from "@/components/panels/run-setup"
+import { ObsazeniPanel } from "@/components/panels/obsazeni/obsazeni-panel"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
@@ -16,7 +16,7 @@ type Section = "overview" | "runs" | "library"
 
 const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
   { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
-  { value: "runs",     label: "Běhy a obsazení",  hint: "Běhy, jednotky, kruhy",      Icon: IconRepeat },
+  { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
   { value: "library",  label: "Knihovna",         hint: "Články a vazby",             Icon: IconBook },
 ]
 
@@ -94,7 +94,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
             fontSize: "1.5rem", fontWeight: 700, color: "var(--c-text)", margin: "0 0 20px",
           }}>{current.label}</h1>
           {section === "overview" && <Overview onGo={go} />}
-          {section === "runs"     && <RunSetupPanel />}
+          {section === "runs"     && <ObsazeniPanel />}
           {section === "library"  && <WikiAdminPanel />}
         </main>
       </div>
@@ -137,7 +137,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-        <Jump title="Běhy a obsazení" text="Založ nebo aktivuj běh a rozděl týmy do jednotek, postavy do kruhů." onClick={() => onGo("runs")} />
+        <Jump title="Běhy a obsazení" text="Týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
         <Jump title="Knihovna" text="Články herní knihovny a vazby mezi nimi." onClick={() => onGo("library")} />
       </div>
 

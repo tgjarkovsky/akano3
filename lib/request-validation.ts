@@ -1,3 +1,5 @@
+import { isSpecialization, isOrigin, isTriplet } from "./setup-options.ts"
+
 export const DEFAULT_DURATION_MIN = 30
 
 export type ConfigIds = {
@@ -34,19 +36,25 @@ export function validateConfigBody(body: unknown, ids: ConfigIds): string | null
   if (!isObj(body)) return "Body must be an object"
   const has = (list: readonly string[], v: unknown) => typeof v === "string" && list.includes(v)
 
-  if (body.action === "setTeamUnit") {
-    if (!has(ids.teamIds, body.teamId)) return "Invalid teamId"
-    if (!has(ids.unitIds, body.unitId)) return "Invalid unitId"
-    return null
-  }
-  if (body.action === "setCircleMembers") {
-    if (!has(ids.circleIds, body.circleId)) return "Invalid circleId"
-    if (!Array.isArray(body.memberIds) || !body.memberIds.every(m => has(ids.characterIds, m))) return "Invalid memberIds"
-    return null
-  }
   if (body.action === "setSpecialization") {
     if (!has(ids.characterIds, body.characterId)) return "Invalid characterId"
-    if (body.specialization !== null && typeof body.specialization !== "string") return "Invalid specialization"
+    if (body.specialization !== null && !isSpecialization(body.specialization)) return "Invalid specialization"
+    return null
+  }
+  if (body.action === "placeTeam") {
+    if (!has(ids.teamIds, body.teamId)) return "Invalid teamId"
+    if (!has(ids.unitIds, body.unitId)) return "Invalid unitId"
+    if (!isTriplet(body.triplet)) return "Invalid triplet"
+    return null
+  }
+  if (body.action === "setOrigin") {
+    if (!has(ids.characterIds, body.characterId)) return "Invalid characterId"
+    if (body.origin !== null && !isOrigin(body.origin)) return "Invalid origin"
+    return null
+  }
+  if (body.action === "setCharacterCircle") {
+    if (!has(ids.characterIds, body.characterId)) return "Invalid characterId"
+    if (!has(ids.circleIds, body.circleId)) return "Invalid circleId"
     return null
   }
   if (body.action === "refillPeerPool") return null

@@ -5,8 +5,12 @@ import { validateConfigBody } from "@/lib/request-validation"
 import { parsePoolRefill } from "@/lib/peer-pool"
 import { requireAdmin } from "@/lib/admin-password"
 import { configActionNeedsAdmin } from "@/lib/config-auth"
+import { ensureSetupColumns } from "@/lib/setup-schema"
+import { computeUnitSlots, planTeamMove, type TeamPlacement } from "@/lib/unit-slots"
+import type { Triplet } from "@/lib/types"
 
-// Obsazení běhu (jednotky, kruhy, specializace) jen z Přípravy s heslem.
+// Obsazení běhu (jednotky, kruhy, specializace, původ) jen z Přípravy s heslem.
+// Tým je vždy v jedné jednotce (placeTeam), postava vždy v jednom kruhu (setCharacterCircle).
 // Doplnění poolu darů volá Velín během hry.
 
 export async function POST(req: Request) {
@@ -24,24 +28,37 @@ export async function POST(req: Request) {
     })
     if (error) return new Response(error, { status: 400 })
     const body = raw as
-      | { action: "setTeamUnit"; teamId: string; unitId: string }
-      | { action: "setCircleMembers"; circleId: string; memberIds: string[] }
       | { action: "setSpecialization"; characterId: string; specialization: string | null }
+      | { action: "placeTeam"; teamId: string; unitId: string; triplet: Triplet }
+      | { action: "setOrigin"; characterId: string; origin: string | null }
+      | { action: "setCharacterCircle"; characterId: string; circleId: string }
       | { action: "refillPeerPool"; amount: number; mode: string }
 
     const runId = await getActiveRunId()
+    await ensureSetupColumns()
 
-    if (body.action === "setTeamUnit") {
-      await sql`UPDATE team_units SET unit_id = ${body.unitId} WHERE team_id = ${body.teamId} AND run_id = ${runId}`
-    } else if (body.action === "setCircleMembers") {
-      if (body.memberIds.length > 0) {
-        await sql.transaction([
-          sql`DELETE FROM circle_members WHERE circle_id = ${body.circleId} AND run_id = ${runId}`,
-          sql`INSERT INTO circle_members (circle_id, character_id, run_id) SELECT ${body.circleId}, unnest(${body.memberIds}::text[]), ${runId}`,
-        ])
-      } else {
-        await sql`DELETE FROM circle_members WHERE circle_id = ${body.circleId} AND run_id = ${runId}`
+    if (body.action === "placeTeam") {
+      // Přesun do slotu jednotky; obsazený slot se vymění (lib/unit-slots.ts).
+      const rows = await sql`SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${runId} ORDER BY team_id`
+      const placements: TeamPlacement[] = rows.map(r => ({
+        teamId: r.team_id as string, unitId: r.unit_id as string | null, triplet: (r.triplet as Triplet | null) ?? null,
+      }))
+      if (!placements.some(p => p.teamId === body.teamId)) return new Response("Tým nemá v běhu záznam", { status: 404 })
+      const slots = computeUnitSlots(UNITS.map(u => u.id), placements)
+      const writes = planTeamMove(slots, body.teamId, { unitId: body.unitId, triplet: body.triplet })
+      if (writes.length > 0) {
+        await sql.transaction(writes.map(w =>
+          sql`UPDATE team_units SET unit_id = ${w.unitId}, triplet = ${w.triplet} WHERE team_id = ${w.teamId} AND run_id = ${runId}`
+        ))
       }
+    } else if (body.action === "setOrigin") {
+      await sql`UPDATE character_state SET origin = ${body.origin} WHERE character_id = ${body.characterId} AND run_id = ${runId}`
+    } else if (body.action === "setCharacterCircle") {
+      // Postava je vždy právě v jednom kruhu: smazat všechna členství, vložit jedno.
+      await sql.transaction([
+        sql`DELETE FROM circle_members WHERE character_id = ${body.characterId} AND run_id = ${runId}`,
+        sql`INSERT INTO circle_members (circle_id, character_id, run_id) VALUES (${body.circleId}, ${body.characterId}, ${runId})`,
+      ])
     } else if (body.action === "setSpecialization") {
       await sql`UPDATE character_state SET specialization = ${body.specialization} WHERE character_id = ${body.characterId} AND run_id = ${runId}`
     } else if (body.action === "refillPeerPool") {
