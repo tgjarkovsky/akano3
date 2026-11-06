@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -10,14 +10,16 @@ import { PasswordChange } from "@/components/views/priprava/priprava-login"
 import { ObsazeniPanel } from "@/components/panels/obsazeni/obsazeni-panel"
 import { PravidlaPanel } from "@/components/panels/pravidla/pravidla-panel"
 import { RulesProvider } from "@/components/panels/pravidla/rules-context"
+import { TextyPanel } from "@/components/panels/texty/texty-panel"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
 
-type Section = "overview" | "runs" | "rules" | "library"
+type Section = "overview" | "texts" | "runs" | "rules" | "library"
 
 const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
   { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
+  { value: "texts",    label: "Texty",            hint: "Psaní a schvalování",        Icon: IconFileText },
   { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
   { value: "rules",    label: "Pravidla",         hint: "Co je napevno, co zakázané", Icon: IconAdjustments },
   { value: "library",  label: "Knihovna",         hint: "Články a vazby",             Icon: IconBook },
@@ -102,6 +104,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
           }}>{current.label}</h1>
           <RulesProvider>
             {section === "overview" && <Overview onGo={go} />}
+            {section === "texts"    && <TextyPanel />}
             {section === "runs"     && <ObsazeniPanel />}
             {section === "rules"    && <PravidlaPanel />}
           </RulesProvider>
@@ -147,6 +150,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+        <Jump title="Texty" text="Jádra postav, týmy, jednotky s rolemi, kruhy. Psaní, Hotovo a schvalování." onClick={() => onGo("texts")} />
         <Jump title="Běhy a obsazení" text="Týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
         <Jump title="Pravidla" text="Které postavy mají specializaci, původ nebo kruh napevno a co je zakázané." onClick={() => onGo("rules")} />
         <Jump title="Knihovna" text="Články herní knihovny a vazby mezi nimi." onClick={() => onGo("library")} />
@@ -154,7 +158,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
 
       <p style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--c-text-faint)", fontSize: "0.82rem", margin: "4px 0 0" }}>
         <IconInfoCircle size={14} />
-        Texty postav, kontrola obsazení a tisk přibudou v dalších krocích.
+        Vztahy postav, spis pro hráče a tisk přibudou v dalších krocích.
       </p>
 
       <PasswordChange onChanged={setAdminToken} />

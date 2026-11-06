@@ -1,3 +1,4 @@
+## [2026-11-06] - Příprava → Texty: matice postupu všech textů (postavy, týmy, jednotky, role, kruhy, specializace a původy), editor se stromem, automatickým ukládáním a náhledem pro hráče, stavy Hotovo / Schváleno, ochrana proti přepsání cizí úpravy, role jednotek ve trojicích A/B, rod postavy
 ## [2026-11-06] - Příprava → Pravidla: povolené hodnoty specializace, původu a kruhu postavy a jednotky týmu (napevno / kterákoli až na X); obsazení zakázané volby zamyká, kontroly hlásí porušení, server je odmítne, tlačítko doplní pevné hodnoty
 ## [2026-11-06] - Přímý přechod Příprava ↔ Velín ve stejné záložce (bez nového přihlášení)
 ## [2026-11-06] - Příprava, Běhy a obsazení: nástěnka jednotek s trojicemi A/B (přetažení i výběr, obsazené místo se vymění), tabulka postav se specializací, původem (Místní, Příbuzní, Cizí) a jedním kruhem, panel kontrol; nový běh přebírá celé obsazení
