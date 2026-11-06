@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -12,16 +12,19 @@ import { PravidlaPanel } from "@/components/panels/pravidla/pravidla-panel"
 import { RulesProvider } from "@/components/panels/pravidla/rules-context"
 import { TextyPanel } from "@/components/panels/texty/texty-panel"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
+import { SpisyPanel, type PrintJob } from "@/components/panels/spisy/spisy-panel"
+import { SpisPrintScreen } from "@/components/panels/spisy/spis-print-screen"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
 
-type Section = "overview" | "texts" | "runs" | "rules" | "library"
+type Section = "overview" | "texts" | "runs" | "rules" | "docs" | "library"
 
 const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
   { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
   { value: "texts",    label: "Texty",            hint: "Psaní a schvalování",        Icon: IconFileText },
   { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
   { value: "rules",    label: "Pravidla",         hint: "Co je napevno, co zakázané", Icon: IconAdjustments },
+  { value: "docs",     label: "Spisy hráčů",      hint: "Odkazy, zveřejnění, tisk",   Icon: IconPrinter },
   { value: "library",  label: "Knihovna",         hint: "Články a vazby",             Icon: IconBook },
 ]
 
@@ -47,6 +50,9 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
     try { sessionStorage.setItem(SECTION_KEY, s) } catch { /* jen se nezapamatuje */ }
   }
   const current = SECTIONS.find(s => s.value === section)!
+  const [printJob, setPrintJob] = useState<PrintJob | null>(null)
+
+  if (printJob) return <SpisPrintScreen job={printJob} onClose={() => setPrintJob(null)} />
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -107,6 +113,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
             {section === "texts"    && <TextyPanel />}
             {section === "runs"     && <ObsazeniPanel />}
             {section === "rules"    && <PravidlaPanel />}
+            {section === "docs"     && <SpisyPanel onPrint={setPrintJob} />}
           </RulesProvider>
           {section === "library"  && <WikiAdminPanel />}
         </main>

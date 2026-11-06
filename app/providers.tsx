@@ -2,6 +2,7 @@
 
 import React from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { usePathname } from "next/navigation"
 import { GameProvider } from "@/lib/game-context"
 
 class ErrorBoundary extends React.Component<
@@ -39,6 +40,9 @@ class ErrorBoundary extends React.Component<
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Spis hráče nepotřebuje stav hry, nemá se proto každé 2 s ptát serveru.
+  const pathname = usePathname()
+  if (pathname?.startsWith("/spis/")) return <ErrorBoundary>{children}</ErrorBoundary>
   return (
     <ErrorBoundary>
       <TooltipProvider>

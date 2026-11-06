@@ -864,3 +864,182 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .import-chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--c-border-mid); color: var(--c-text-muted); }
 .import-chip-over { border-color: color-mix(in srgb, var(--destructive) 55%, transparent); color: var(--destructive); }
 .import-preview { margin: 10px 0 4px 28px; padding: 6px 16px; border-radius: 8px; background-color: var(--c-bg-card); color: var(--c-text); max-height: 520px; overflow-y: auto; }
+
+/* ── Příprava → Spisy ── */
+.spisy-bar { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.spisy-select {
+  min-height: 40px; min-width: 220px; padding: 0 10px; border-radius: 6px;
+  border: 1px solid var(--c-input-border); background: var(--c-input); color: var(--c-text); font-size: 0.92rem;
+}
+.spisy-status {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 40px; padding: 6px 8px 6px 14px;
+  border-radius: 8px; border: 1px solid var(--c-border-mid); color: var(--c-text); font-size: 0.9rem;
+}
+.spisy-status[data-on] { border-color: var(--c-success); background: color-mix(in srgb, var(--c-success) 10%, transparent); }
+.spisy-table-wrap { overflow-x: auto; border: 1px solid var(--c-border); border-radius: 10px; }
+.spisy-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; color: var(--c-text); }
+.spisy-table th { text-align: left; font-weight: 600; font-size: 0.75rem; color: var(--c-text-muted); padding: 10px 12px; border-bottom: 1px solid var(--c-border-mid); white-space: nowrap; }
+.spisy-table td { padding: 6px 12px; border-top: 1px solid var(--c-border); white-space: nowrap; }
+.spisy-table tbody tr:first-child td { border-top: none; }
+.spisy-code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--c-text-muted); }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--c-text-muted); cursor: pointer;
+}
+.icon-btn:hover { border-color: var(--c-border-mid); color: var(--c-text); }
+.icon-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Spis postavy ─────────────────────────────────────────────────────
+   Bílý papír, černý text, barva jen v drobnostech: levný tisk i na černobílé
+   tiskárně. Na obrazovce jako list papíru na šedém stole. */
+.spis-screen {
+  flex: 1; min-height: 100vh; background: #e7e4df; color: #141210;
+  padding: 0 12px 64px;
+}
+.spis-toolbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  max-width: 210mm; margin: 0 auto; padding: 12px 0;
+  background: #e7e4df;
+}
+.spis-toolbar-title { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #5a534b; }
+.spis-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px;
+  border-radius: 8px; border: 1px solid #141210; background: #fff; color: #141210;
+  font: 600 0.95rem var(--font-sans); cursor: pointer; text-decoration: none;
+}
+.spis-btn:hover { background: #f4f2ef; }
+.spis-btn-primary { background: #141210; color: #fff; }
+.spis-btn-primary:hover { background: #2c2824; }
+.spis-btn:focus-visible { outline: 2px solid #701010; outline-offset: 2px; }
+.spis-hint { max-width: 210mm; margin: 0 auto 12px; color: #5a534b; font-size: 0.85rem; }
+
+.spis-sheet {
+  max-width: 210mm; margin: 0 auto 24px; background: #fff;
+  padding: 18mm 18mm 22mm; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+}
+@media (max-width: 640px) {
+  .spis-screen { padding: 0 0 48px; }
+  .spis-toolbar { padding: 10px 16px; }
+  .spis-hint { padding: 0 16px; }
+  .spis-sheet { padding: 28px 18px 36px; box-shadow: none; }
+}
+
+.spis {
+  font-family: var(--font-sans); color: #141210; font-size: 17px; line-height: 1.6;
+  font-variant-numeric: oldstyle-nums;
+}
+.spis-label {
+  margin: 0; font-family: var(--font-mono); font-size: 0.68em; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #5a534b;
+}
+
+/* Titulní strana */
+.spis-cover { display: flex; flex-direction: column; }
+.spis-cover-top {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-family: var(--font-mono); font-size: 0.7em; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.spis-double-rule { border-top: 2.5px solid #141210; border-bottom: 0.75px solid #141210; height: 3px; margin: 8px 0 0; }
+.spis-cover-kicker { margin: 18mm 0 4px; font-family: var(--font-mono); font-size: 0.72em; letter-spacing: 0.2em; text-transform: uppercase; color: #5a534b; }
+.spis-name {
+  margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  font-size: 3.4em; line-height: 1; letter-spacing: 0.02em;
+}
+.spis-nickname { margin: 6px 0 0; font-style: italic; font-size: 1.35em; color: #3b3630; }
+.spis-facts { margin: 12mm 0 0; display: grid; gap: 0; max-width: 125mm; }
+.spis-facts > div {
+  display: grid; grid-template-columns: 38mm 1fr; gap: 12px; align-items: baseline;
+  padding: 7px 0; border-bottom: 0.75px dotted #8a8178;
+}
+.spis-facts dt { font-family: var(--font-mono); font-size: 0.66em; letter-spacing: 0.12em; text-transform: uppercase; color: #5a534b; }
+.spis-facts dd { margin: 0; font-size: 1.05em; }
+.spis-toc { margin: 12mm 0 0; }
+.spis-toc ol { list-style: none; margin: 8px 0 0; padding: 0; }
+.spis-toc li { display: grid; grid-template-columns: 12mm 38mm 1fr; align-items: baseline; padding: 3px 0; }
+.spis-toc-num { font-family: var(--font-display); font-weight: 600; color: #701010; }
+.spis-toc-kicker { font-family: var(--font-mono); font-size: 0.66em; letter-spacing: 0.1em; text-transform: uppercase; color: #5a534b; }
+.spis-toc-title { font-weight: 600; }
+.spis-cover-note {
+  margin: 14mm 0 0; padding: 14px 18px; border: 1.25px solid #141210; max-width: 140mm;
+  font-size: 0.88em; line-height: 1.5;
+}
+.spis-cover-note p { margin: 0; }
+.spis-cover-note-title { font-family: var(--font-display) !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.15em; margin-bottom: 4px !important; }
+.spis-tag-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.spis-tag-legend li { display: flex; align-items: center; gap: 10px; }
+.spis-tag-legend .spis-tag { min-width: 30mm; justify-content: center; }
+
+/* Štítky viditelnosti: rozlišené obrysem, ne barvou */
+.spis-tag {
+  display: inline-flex; align-items: center; flex-shrink: 0; white-space: nowrap;
+  padding: 2px 8px; border: 0.75px solid #141210; border-radius: 2px;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.5;
+}
+.spis-tag-self   { background: #141210; color: #fff; }
+.spis-tag-public { border-style: dashed; color: #5a534b; border-color: #5a534b; }
+.spis-tag-team, .spis-tag-unit, .spis-tag-circle { border-width: 1.25px; }
+
+/* Kapitoly */
+.spis-chapter { margin-top: 20mm; }
+.spis-chapter-head {
+  display: flex; align-items: flex-end; gap: 16px;
+  padding-bottom: 10px; border-bottom: 2.5px solid #141210; margin-bottom: 8mm;
+}
+.spis-chapter-num {
+  font-family: var(--font-display); font-weight: 700; font-size: 3.2em; line-height: 0.85; color: #701010;
+  min-width: 1.2em;
+}
+.spis-chapter-title {
+  margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; text-transform: uppercase;
+  font-size: 1.9em; line-height: 1.05; letter-spacing: 0.02em;
+}
+.spis-block { margin: 0 0 9mm; }
+.spis-block-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  border-bottom: 0.75px solid #b9b1a7; padding-bottom: 4px; margin-bottom: 10px;
+}
+.spis-block-head h3 {
+  margin: 0; font-family: var(--font-display); font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.06em; font-size: 1.02em;
+}
+.spis-draft { display: inline-block; margin: 0 0 8px; padding: 2px 8px; border-radius: 3px; background: #fff3c4; font-family: var(--font-mono); font-size: 0.7rem; color: #6b4a00; }
+.spis-empty { margin: 20mm 0; text-align: center; font-style: italic; color: #5a534b; }
+
+/* Text */
+.spis-text { max-width: 66ch; hyphens: auto; -webkit-hyphens: auto; }
+.spis-text p { margin: 0 0 0.6em; orphans: 3; widows: 3; }
+.spis-text em { font-style: italic; }
+.spis-text strong { font-weight: 700; }
+.spis-text ul, .spis-text ol { margin: 0 0 0.7em; padding-left: 1.3em; }
+.spis-text li { margin: 0.15em 0; padding-left: 0.2em; }
+.spis-text ul { list-style: none; }
+.spis-text ul li::before { content: "–"; display: inline-block; width: 1.1em; margin-left: -1.1em; color: #5a534b; }
+.spis-text blockquote { margin: 0.4em 0 0.8em; padding-left: 14px; border-left: 1.5px solid #141210; font-style: italic; }
+.spis-subhead {
+  margin: 1.3em 0 0.4em; font-family: var(--font-sans); font-weight: 600; font-style: italic;
+  font-size: 1.18em; letter-spacing: 0.01em;
+}
+.spis-text > .spis-subhead:first-child { margin-top: 0.2em; }
+.spis-minorhead { margin: 1em 0 0.3em; font-family: var(--font-sans); font-weight: 700; font-size: 1em; }
+.spis-asterism { text-align: center; margin: 0.9em 0 !important; color: #5a534b; letter-spacing: 0.3em; }
+
+/* Tisk: jen spis, A4, každá kapitola na nové stránce */
+@media print {
+  @page { size: A4; margin: 18mm 20mm 18mm; }
+  html, body { background: #fff !important; }
+  .no-print, .spis-toolbar, .spis-hint { display: none !important; }
+  .spis-screen { background: #fff; padding: 0; min-height: 0; }
+  .spis-sheet { max-width: none; margin: 0; padding: 0; box-shadow: none; break-after: page; }
+  .spis-sheet:last-child { break-after: auto; }
+  .spis { font-size: 10.5pt; line-height: 1.5; }
+  .spis-text { max-width: none; }
+  .spis-cover { min-height: 255mm; break-after: page; }
+  .spis-cover-note { margin-top: auto; }
+  /* Jádro začíná na nové stránce, další kapitoly navazují, ať se netiskne zbytečně papír. */
+  .spis-chapter { margin-top: 12mm; }
+  .spis-cover + .spis-chapter { margin-top: 0; }
+  .spis-block { break-inside: auto; }
+  .spis-chapter-head, .spis-block-head, .spis-subhead, .spis-minorhead { break-after: avoid; break-inside: avoid; }
+  .spis-tag { font-size: 6.5pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

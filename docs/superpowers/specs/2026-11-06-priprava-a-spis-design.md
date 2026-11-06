@@ -233,6 +233,25 @@ Kruhy.
 V Přípravě **Tisk** vykreslí všechny postavy běhu za sebou se zalomením
 stránky, takže jedno „Tisknout / Uložit jako PDF“ v prohlížeči stačí.
 
+### Revize 2026-11-06: spis přes tajný odkaz
+
+Hráči dostanou **odkaz do aplikace**, tisk je tlačítko na té stránce.
+
+- Každá postava má na každý běh tajný odkaz `/spis/[odkaz]` (18 náhodných
+  bajtů, tabulka `doc_links`). Vytváří ho Příprava → **Spisy hráčů**, kde jde
+  odkaz zkopírovat, otevřít jako hráč a nahradit novým (starý přestane platit).
+- Zveřejnění je na běh (tabulka `run_docs`). Před zveřejněním odkaz ukáže
+  „Spis se připravuje“. Zveřejnění s neschválenými texty se potvrzuje.
+- Spis skládá `lib/character-doc.ts`: titulní strana (tým, spoluhráči,
+  jednotka, specializace, původ, kruh, obsah, legenda štítků) a kapitoly
+  Já · Tým · Jednotka · Kruh · Specializace a původ. Prázdné texty se vynechají.
+- Vzhled: bílý papír, černý text, barva jen na číslech kapitol. Štítky
+  viditelnosti se liší obrysem (plný, tlustý, čárkovaný), ne barvou.
+  Jádro začíná na nové stránce, další kapitoly navazují.
+- Příprava tiskne jednu postavu nebo celý běh (každý spis od nové stránky).
+- Role v jednotce a šablony rodů ve spisu zatím nejsou: obsazení rolí na běh
+  ještě neexistuje. Osobní wiki v aplikaci (pavouk) přijde jako další krok.
+
 ## API
 
 | Routa | Přístup | Vrací |

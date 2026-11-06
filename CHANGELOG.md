@@ -1,3 +1,4 @@
+## [2026-11-06] - Spisy hráčů: tajný odkaz na spis postavy pro každý běh (/spis/[odkaz]), tisk a uložení do PDF na A4 v černobílém vzhledu; Příprava → Spisy hráčů vytváří a kopíruje odkazy, zveřejňuje běh a tiskne jednu postavu nebo celý běh
 ## [2026-11-06] - Oprava importu textů: přepis rozepsaného textu už nezapisuje NULL do changed_after_approval; chyba importu vrací svůj text
 ## [2026-11-06] - Texty: import ze souboru (náhled, výběr postav a týmů, přepis do stavu rozepsané), pole Vztahy (dočasně text) a Otázky, převodní skript scripts/prevod-jadra-tymy.py pro Google dokument „Jádra + Týmy“; jména postav podle české transkripce a dokumentu (Mušaši, Šigen, Kaja, Raidži, Eri, Saja, Tecuja, Icuki, Ajumi, Jošika, Šiho, Jusuke, Rjo, Secuko, Čiharu)
 ## [2026-11-06] - Texty: víc legend v jednom poli (nadpis ## na legendu), tlačítko Další legenda a počet legend
