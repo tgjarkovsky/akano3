@@ -1,3 +1,4 @@
+## [2026-11-07] - Pravidla: pevnou roli jde vybrat jen v týmu s jednotkou napevno a jen z rolí té jednotky; jednotku týmu s pevnými rolemi nejde změnit ani uvolnit, dokud se role nezruší
 ## [2026-11-07] - Pravidla: záložky Role a Jednotka týmu jsou jedna „Jednotka a role“; u každého týmu je nahoře jeho jednotka a pod ní pevné role členů
 ## [2026-11-07] - Pravidla: pevná role v jednotce (záložka Role, výběr z rolí jednotek, které tým smí dostat); role smí mít napevno jen jedna postava a role spoluhráčů musí být ve stejné trojici; Obsazení podle pevné role zamyká jednotku i trojici týmu, hlásí porušení a u postavy ukazuje její pevnou roli; smazání role smaže i její pravidla
 ## [2026-11-07] - Texty → Import umí role jednotek: soubor nese jednotku, trojici, klíč, názvy a osobní text; chybějící role se založí, existující (stejná jednotka a klíč) se nechá a dostane jen text; náhled je ukáže jako „nová role“ nebo „přepíše“

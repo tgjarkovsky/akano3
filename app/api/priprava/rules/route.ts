@@ -38,6 +38,12 @@ export async function POST(req: Request) {
     const b = body as { subjectType: RuleSubject; subjectId: string; property: RuleProperty; allowed: string[] | null; by?: unknown }
     const allowed = b.allowed === null ? null : b.property === "role" ? b.allowed : normalizeAllowed(b.allowed, optionsFor(b.property))
 
+    if (b.property === "unit" && allowed === null) {
+      // Zrušení pravidla jednotky = libovolná jednotka; s pevnými rolemi členů nejde.
+      const index = indexRules(await getRules())
+      const holder = players.find(c => c.teamId === b.subjectId && fixedRole(index, roles, c.id))
+      if (holder) return new Response(`${holder.name} má v týmu pevnou roli, nejdřív ji zruš`, { status: 409 })
+    }
     if (allowed !== null && (b.property === "role" || b.property === "unit")) {
       const index = indexRules(await getRules())
       if (b.property === "role") {
@@ -49,11 +55,11 @@ export async function POST(req: Request) {
         })
         if (conflict) return new Response(conflict, { status: 409 })
       } else {
-        // Jednotka týmu musí dovolit jednotky pevných rolí jeho členů.
+        // Pevné role členů drží jednotku týmu napevno; jinou nebo volnější nejde nastavit.
         for (const c of players.filter(c => c.teamId === b.subjectId)) {
           const r = fixedRole(index, roles, c.id)
-          if (r && !allowed.includes(r.unitId)) {
-            return new Response(`${c.name} má napevno roli ${roleLabel(r)} v jednotce ${getUnitName(r.unitId)}`, { status: 409 })
+          if (r && (allowed.length !== 1 || allowed[0] !== r.unitId)) {
+            return new Response(`${c.name} má napevno roli ${roleLabel(r)} v jednotce ${getUnitName(r.unitId)}, nejdřív ji zruš`, { status: 409 })
           }
         }
       }

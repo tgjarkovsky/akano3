@@ -52,16 +52,20 @@ export function PravidlaPanel() {
   const groups = useMemo((): { teamId: string; subjects: Subject[] }[] => TEAMS.map(t => {
     const members = CHARACTERS.filter(c => c.teamId === t.id && (c.role === "student" || c.role === "ruze"))
     if (tabKey === "unit") {
+      // Pevná role jde vybrat jen v týmu s jednotkou napevno. Postava s pevnou rolí
+      // se ukáže vždy, ať jde pravidlo zrušit.
+      const unitFixed = allowedValues(index, "team", t.id, "unit")?.length === 1
       return {
         teamId: t.id,
         subjects: [
           { id: t.id, name: "Jednotka týmu", teamId: t.id, subjectType: "team" as const, property: "unit" as const },
-          ...members.map(c => ({ id: c.id, name: c.name, subjectType: "character" as const, property: "role" as const })),
+          ...members.filter(c => unitFixed || allowedValues(index, "character", c.id, "role") !== null)
+            .map(c => ({ id: c.id, name: c.name, subjectType: "character" as const, property: "role" as const })),
         ],
       }
     }
     return { teamId: t.id, subjects: members.map(c => ({ id: c.id, name: c.name, subjectType: "character" as const, property: tabKey })) }
-  }), [tabKey])
+  }), [tabKey, index])
 
   const q = query.trim().toLowerCase()
   const visible = (s: Subject) => {
@@ -90,8 +94,8 @@ export function PravidlaPanel() {
         Které hodnoty smí postava nebo tým dostat. Klikni na možnost a vypneš ji: všechny zapnuté znamenají
         <b> libovolná</b>, jedna zapnutá <b>napevno</b>, všechny kromě jedné <b>kterákoli až na</b>.
         Pravidla platí ve všech bězích a obsazení podle nich zamyká volby.
-        {tabKey === "unit" && <> U týmu nastavíš jednotku, pod ním členům pevnou roli. Roli jde dát jen <b>napevno</b>:
-          tým pak smí jen do jednotky a trojice té role. Role se zakládají v Texty → Role.</>}
+        {tabKey === "unit" && <> U týmu nastavíš jednotku. Když je <b>napevno</b>, objeví se pod ní členové a můžeš jim
+          dát pevnou roli v té jednotce; tým pak smí jen do trojice té role. Role se zakládají v Texty → Role.</>}
       </p>
 
       <div role="tablist" aria-label="Vlastnost" style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--c-border)", marginBottom: 16, overflowX: "auto" }}>
@@ -205,8 +209,10 @@ function RolePicker({ subjectId, subjectName, teamId, value, busy, onPick }: {
   onPick: (roleId: string | null) => void
 }) {
   const { index, roles } = useRules()
+  // Jen role pevné jednotky týmu (a případně dosavadní pevná role, ať jde vidět a zrušit).
   const units = teamId ? allowedValues(index, "team", teamId, "unit") : null
-  const list = UNITS.filter(u => units === null || units.includes(u.id) || roles.some(r => String(r.id) === value && r.unitId === u.id))
+  const fixedUnit = units?.length === 1 ? units[0] : null
+  const list = UNITS.filter(u => u.id === fixedUnit || roles.some(r => String(r.id) === value && r.unitId === u.id))
   return (
     <span className="rule-chips">
       <select value={value} disabled={busy} className="move-select" style={{ width: "auto", minWidth: 220 }}
@@ -223,7 +229,9 @@ function RolePicker({ subjectId, subjectName, teamId, value, busy, onPick }: {
           )
         })}
       </select>
-      {roles.length === 0 && <span style={{ fontSize: "0.8rem", color: "var(--c-text-faint)" }}>Zatím žádné role (Texty → Role)</span>}
+      {fixedUnit && !roles.some(r => r.unitId === fixedUnit) &&
+        <span style={{ fontSize: "0.8rem", color: "var(--c-text-faint)" }}>Jednotka zatím nemá role (Texty → Role)</span>}
+      {!fixedUnit && <span style={{ fontSize: "0.8rem", color: "var(--destructive)" }}>Tým nemá jednotku napevno</span>}
     </span>
   )
 }

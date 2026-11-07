@@ -51,9 +51,9 @@ export function slotBlockedByRoles(
 }
 
 /**
- * Proč nejde postavě dát pevnou roli, nebo null. Role smí mít napevno jen jedna
- * postava, role spoluhráčů musí být ve stejné trojici a jednotka role musí
- * projít pravidlem jednotky týmu.
+ * Proč nejde postavě dát pevnou roli, nebo null. Tým musí mít jednotku napevno
+ * a role z ní být, roli smí mít napevno jen jedna postava a role spoluhráčů
+ * musí být ve stejné trojici.
  */
 export function fixedRoleConflict(input: {
   index: Map<string, string[]>
@@ -77,9 +77,8 @@ export function fixedRoleConflict(input: {
       return `${input.name(id)} ze stejného týmu má napevno ${roleLabel(r)} (${input.unitName(r.unitId)} · ${r.triplet}), tým nemůže být ve dvou trojicích`
     }
   }
-  if (input.teamId) {
-    const units = allowedValues(input.index, "team", input.teamId, "unit")
-    if (units && !units.includes(role.unitId)) return `Pravidlo jednotky týmu nedovoluje ${input.unitName(role.unitId)}`
-  }
+  const units = input.teamId ? allowedValues(input.index, "team", input.teamId, "unit") : null
+  if (units?.length !== 1) return "Pevnou roli jde dát jen v týmu s jednotkou napevno"
+  if (units[0] !== role.unitId) return `Tým má napevno jednotku ${input.unitName(units[0])}, role je z ${input.unitName(role.unitId)}`
   return null
 }
