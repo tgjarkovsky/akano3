@@ -2,17 +2,20 @@
 
 import React, { useMemo, useState } from "react"
 import { IconLock, IconSearch, IconX, IconCheck } from "@tabler/icons-react"
-import { TEAMS, CHARACTERS } from "@/lib/data"
+import { TEAMS, CHARACTERS, UNITS } from "@/lib/data"
+import { getUnitName } from "@/lib/utils"
+import { roleLabel, roleRuleOptions } from "@/lib/role-rules"
 import { TeamIcon } from "@/components/shared/team-icon"
 import { allowedValues, describeRule, PROPERTY_SUBJECT, type RuleKind, type RuleProperty } from "@/lib/assignment-rules"
 import { ruleOptionsFor, PROPERTY_LABELS } from "@/lib/rule-options"
 import { SectionTitle } from "@/components/panels/obsazeni/shared"
 import { useRules } from "./rules-context"
 
-// Pravidla obsazení: pro každou postavu (specializace, původ, kruh) a tým
-// (jednotka) které hodnoty smí dostat. Platí ve všech bězích.
+// Pravidla obsazení: pro každou postavu (specializace, původ, kruh, role) a tým
+// (jednotka) které hodnoty smí dostat. Platí ve všech bězích. Role jde jen
+// napevno a s ní i jednotka a trojice týmu.
 
-const PROPERTIES: RuleProperty[] = ["specialization", "origin", "circle", "unit"]
+const PROPERTIES: RuleProperty[] = ["specialization", "origin", "circle", "role", "unit"]
 
 const KIND_STYLE: Record<RuleKind, React.CSSProperties> = {
   any:    { color: "var(--c-text-faint)", borderColor: "var(--c-border)" },
@@ -24,13 +27,13 @@ const KIND_STYLE: Record<RuleKind, React.CSSProperties> = {
 type Subject = { id: string; name: string; sub?: string; teamId?: string }
 
 export function PravidlaPanel() {
-  const { rules, index, loaded, pending, saveRule } = useRules()
+  const { rules, index, roles, loaded, pending, saveRule } = useRules()
   const [property, setProperty] = useState<RuleProperty>("specialization")
   const [onlyRules, setOnlyRules] = useState(false)
   const [query, setQuery] = useState("")
 
   const subjectType = PROPERTY_SUBJECT[property]
-  const options = ruleOptionsFor(property)
+  const options = useMemo(() => (property === "role" ? roleRuleOptions(roles, getUnitName) : ruleOptionsFor(property)), [property, roles])
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {}
@@ -76,6 +79,8 @@ export function PravidlaPanel() {
         Které hodnoty smí postava nebo tým dostat. Klikni na možnost a vypneš ji: všechny zapnuté znamenají
         <b> libovolná</b>, jedna zapnutá <b>napevno</b>, všechny kromě jedné <b>kterákoli až na</b>.
         Pravidla platí ve všech bězích a obsazení podle nich zamyká volby.
+        {property === "role" && <> Roli jde dát jen <b>napevno</b>: tým postavy pak smí jen do jednotky a trojice té role.
+          Role se zakládají v Texty → Role.</>}
       </p>
 
       <div role="tablist" aria-label="Vlastnost" style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--c-border)", marginBottom: 16, overflowX: "auto" }}>
@@ -130,6 +135,10 @@ export function PravidlaPanel() {
                           {s.sub && <span style={{ display: "block", fontSize: "0.78rem", fontStyle: "italic", color: "var(--c-text-muted)" }}>„{s.sub}“</span>}
                         </span>
                       </span>
+                      {property === "role" ? (
+                        <RolePicker subjectId={s.id} subjectName={s.name} teamId={g.teamId} value={allowed?.[0] ?? ""} busy={busy}
+                          onPick={v => saveRule(subjectType, s.id, property, v ? [v] : null)} />
+                      ) : (
                       <span className="rule-chips" role="group" aria-label={`${PROPERTY_LABELS[property]} – povolené hodnoty pro ${s.name}`}>
                         {options.map(o => {
                           const on = allowed === null || allowed.includes(o.value)
@@ -144,15 +153,16 @@ export function PravidlaPanel() {
                           )
                         })}
                       </span>
+                      )}
                       <span style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
                         <span className="rule-badge" style={KIND_STYLE[desc.kind]}>
                           {desc.kind === "fixed" && <IconLock size={12} aria-hidden />} {desc.text}
                         </span>
-                        <select value="" disabled={busy} aria-label={`Nastavit ${s.name} napevno`} className="move-select" style={{ width: "auto" }}
+                        {property !== "role" && <select value="" disabled={busy} aria-label={`Nastavit ${s.name} napevno`} className="move-select" style={{ width: "auto" }}
                           onChange={e => { if (e.target.value) saveRule(subjectType, s.id, property, [e.target.value]) }}>
                           <option value="">Napevno…</option>
                           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        </select>
+                        </select>}
                         {allowed !== null && (
                           <button type="button" disabled={busy} className="rule-reset" onClick={() => saveRule(subjectType, s.id, property, null)}
                             aria-label={`Zrušit pravidlo pro ${s.name}`} title="Zrušit pravidlo (libovolná)">
@@ -169,5 +179,34 @@ export function PravidlaPanel() {
         </div>
       )}
     </div>
+  )
+}
+
+// Výběr pevné role: role jednotek, které tým postavy smí dostat (pravidlo jednotky).
+function RolePicker({ subjectId, subjectName, teamId, value, busy, onPick }: {
+  subjectId: string; subjectName: string; teamId: string | null; value: string; busy: boolean
+  onPick: (roleId: string | null) => void
+}) {
+  const { index, roles } = useRules()
+  const units = teamId ? allowedValues(index, "team", teamId, "unit") : null
+  const list = UNITS.filter(u => units === null || units.includes(u.id) || roles.some(r => String(r.id) === value && r.unitId === u.id))
+  return (
+    <span className="rule-chips">
+      <select value={value} disabled={busy} className="move-select" style={{ width: "auto", minWidth: 220 }}
+        aria-label={`Pevná role pro ${subjectName}`} data-subject={subjectId}
+        onChange={e => onPick(e.target.value || null)}>
+        <option value="">Libovolná role</option>
+        {list.map(u => {
+          const rs = roles.filter(r => r.unitId === u.id)
+          if (rs.length === 0) return null
+          return (
+            <optgroup key={u.id} label={u.name}>
+              {rs.map(r => <option key={r.id} value={String(r.id)}>{roleLabel(r)} · trojice {r.triplet}</option>)}
+            </optgroup>
+          )
+        })}
+      </select>
+      {roles.length === 0 && <span style={{ fontSize: "0.8rem", color: "var(--c-text-faint)" }}>Zatím žádné role (Texty → Role)</span>}
+    </span>
   )
 }

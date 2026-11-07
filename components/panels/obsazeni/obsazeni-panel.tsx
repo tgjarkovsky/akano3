@@ -22,7 +22,7 @@ import { ChecksPanel } from "./checks-panel"
 export function ObsazeniPanel() {
   const { teams, characters } = useGame()
   const { save, pending } = useSetupSave()
-  const { index: rules, pending: rulesPending, applyFixed } = useRules()
+  const { index: rules, roles, pending: rulesPending, applyFixed } = useRules()
 
   const players = useMemo(
     () => characters.filter(c => (c.role === "student" || c.role === "ruze") && c.teamId),
@@ -45,8 +45,8 @@ export function ObsazeniPanel() {
   const issues = useMemo(() => checkAssignment({
     slots, unplacedTeamIds, players,
     unitName: getUnitName, teamName: getTeamName,
-    rules, optionsFor: ruleOptionsFor,
-  }), [slots, unplacedTeamIds, players, rules])
+    rules, optionsFor: ruleOptionsFor, roles,
+  }), [slots, unplacedTeamIds, players, rules, roles])
   const fixedPending = useMemo(() => pendingFixedValues(rules, players).length, [rules, players])
 
   const unitsWithIssues = useMemo(
@@ -73,11 +73,11 @@ export function ObsazeniPanel() {
       <div className="obsazeni-grid">
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 28 }}>
           <UnitBoard slots={slots} unplacedTeamIds={unplacedTeamIds} characters={players}
-            unitsWithIssues={unitsWithIssues} pendingTeamId={pendingTeamId} onMove={moveTeam} rules={rules} />
+            unitsWithIssues={unitsWithIssues} pendingTeamId={pendingTeamId} onMove={moveTeam} rules={rules} roles={roles} />
           <CharacterTable slots={slots} unplacedTeamIds={unplacedTeamIds} players={players}
             withIssues={withIssues} pending={pending}
             onSpec={setSpec} onOrigin={setOrigin} onCircle={setCircle}
-            rules={rules} fixedPending={fixedPending} applyingFixed={rulesPending === "apply-fixed"} onApplyFixed={applyFixed} />
+            rules={rules} roles={roles} fixedPending={fixedPending} applyingFixed={rulesPending === "apply-fixed"} onApplyFixed={applyFixed} />
         </div>
         <aside className="obsazeni-aside"><ChecksPanel issues={issues} /></aside>
       </div>

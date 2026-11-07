@@ -1,12 +1,13 @@
-// Pravidla obsazení: pro postavu (specializace, původ, kruh) nebo tým (jednotka)
-// seznam povolených hodnot. Pravidla platí ve všech bězích.
+// Pravidla obsazení: pro postavu (specializace, původ, kruh, role v jednotce)
+// nebo tým (jednotka) seznam povolených hodnot. Pravidla platí ve všech bězích.
+// Role jde nastavit jen napevno (jedna hodnota = id role z unit_roles).
 //
 //   žádné pravidlo / všechny povolené  → libovolná
 //   jedna povolená                     → napevno
 //   všechny kromě jedné                → kterákoli až na X
 //   jiná podmnožina                    → jen vyjmenované
 
-export type RuleProperty = "specialization" | "origin" | "circle" | "unit"
+export type RuleProperty = "specialization" | "origin" | "circle" | "role" | "unit"
 export type RuleSubject = "character" | "team"
 
 export type AssignmentRule = {
@@ -20,6 +21,7 @@ export const PROPERTY_SUBJECT: Record<RuleProperty, RuleSubject> = {
   specialization: "character",
   origin: "character",
   circle: "character",
+  role: "character",
   unit: "team",
 }
 
@@ -76,7 +78,7 @@ export function validateRuleInput(
   if (typeof body !== "object" || body === null) return "Neplatné tělo požadavku"
   const b = body as Record<string, unknown>
   const property = b.property
-  if (property !== "specialization" && property !== "origin" && property !== "circle" && property !== "unit") return "Neznámá vlastnost"
+  if (property !== "specialization" && property !== "origin" && property !== "circle" && property !== "role" && property !== "unit") return "Neznámá vlastnost"
   const subjectType = PROPERTY_SUBJECT[property]
   if (b.subjectType !== subjectType) return "Vlastnost nepatří k tomuto typu"
   const subjects = subjectType === "character" ? ids.characterIds : ids.teamIds
@@ -87,6 +89,7 @@ export function validateRuleInput(
   if (!b.allowed.every(v => typeof v === "string" && values.includes(v))) return "Neznámá hodnota"
   if (new Set(b.allowed).size !== b.allowed.length) return "Hodnota je v seznamu dvakrát"
   if (b.allowed.length === 0) return "Aspoň jedna hodnota musí zůstat povolená"
+  if (property === "role" && b.allowed.length !== 1) return "Role jde nastavit jen napevno"
   return null
 }
 

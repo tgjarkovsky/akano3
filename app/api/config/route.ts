@@ -11,6 +11,8 @@ import type { Triplet } from "@/lib/types"
 import { indexRules, isAllowed, allowedValues, describeRule, type RuleProperty, type RuleSubject } from "@/lib/assignment-rules"
 import { ruleOptionsFor, PROPERTY_LABELS } from "@/lib/rule-options"
 import { getRules } from "@/lib/rules-store"
+import { getRoles } from "@/lib/docs-store"
+import { requiredSlot, roleLabel, fixedRole } from "@/lib/role-rules"
 import { getTeamName, getCharName } from "@/lib/utils"
 
 // Obsazení běhu (jednotky, kruhy, specializace, původ) jen z Přípravy s heslem.
@@ -64,6 +66,21 @@ export async function POST(req: Request) {
       for (const w of writes) {
         const blocked = ruleBlock("team", w.teamId, "unit", w.unitId)
         if (blocked) return blocked
+      }
+      // Pevná role člena určuje jednotku i trojici týmu.
+      if (rules && writes.length > 0) {
+        const roles = await getRoles()
+        for (const w of writes) {
+          const members = TEAMS.find(t => t.id === w.teamId)?.memberIds ?? []
+          const { slot } = requiredSlot(rules, roles, members)
+          if (slot && (slot.unitId !== w.unitId || slot.triplet !== w.triplet)) {
+            const holder = members.find(id => fixedRole(rules, roles, id))!
+            const role = fixedRole(rules, roles, holder)!
+            return new Response(
+              `${getTeamName(w.teamId)}: ${getCharName(holder)} má napevno roli ${roleLabel(role)}, tým patří do ${UNITS.find(u => u.id === slot.unitId)?.name ?? slot.unitId} · trojice ${slot.triplet}`,
+              { status: 409 })
+          }
+        }
       }
       if (writes.length > 0) {
         await sql.transaction(writes.map(w =>

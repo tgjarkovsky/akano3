@@ -1,5 +1,6 @@
 import type { UnitSlots } from "./unit-slots.ts"
 import { allowedValues, describeRule, type RuleOption, type RuleProperty } from "./assignment-rules.ts"
+import { fixedRole, requiredSlot, roleLabel, type RuleRole } from "./role-rules.ts"
 
 // Kontroly obsazení běhu v Přípravě. Chyby blokují zveřejnění dokumentů
 // (až bude), varování jen upozorňují.
@@ -18,6 +19,7 @@ export type AssignmentIssue = {
 type CheckCharacter = {
   id: string
   name: string
+  teamId?: string
   specialization?: string
   origin?: string
   circleIds: string[]
@@ -33,6 +35,8 @@ export function checkAssignment(input: {
   /** pravidla obsazení (lib/assignment-rules.ts); bez nich se porušení nekontroluje */
   rules?: Map<string, string[]>
   optionsFor?: (p: RuleProperty) => readonly RuleOption[]
+  /** role jednotek; s nimi se kontrolují pevné role (tým ve správné jednotce a trojici) */
+  roles?: readonly RuleRole[]
 }): AssignmentIssue[] {
   const issues: AssignmentIssue[] = []
   const rules = input.rules
@@ -65,6 +69,37 @@ export function checkAssignment(input: {
       if (!teamId) continue
       const v = violation("team", teamId, "unit", s.unitId)
       if (v) issues.push({ level: "error", message: `${input.teamName(teamId)}: jednotka ${v}`, target: { type: "team", id: teamId } })
+    }
+  }
+  // Pevná role člena určuje jednotku a trojici týmu.
+  if (rules && input.roles) {
+    const roles = input.roles
+    const placeOf = (teamId: string) => {
+      for (const s of input.slots) {
+        if (s.A === teamId) return { unitId: s.unitId, triplet: "A" as const }
+        if (s.B === teamId) return { unitId: s.unitId, triplet: "B" as const }
+        if (s.overflow.includes(teamId)) return { unitId: s.unitId, triplet: null }
+      }
+      return null
+    }
+    const teamIds = [...new Set(input.players.map(c => c.teamId).filter((t): t is string => !!t))]
+    for (const teamId of teamIds) {
+      const members = input.players.filter(c => c.teamId === teamId)
+      const { slot, conflict } = requiredSlot(rules, roles, members.map(c => c.id))
+      if (!slot) continue
+      const fixed = members.flatMap(c => { const r = fixedRole(rules, roles, c.id); return r ? [`${c.name} (${roleLabel(r)})`] : [] })
+      if (conflict) {
+        issues.push({ level: "error", message: `${input.teamName(teamId)}: pevné role ${fixed.join(", ")} jsou v různých trojicích`, target: { type: "team", id: teamId } })
+        continue
+      }
+      const at = placeOf(teamId)
+      if (!at || at.unitId !== slot.unitId || at.triplet !== slot.triplet) {
+        issues.push({
+          level: "error",
+          message: `${input.teamName(teamId)} patří do ${input.unitName(slot.unitId)} · trojice ${slot.triplet} (pevná role ${fixed.join(", ")})`,
+          target: { type: "team", id: teamId },
+        })
+      }
     }
   }
   for (const teamId of input.unplacedTeamIds) {

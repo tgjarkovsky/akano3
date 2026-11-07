@@ -9,6 +9,7 @@ import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import type { UnitSlots } from "@/lib/unit-slots"
 import type { Character, Specialization, Origin } from "@/lib/types"
 import { allowedValues } from "@/lib/assignment-rules"
+import { fixedRole, roleLabel, type RuleRole } from "@/lib/role-rules"
 import { IconLock, IconWand } from "@tabler/icons-react"
 import { SectionTitle, Segmented } from "./shared"
 
@@ -24,13 +25,14 @@ type Props = {
   onOrigin: (characterId: string, v: Origin) => void
   onCircle: (characterId: string, circleId: string) => void
   rules: Map<string, string[]>
+  roles: RuleRole[]
   /** kolik pevných hodnot z pravidel postavám ještě chybí */
   fixedPending: number
   applyingFixed: boolean
   onApplyFixed: () => void
 }
 
-export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, fixedPending, applyingFixed, onApplyFixed }: Props) {
+export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, roles, fixedPending, applyingFixed, onApplyFixed }: Props) {
   const [filter, setFilter] = useState<Filter>({ kind: "all" })
   const [query, setQuery] = useState("")
 
@@ -135,6 +137,15 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                   <div key={c.id} id={`postava-${c.id}`} className="char-row" role="row" data-issue={issue ? "true" : undefined}>
                     <span role="cell" style={{ minWidth: 0 }}>
                       <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{c.name}</span>
+                      {(() => {
+                        const r = fixedRole(rules, roles, c.id)
+                        return r && (
+                          <span style={{ display: "block", fontSize: "0.76rem", color: "var(--c-accent)" }}
+                            title={`Pevná role v jednotce ${getUnitName(r.unitId)}, trojice ${r.triplet}`}>
+                            <IconLock size={11} aria-hidden style={{ verticalAlign: "-1px" }} /> {roleLabel(r)}
+                          </span>
+                        )
+                      })()}
                     </span>
                     <span role="cell">
                       <span className="cell-label">Specializace{lock(specAllowed)}</span>

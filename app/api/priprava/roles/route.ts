@@ -1,11 +1,23 @@
 import { requireAdmin } from "@/lib/admin-password"
 import { parseRoleInput } from "@/lib/doc-validation"
 import { DOC_IDS } from "@/lib/doc-ids"
-import { createRole, updateRole, deleteRole } from "@/lib/docs-store"
+import { createRole, updateRole, deleteRole, getRoles } from "@/lib/docs-store"
 
 export const dynamic = "force-dynamic"
 
 const DUPLICATE = "Jednotka už má roli s tímhle klíčem"
+
+// GET /api/priprava/roles — všechny role jednotek (pro pravidla obsazení)
+export async function GET(req: Request) {
+  const denied = await requireAdmin(req)
+  if (denied) return denied
+  try {
+    return Response.json(await getRoles())
+  } catch (err) {
+    console.error("[priprava/roles GET]", err)
+    return new Response("Server error", { status: 500 })
+  }
+}
 
 // POST /api/priprava/roles { unitId, triplet, key, nameM, nameF } — nová role
 export async function POST(req: Request) {

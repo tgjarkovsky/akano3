@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db"
+import { ensureSetupColumns } from "@/lib/setup-schema"
 import type { DocEntityType } from "@/lib/doc-fields"
 import { statusAfterEdit, statusAfterAction, checkTransition, statusOf, type StoredStatus, type StatusAction } from "@/lib/doc-status"
 import type { ImportRole, RoleInput } from "@/lib/doc-validation"
@@ -187,6 +188,12 @@ export async function changeStatus(input: {
 
 // ── Role jednotek ──────────────────────────────────────────────────────
 
+export async function getRoles(): Promise<UnitRole[]> {
+  await ensureDocTables()
+  const rows = await sql`SELECT * FROM unit_roles ORDER BY unit_id, triplet, sort_order, id`
+  return rows.map(rowToRole)
+}
+
 export async function createRole(r: RoleInput): Promise<UnitRole | "duplicate"> {
   await ensureDocTables()
   const rows = await sql`
@@ -211,9 +218,11 @@ export async function updateRole(id: number, r: RoleInput): Promise<UnitRole | "
 }
 
 export async function deleteRole(id: number) {
-  await ensureDocTables()
+  await Promise.all([ensureDocTables(), ensureSetupColumns()])
   await sql.transaction([
     sql`DELETE FROM doc_texts WHERE entity_type = 'role' AND entity_id = ${String(id)}`,
+    // pevná role v Příprava → Pravidla
+    sql`DELETE FROM assignment_rules WHERE property = 'role' AND ${String(id)} = ANY(allowed)`,
     sql`DELETE FROM unit_roles WHERE id = ${id}`,
   ])
 }

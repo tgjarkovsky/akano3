@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { useGame } from "@/lib/game-context"
 import { indexRules, type AssignmentRule, type RuleProperty, type RuleSubject } from "@/lib/assignment-rules"
+import type { RuleRole } from "@/lib/role-rules"
 
 // Pravidla obsazení pro celou Přípravu: sekce Pravidla je upravuje,
 // Běhy a obsazení podle nich zamyká volby a hlásí porušení.
@@ -11,6 +12,8 @@ import { indexRules, type AssignmentRule, type RuleProperty, type RuleSubject } 
 type RulesCtx = {
   rules: AssignmentRule[]
   index: Map<string, string[]>
+  /** role jednotek pro pravidlo „role“ (Příprava → Texty → Role) */
+  roles: RuleRole[]
   loaded: boolean
   pending: string | null
   saveRule: (subjectType: RuleSubject, subjectId: string, property: RuleProperty, allowed: string[] | null) => Promise<boolean>
@@ -22,6 +25,7 @@ const Ctx = createContext<RulesCtx | null>(null)
 export function RulesProvider({ children }: { children: React.ReactNode }) {
   const { addToast, refreshGameState } = useGame()
   const [rules, setRules] = useState<AssignmentRule[]>([])
+  const [roles, setRoles] = useState<RuleRole[]>([])
   const [loaded, setLoaded] = useState(false)
   const [pending, setPending] = useState<string | null>(null)
 
@@ -31,6 +35,10 @@ export function RulesProvider({ children }: { children: React.ReactNode }) {
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then((rows: AssignmentRule[]) => { if (!cancelled) { setRules(rows); setLoaded(true) } })
       .catch(() => { if (!cancelled) { setLoaded(true); addToast("Pravidla se nepodařilo načíst", "error") } })
+    adminFetch("/api/priprava/roles")
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then((rows: RuleRole[]) => { if (!cancelled) setRoles(rows) })
+      .catch(() => { if (!cancelled) addToast("Role jednotek se nepodařilo načíst", "error") })
     return () => { cancelled = true }
   }, [addToast])
 
@@ -43,7 +51,7 @@ export function RulesProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subjectType, subjectId, property, allowed, by: getOrganizer() }),
       })
-      if (!res.ok) { addToast(res.status === 400 ? await res.text() : "Pravidlo se nepodařilo uložit", "error"); return false }
+      if (!res.ok) { addToast(res.status === 400 || res.status === 409 ? await res.text() : "Pravidlo se nepodařilo uložit", "error"); return false }
       setRules(await res.json())
       return true
     } catch {
@@ -70,7 +78,7 @@ export function RulesProvider({ children }: { children: React.ReactNode }) {
   }, [addToast, refreshGameState])
 
   const index = useMemo(() => indexRules(rules), [rules])
-  const value = useMemo(() => ({ rules, index, loaded, pending, saveRule, applyFixed }), [rules, index, loaded, pending, saveRule, applyFixed])
+  const value = useMemo(() => ({ rules, index, roles, loaded, pending, saveRule, applyFixed }), [rules, index, roles, loaded, pending, saveRule, applyFixed])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 

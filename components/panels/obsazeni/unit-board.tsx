@@ -8,6 +8,7 @@ import { getUnitName } from "@/lib/utils"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { planTeamMove, type UnitSlots } from "@/lib/unit-slots"
 import { isAllowed } from "@/lib/assignment-rules"
+import { slotBlockedByRoles, type RuleRole } from "@/lib/role-rules"
 import type { Character, Triplet } from "@/lib/types"
 import { SectionTitle } from "./shared"
 
@@ -23,9 +24,10 @@ type Props = {
   pendingTeamId: string | null
   onMove: (teamId: string, unitId: string, triplet: Triplet) => void
   rules: Map<string, string[]>
+  roles: RuleRole[]
 }
 
-export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues, pendingTeamId, onMove, rules }: Props) {
+export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues, pendingTeamId, onMove, rules, roles }: Props) {
   const [dragTeam, setDragTeam] = useState<string | null>(null)
   const [overSlot, setOverSlot] = useState<string | null>(null)
 
@@ -46,7 +48,7 @@ export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues,
 
   const card = (teamId: string, warn = false) => (
     <TeamCard key={teamId} teamId={teamId} warn={warn} characters={characters}
-      slots={slots} busy={pendingTeamId === teamId} rules={rules}
+      slots={slots} busy={pendingTeamId === teamId} rules={rules} roles={roles}
       onDragStart={() => setDragTeam(teamId)} onDragEnd={() => { setDragTeam(null); setOverSlot(null) }}
       onMove={onMove} />
   )
@@ -96,8 +98,9 @@ export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues,
   )
 }
 
-function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEnd, onMove, rules }: {
+function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEnd, onMove, rules, roles }: {
   rules: Map<string, string[]>
+  roles: RuleRole[]
   teamId: string
   warn: boolean
   characters: Character[]
@@ -151,9 +154,11 @@ function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEn
               const occupant = s?.[t]
               if (occupant === teamId) return null
               const occName = occupant ? TEAMS.find(x => x.id === occupant)?.name : null
-              // Zakázané, když by přesun (včetně výměny) porušil pravidlo jednotky.
+              // Zakázané, když by přesun (včetně výměny) porušil pravidlo jednotky nebo pevnou roli.
               const blocked = planTeamMove(slots, teamId, { unitId: u.id, triplet: t })
-                .some(w => w.unitId !== null && !isAllowed(rules, "team", w.teamId, "unit", w.unitId))
+                .some(w => (w.unitId !== null && !isAllowed(rules, "team", w.teamId, "unit", w.unitId)) ||
+                  slotBlockedByRoles(rules, roles, TEAMS.find(x => x.id === w.teamId)?.memberIds ?? [],
+                    w.unitId !== null && w.triplet !== null ? { unitId: w.unitId, triplet: w.triplet } : { unitId: "", triplet: "A" }))
               return (
                 <option key={`${u.id}:${t}`} value={`${u.id}:${t}`} disabled={blocked}>
                   {u.name} · {t}{blocked ? " (zakázáno pravidlem)" : occName ? ` (vyměnit s ${occName})` : " (volné)"}
