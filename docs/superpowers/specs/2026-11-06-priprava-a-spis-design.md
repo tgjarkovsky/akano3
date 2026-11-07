@@ -261,6 +261,13 @@ drží místo, takže funguje tlačítko Zpět. U cizích skupin jen medailonek
 a veřejný text, interní texty ani začerněné pruhy se neposílají. Seznam
 lidí zatím ne. Tisk dál tiskne celý spis. Pavouk přijde nad nástěnku.
 
+Úprava téhož dne: nahoře jen hráčovo (on sám a jeho skupiny, tedy tým,
+jednotka a kruh), pod tím ostatní skupiny, kde hráč není. Ty nemají
+vlastní stránku: medailonek a veřejný text ukáže náhled při najetí myší,
+na dotykovém displeji klepnutím (na telefonu jako list ze spodu).
+Tlačítko „Spis jako dokument“ (`#dokument`) ukáže v prohlížeči celý spis
+tak, jak se tiskne do PDF.
+
 ## API
 
 | Routa | Přístup | Vrací |

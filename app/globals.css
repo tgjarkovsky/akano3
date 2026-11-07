@@ -1083,6 +1083,36 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .kn-tile-lead { font-size: 0.85rem; line-height: 1.4; color: #3b3630; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .kn-mine-mark { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 1px 6px; background: #141210; color: #fff; border-radius: 2px; }
 a.spis-btn { text-decoration: none; }
+.kn-toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.kn-section-first { margin-top: 22px !important; }
+button.kn-tile { width: 100%; height: 100%; text-align: left; cursor: pointer; font: inherit; }
+.kn-peek-wrap { position: relative; }
+.kn-peek {
+  position: absolute; z-index: 30; top: calc(100% - 2px); left: 0;
+  width: min(380px, calc(100vw - 32px)); max-height: min(60vh, 520px); overflow: auto;
+  padding: 14px 16px 6px; background: #fff; color: #141210;
+  border: 1.25px solid #141210; border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+  font-family: var(--font-sans); font-size: 15px; line-height: 1.5;
+}
+.kn-peek-right { left: auto; right: 0; }
+.kn-peek-above { top: auto; bottom: calc(100% - 2px); }
+.kn-peek-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.kn-peek-title { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; text-transform: uppercase; font-size: 1.25rem; line-height: 1.1; }
+.kn-peek-close {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  border: 1px solid #b9b1a7; border-radius: 4px; background: #fff; color: #141210; cursor: pointer;
+}
+.kn-peek-close:hover { border-color: #141210; }
+.kn-peek-block { padding-top: 8px; border-top: 0.75px solid #d8d2ca; margin-bottom: 6px; }
+.kn-peek-label { margin: 0 0 4px; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: #5a534b; }
+.kn-peek .spis-text { max-width: none; }
+.kn-peek-empty { margin: 0 0 10px; font-style: italic; color: #5a534b; }
+/* Na telefonu jako list ze spodu obrazovky */
+@media (max-width: 640px) {
+  .kn-peek, .kn-peek-right, .kn-peek-above {
+    position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; width: auto; max-height: 70vh;
+  }
+}
 
 /* Tisk: jen spis, A4, každá kapitola na nové stránce */
 @media print {
