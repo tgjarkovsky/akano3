@@ -2,7 +2,7 @@
 // oddíl Skládání dokumentu). Čistá funkce: dostane obsazení a texty, vrátí kapitoly
 // v pevném pořadí. Prázdné texty a kapitoly bez textu vynechá.
 
-export type DocVisibility = "self" | "team" | "unit" | "circle" | "public"
+export type DocVisibility = "self" | "team" | "unit" | "circle" | "public" | "prelarp"
 
 export const DOC_VISIBILITY_LABELS: Record<DocVisibility, string> = {
   self: "jen ty",
@@ -10,6 +10,7 @@ export const DOC_VISIBILITY_LABELS: Record<DocVisibility, string> = {
   unit: "tvoje jednotka",
   circle: "tvůj kruh",
   public: "veřejné",
+  prelarp: "před hrou",
 }
 
 export type DocBlock = {
@@ -57,6 +58,7 @@ export type DocInput = {
 
 // Pořadí a nadpisy textů jádra. Tři otázky jdou za vnitřním světem.
 const CORE: [field: string, title: string][] = [
+  ["medallion",     "Medailonek"],
   ["legends",       "Legendy"],
   ["inner_world",   "Vnitřní svět"],
   ["why_hunter",    "Proč se potřebuji stát lovcem?"],
@@ -79,27 +81,30 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
   const chapters: DocChapter[] = [
     {
       key: "core", kicker: "Jádro postavy", title: "Já",
-      blocks: CORE.flatMap(([field, title]) => block("character", character.id, field, title, "self")),
+      blocks: CORE.flatMap(([field, title]) => block("character", character.id, field, title, field === "medallion" ? "prelarp" : "self")),
     },
   ]
   if (team) chapters.push({
     key: "team", kicker: "Tvůj tým", title: team.name,
     blocks: [
-      ...block("team", team.id, "public", "Co o vás ví každý", "public"),
+      ...block("team", team.id, "medallion", "Medailonek", "prelarp"),
+      ...block("team", team.id, "public", "Co o vás vědí všichni", "public"),
       ...block("team", team.id, "internal", "Jen mezi vámi", "team"),
     ],
   })
   if (unit) chapters.push({
     key: "unit", kicker: "Tvoje jednotka", title: unit.name,
     blocks: [
-      ...block("unit", unit.id, "public", "Co o jednotce ví každý", "public"),
+      ...block("unit", unit.id, "medallion", "Medailonek", "prelarp"),
+      ...block("unit", unit.id, "public", "Co o jednotce vědí všichni", "public"),
       ...block("unit", unit.id, "internal", "Jen v jednotce", "unit"),
     ],
   })
   if (circle) chapters.push({
     key: "circle", kicker: "Tvůj kruh", title: circle.name,
     blocks: [
-      ...block("circle", circle.id, "public", "Co o kruhu ví každý", "public"),
+      ...block("circle", circle.id, "medallion", "Medailonek", "prelarp"),
+      ...block("circle", circle.id, "public", "Co o kruhu vědí všichni", "public"),
       ...block("circle", circle.id, "internal", "Společné", "circle"),
     ],
   })

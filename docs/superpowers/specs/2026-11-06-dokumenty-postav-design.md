@@ -25,6 +25,7 @@ ručně.
 | R10 | Gender | Je pevně daný v jádru postavy (m / ž). Jedinou postavu s možností obou pohlaví řešíme zvlášť a později. |
 | R11 | Kde je potřeba rodová shoda | Jen v textech jednotky: veřejné, interní, osobní texty rolí. Týmy mají pevné postavy, kruhy nemají osobní texty. |
 | R12 | Jak vznikají šablony | Autor napíše normální text pro jedno konkrétní obsazení. AI v něm podle zadání nahradí proměnná jména a tvary značkami. Aplikace převod ověří zpětným vykreslením. |
+| R13 | Tři úrovně známosti | **Medailonek**: vědí lidi už před přihláškou na larp (web). **Veřejné**: vědí na larpu všechny postavy. **Interní**: jen členové skupiny. Medailonek mají postavy, týmy, jednotky a kruhy. (2026-11-07) |
 
 ## Vrstvy obsahu
 

@@ -6,7 +6,7 @@ import { SpisText } from "./spis-text"
 // Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
 
-const TAG_ORDER: DocVisibility[] = ["self", "team", "unit", "circle", "public"]
+const TAG_ORDER: DocVisibility[] = ["self", "team", "unit", "circle", "public", "prelarp"]
 
 function Tag({ v }: { v: DocVisibility }) {
   return <span className={`spis-tag spis-tag-${v}`}>{DOC_VISIBILITY_LABELS[v]}</span>
@@ -102,5 +102,6 @@ const LEGEND: Record<DocVisibility, string> = {
   team: "i tvůj tým",
   unit: "celá tvoje jednotka",
   circle: "členové tvého kruhu",
-  public: "všichni",
+  public: "všechny postavy na larpu",
+  prelarp: "všichni, už před přihláškou na larp",
 }

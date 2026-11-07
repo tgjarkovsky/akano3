@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { IconFileImport } from "@tabler/icons-react"
+import { IconFileImport, IconChartBar } from "@tabler/icons-react"
 import { DOC_FIELDS, docKey } from "@/lib/doc-fields"
 import { countStatuses, STATUS_LABELS, type DocStatus } from "@/lib/doc-status"
 import { getOrganizer } from "@/lib/admin-client"
+import { TextStats } from "./stats"
 import { CATEGORIES, STATUS_COLORS, StatusDot, buildEntities, useTexty, type Category, type DocEntity } from "./texty-data"
 
 // Přehled postupu: řádek = entita, sloupec = pole, buňka = stav. Klik otevře editor.
@@ -27,6 +28,7 @@ export function TextMatrix({ category, onCategory, onOpen, onImport }: {
 }) {
   const { loaded, meta, roles, statusOfField } = useTexty()
   const [filter, setFilter] = useState<Filter>("all")
+  const [showStats, setShowStats] = useState(false)
   const me = getOrganizer()
 
   const fields = DOC_FIELDS[category]
@@ -64,6 +66,9 @@ export function TextMatrix({ category, onCategory, onOpen, onImport }: {
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
           <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--c-text)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             Schváleno {all.approved} z {all.total} textů
+            <button className="tool-btn" onClick={() => setShowStats(v => !v)} aria-expanded={showStats} style={{ fontWeight: 400 }}>
+              <IconChartBar size={15} /> {showStats ? "Skrýt statistiky" : "Statistiky"}
+            </button>
             <button className="tool-btn" onClick={onImport} style={{ fontWeight: 400 }}><IconFileImport size={15} /> Import</button>
           </span>
           <span style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.8rem", color: "var(--c-text-muted)" }}>
@@ -79,6 +84,7 @@ export function TextMatrix({ category, onCategory, onOpen, onImport }: {
             <span key={s} style={{ width: `${pct(all[s], all.total)}%`, backgroundColor: STATUS_COLORS[s] }} />
           ))}
         </div>
+        {showStats && <TextStats onCategory={c => { onCategory(c); setShowStats(false) }} />}
       </div>
 
       <div role="tablist" aria-label="Kategorie textů" className="texty-tabs">

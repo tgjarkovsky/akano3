@@ -706,6 +706,15 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 }
 .progress-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background-color: var(--c-bg-section); }
 .progress-bar span { display: block; height: 100%; }
+.stats-wrap { margin-top: 14px; overflow-x: auto; }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--c-text); }
+.stats-table th, .stats-table td { padding: 5px 10px; white-space: nowrap; }
+.stats-table thead th { font-size: 0.75rem; font-weight: 600; color: var(--c-text-muted); text-align: right; border-bottom: 1px solid var(--c-border-mid); }
+.stats-num { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-cat { cursor: pointer; }
+.stats-cat > * { border-top: 1px solid var(--c-border); padding-top: 9px; font-weight: 700; }
+.stats-cat:hover { background-color: var(--c-bg-section); }
+.stats-link { border: none; background: transparent; color: var(--c-text); font: inherit; font-weight: 700; padding: 0; cursor: pointer; }
 .texty-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--c-border); overflow-x: auto; }
 .texty-tab {
   display: inline-flex; align-items: baseline; gap: 6px; min-height: 42px; padding: 0 14px;
@@ -785,6 +794,7 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .vis-private  { color: var(--destructive); border-color: color-mix(in srgb, var(--destructive) 50%, transparent); }
 .vis-internal { color: var(--c-accent); border-color: color-mix(in srgb, var(--c-accent) 50%, transparent); }
 .vis-public   { color: var(--c-success); border-color: color-mix(in srgb, var(--c-success) 50%, transparent); }
+.vis-prelarp  { color: var(--c-teal); border-color: color-mix(in srgb, var(--c-teal) 50%, transparent); }
 
 .doc-textarea {
   display: block; width: 100%; box-sizing: border-box; min-height: 52vh; resize: vertical;
@@ -978,6 +988,7 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 }
 .spis-tag-self   { background: #141210; color: #fff; }
 .spis-tag-public { border-style: dashed; color: #5a534b; border-color: #5a534b; }
+.spis-tag-prelarp { border-style: dotted; color: #5a534b; border-color: #5a534b; }
 .spis-tag-team, .spis-tag-unit, .spis-tag-circle { border-width: 1.25px; }
 
 /* Kapitoly */

@@ -9,7 +9,8 @@
 #
 # Pravidla převodu (rozhodnuta 2026-11-06, viz CHANGELOG):
 #   - postavy C001–C030 → S001–S030, sekce dokumentu → pole aplikace,
-#   - z týmu jen medailonek (odstavec pod úslovím) → Tým · Veřejné,
+#   - z týmu jen medailonek (odstavec pod úslovím) → Tým · Medailonek,
+#   - medailonky postav (v záložce týmu pod jménem postavy) → Postava · Medailonek,
 #   - z hlavičky postavy jen pohlaví → rod,
 #   - v legendách jsou čáry „---“/„—“ předěly; v ostatních sekcích je text mezi
 #     dvěma čarami autorský komentář a vynechá se, osamocená čára uvozuje poznámky
@@ -204,6 +205,20 @@ def akari_fix(tabs):
 
 ICUKI_EXTRA = akari_fix(tabs)
 
+def name_key(s):
+    return re.sub(r"[^\w]+", "", norm(s))
+
+# Jména postav podle záložek „C001 Mušaši“ (jak je píše dokument, ne aplikace).
+CHAR_BY_NAME = {}
+for t in tabs:
+    m = re.match(r"^C(\d{3})\s+(.+?)\**$", t["title"])
+    if m:
+        CHAR_BY_NAME[name_key(m.group(2))] = f"S{int(m.group(1)):03d}"
+# Záložky týmů píšou některá jména jinak než záložky postav, Makoto má nevyplněný nadpis.
+CHAR_ALIASES = {"kaja": "S004", "tetsuja": "S013", "itsuki": "S014", ("T10", "jméno"): "S029"}
+META_LINE = re.compile(r"^\s*\**(pohlaví|status|tým|specializace|původ|jednotka|kruh|čišiki|čisiki)\**\s*:", re.I)
+char_medals = {}
+
 for t in tabs:
     title = t["title"]
     m_char = re.match(r"^C(\d{3})\s+(.+?)\**$", title)
@@ -275,10 +290,43 @@ for t in tabs:
                 warnings.append({"where": title, "issue": "medallion_from_label"})
         medal = clean([l for p in paras for l in p + [""]])
         if medal:
-            texts.append({"entityType": "team", "entityId": tid, "field": "public", "body": medal})
+            texts.append({"entityType": "team", "entityId": tid, "field": "medallion", "body": medal})
         else:
             warnings.append({"where": title, "issue": "no_medallion"})
         teams.append({"id": tid, "tab": title, "medallion": medal})
+
+        # Medailonky postav: pod nadpisem ## se jménem, za řádky vlastností „– muž“.
+        # Končí dalším nadpisem nebo tučným řádkem („**Detailní popis**“).
+        i = 0
+        while i < len(body):
+            m = HEAD.match(body[i])
+            if not (m and len(m.group(1)) <= 2):
+                i += 1; continue
+            key = name_key(m.group(2))
+            cid = CHAR_BY_NAME.get(key) or CHAR_ALIASES.get(key) or CHAR_ALIASES.get((tid, key))
+            j = i + 1
+            while j < len(body) and not HEAD.match(body[j]) and not BOLD_LINE.match(body[j]):
+                j += 1
+            if cid:
+                text = clean([l for l in body[i + 1:j]
+                              if not re.match(r"^\s*[–-]\s", l) and not META_LINE.match(l.replace("\\", ""))
+                              and not re.match(r"^\s*\**pozn", l, re.I)])
+                # Starší koncepty mají medailonek jako citát v kurzívě: *“…”*
+                q = re.fullmatch(r"\*[“\"](.+)[”\"]\*", text, re.S)
+                if q: text = q.group(1).strip()
+                if not text or norm(text).startswith("medailonek postavy"):
+                    warnings.append({"where": title, "issue": "no_character_medallion", "detail": cid})
+                elif cid in char_medals:
+                    warnings.append({"where": title, "issue": "duplicate_character_medallion", "detail": cid})
+                else:
+                    char_medals[cid] = text
+            i = j
+
+for cid, text in sorted(char_medals.items()):
+    texts.append({"entityType": "character", "entityId": cid, "field": "medallion", "body": text})
+missing_medals = sorted(set(CHAR_BY_NAME.values()) - set(char_medals))
+if missing_medals:
+    warnings.append({"where": "medailonky postav", "issue": "missing", "detail": missing_medals})
 
 out = {
     "source": "Google Docs: Jádra + Týmy",

@@ -38,6 +38,18 @@ export function ensureDocTables(): Promise<void> {
         UNIQUE (unit_id, key)
       )
     `
+    // Jednorázové úpravy dat. Značka a úprava jsou jeden příkaz, takže proběhnou spolu, nebo vůbec.
+    await sql`CREATE TABLE IF NOT EXISTS doc_migrations (name TEXT PRIMARY KEY, done_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`
+    // 2026-11-07: dosavadní veřejné texty týmů jsou medailonky (známé před přihláškou na larp).
+    await sql`
+      WITH m AS (
+        INSERT INTO doc_migrations (name) VALUES ('team-public-to-medallion')
+        ON CONFLICT (name) DO NOTHING RETURNING name
+      )
+      UPDATE doc_texts t SET field = 'medallion'
+      WHERE EXISTS (SELECT 1 FROM m) AND t.entity_type = 'team' AND t.field = 'public'
+        AND NOT EXISTS (SELECT 1 FROM doc_texts d WHERE d.entity_type = 'team' AND d.entity_id = t.entity_id AND d.field = 'medallion')
+    `
     await sql`
       CREATE TABLE IF NOT EXISTS character_meta (
         character_id TEXT PRIMARY KEY,

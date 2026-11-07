@@ -2,7 +2,7 @@
 // Každá entita má pevný seznam polí; stav se vede pro každé pole zvlášť.
 
 export type DocEntityType = "character" | "team" | "unit" | "role" | "circle" | "trait"
-export type Visibility = "private" | "internal" | "public"
+export type Visibility = "private" | "internal" | "public" | "prelarp"
 
 export type DocField = {
   key: string
@@ -16,6 +16,7 @@ export type DocField = {
 
 export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
   character: [
+    { key: "medallion", label: "Medailonek", hint: "Co o postavě vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
     { key: "legends",     label: "Legendy",       hint: "Důležité momenty ze života postavy, ve 3. osobě. Každou legendu začni nadpisem ## Název.", visibility: "private", sections: { singular: "legenda" } },
     { key: "inner_world", label: "Vnitřní svět",  hint: "Jak postava přemýšlí, v 1. osobě.",               visibility: "private" },
     { key: "summary",     label: "Shrnutí",       hint: "To nejdůležitější v bodech.",                     visibility: "private" },
@@ -26,18 +27,21 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
     { key: "stands_out",  label: "Čím vystupuju", hint: "Čím vystupuju z řady?",                           visibility: "private" },
   ],
   team: [
-    { key: "public",   label: "Veřejné", hint: "Co o týmu ví každý. Platí ve všech bězích, nezmiňuj jednotku.", visibility: "public" },
+    { key: "medallion", label: "Medailonek", hint: "Co o týmu vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "public",   label: "Veřejné", hint: "Co o týmu vědí na larpu všechny postavy. Platí ve všech bězích, nezmiňuj jednotku.", visibility: "public" },
     { key: "internal", label: "Interní", hint: "Co ví jen členové týmu. Platí ve všech bězích.",              visibility: "internal" },
   ],
   unit: [
-    { key: "public",   label: "Veřejné", hint: "Co o jednotce ví každý. Lidi z jednotky piš šablonou, mění se mezi běhy.", visibility: "public" },
+    { key: "medallion", label: "Medailonek", hint: "Co o jednotce vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "public",   label: "Veřejné", hint: "Co o jednotce vědí na larpu všechny postavy. Lidi z jednotky piš šablonou, mění se mezi běhy.", visibility: "public" },
     { key: "internal", label: "Interní", hint: "Co ví jen členové jednotky. Lidi z jednotky piš šablonou.",               visibility: "internal" },
   ],
   role: [
     { key: "personal", label: "Osobní", hint: "Co ví jen držitel role. Roli může v různých bězích držet kdokoli z týmu.", visibility: "private" },
   ],
   circle: [
-    { key: "public",   label: "Veřejné",  hint: "Co o kruhu ví každý.",  visibility: "public" },
+    { key: "medallion", label: "Medailonek", hint: "Co o kruhu vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "public",   label: "Veřejné",  hint: "Co o kruhu vědí na larpu všechny postavy.",  visibility: "public" },
     { key: "internal", label: "Společné", hint: "Co ví jen členové kruhu.", visibility: "internal" },
   ],
   trait: [
@@ -49,6 +53,7 @@ export const VISIBILITY_LABELS: Record<Visibility, string> = {
   private: "jen hráč",
   internal: "jen členové",
   public: "veřejné",
+  prelarp: "před hrou",
 }
 
 export const isDocEntityType = (t: unknown): t is DocEntityType =>
