@@ -34,7 +34,22 @@ export type DocBlock = {
   approved?: boolean
 }
 
-export type DocChapter = { key: string; kicker: string; title: string; blocks: DocBlock[] }
+/** Členové skupiny na začátku kapitoly; u jednotky po týmech (label = název týmu). */
+export type MemberGroup = { label?: string; names: string[] }
+
+export type DocChapter = { key: string; kicker: string; title: string; members?: MemberGroup[]; blocks: DocBlock[] }
+
+/** Základní údaje o postavě pro náhled při najetí na jméno v textu („dogtag“). */
+export type DogTag = {
+  id: string
+  name: string
+  gender?: string
+  team?: string
+  unit?: string
+  circle?: string
+  specialization?: string
+  origin?: string
+}
 
 export type CharacterDoc = {
   runName: string
@@ -50,6 +65,8 @@ export type CharacterDoc = {
     circle?: string
   }
   chapters: DocChapter[]
+  /** postavy, jejichž jména se v textech ukazují s dogtagem */
+  roster?: DogTag[]
 }
 
 export type StoredText = { body: string; status: string | null }
@@ -63,8 +80,9 @@ export type DocInput = {
   runDate?: string
   character: { id: string; name: string }
   team?: Named & { teammates: string[] }
-  unit?: Named
-  circle?: Named
+  unit?: Named & { members?: MemberGroup[] }
+  circle?: Named & { members?: string[] }
+  roster?: DogTag[]
   /** id ve tvaru „specialization:combat“, stejně jako entity textů */
   specialization?: Trait
   origin?: Trait
@@ -109,6 +127,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
   ]
   if (team) chapters.push({
     key: "team", kicker: "Tvůj tým", title: team.name,
+    members: [{ names: [character.name, ...team.teammates] }],
     blocks: [
       ...block("team", team.id, "medallion", "Medailonek", "prelarp"),
       ...block("team", team.id, "public", "Co o vás vědí všichni", "public"),
@@ -117,6 +136,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
   })
   if (unit) chapters.push({
     key: "unit", kicker: "Tvoje jednotka", title: unit.name,
+    ...(unit.members?.length ? { members: unit.members } : {}),
     blocks: [
       ...block("unit", unit.id, "medallion", "Medailonek", "prelarp"),
       ...block("unit", unit.id, "public", "Co o jednotce vědí všichni", "public"),
@@ -125,6 +145,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
   })
   if (circle) chapters.push({
     key: "circle", kicker: "Tvůj kruh", title: circle.name,
+    ...(circle.members?.length ? { members: [{ names: circle.members }] } : {}),
     blocks: [
       ...block("circle", circle.id, "medallion", "Medailonek", "prelarp"),
       ...block("circle", circle.id, "public", "Co o kruhu vědí všichni", "public"),
@@ -152,6 +173,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
       circle: circle?.name,
     },
     chapters: chapters.filter(c => c.blocks.length > 0),
+    ...(input.roster?.length ? { roster: input.roster } : {}),
   }
 }
 
@@ -212,7 +234,7 @@ export type AcademyEntry = {
   kind: AcademyKind
   id: string
   name: string
-  /** krátký řádek pod jménem: členové týmu, týmy jednotky, počet v kruhu */
+  /** krátký řádek pod jménem: kdo ve skupině je */
   sub?: string
   /** je to hráčova vlastní skupina (odkaz vede na kapitolu spisu) */
   mine: boolean

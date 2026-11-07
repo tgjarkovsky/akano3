@@ -1,7 +1,7 @@
 import React from "react"
 import { romanNumeral } from "@/lib/utils"
-import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocBlock, type DocLevel, type DocVisibility } from "@/lib/character-doc"
-import { SpisText } from "./spis-text"
+import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocBlock, type DocLevel, type DocVisibility, type DogTag, type MemberGroup } from "@/lib/character-doc"
+import { SpisText, WithNames } from "./spis-text"
 
 // Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
@@ -77,7 +77,8 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
               <h2 className="spis-chapter-title">{c.title}</h2>
             </div>
           </header>
-          {c.blocks.map(b => <SpisBlock key={b.key} block={b} showStatus={showStatus} />)}
+          {c.members && <Members groups={c.members} roster={doc.roster} self={doc.character.name} />}
+          {c.blocks.map(b => <SpisBlock key={b.key} block={b} showStatus={showStatus} roster={doc.roster} />)}
         </section>
       ))}
 
@@ -89,16 +90,38 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
 }
 
 /** Jeden text spisu s nadpisem a štítkem; sdílí ho tisk i osobní knihovna. */
-export function SpisBlock({ block: b, showStatus = false }: { block: DocBlock; showStatus?: boolean }) {
+export function SpisBlock({ block: b, showStatus = false, roster }: { block: DocBlock; showStatus?: boolean; roster?: DogTag[] }) {
   return (
     <section className={`spis-block${b.voice ? ` spis-voice-${b.voice}` : ""}`}>
       <div className="spis-block-head">
-        <h3>{b.title}{b.voice && <span className="spis-voice-note">{VOICE_NOTE[b.voice]}</span>}</h3>
+        <h3>{b.title}</h3>
         <Tag level={DOC_LEVEL[b.visibility]} />
       </div>
       {showStatus && b.approved === false && <p className="spis-draft no-print">Text ještě není schválený</p>}
-      <SpisText body={b.body} />
+      <SpisText body={b.body} roster={roster} />
     </section>
+  )
+}
+
+/** Kdo ve skupině je, na začátku kapitoly. Jména mají dogtag, hráč je označený „ty“. */
+export function Members({ groups, roster, self }: { groups: MemberGroup[]; roster?: DogTag[]; self?: string }) {
+  return (
+    <dl className="spis-members">
+      {groups.map((g, i) => (
+        <div key={i}>
+          <dt>{g.label ?? "Členové"}</dt>
+          <dd>
+            {g.names.map((n, j) => (
+              <React.Fragment key={n}>
+                {j > 0 && ", "}
+                <WithNames text={n} roster={roster} />
+                {n === self && <span className="spis-members-self"> (ty)</span>}
+              </React.Fragment>
+            ))}
+          </dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -107,5 +130,3 @@ const LEGEND: Record<DocLevel, string> = {
   group: "ostatní ze skupiny, o které kapitola je: tvůj tým, jednotka nebo kruh",
   public: "všechny postavy na larpu; medailonky znají hráči už před přihláškou",
 }
-
-const VOICE_NOTE = { story: "jak to bylo", inner: "jak to prožíváš" } as const

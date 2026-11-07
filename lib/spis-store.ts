@@ -5,7 +5,7 @@ import { DOC_PLAYERS } from "@/lib/doc-ids"
 import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
-import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, peopleCount, type AcademyEntry, type CharacterDoc, type StoredText } from "@/lib/character-doc"
+import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, type AcademyEntry, type CharacterDoc, type DogTag, type MemberGroup, type StoredText } from "@/lib/character-doc"
 
 // Spisy postav pro hráče. Každá postava má na každý běh tajný odkaz;
 // spis přes něj jde otevřít, až Příprava běh zveřejní.
@@ -44,22 +44,26 @@ type RunContext = {
   unitOfTeam: Map<string, string>
   state: Map<string, { specialization: string | null; origin: string | null }>
   circleOf: Map<string, string>
+  gender: Map<string, string | null>
   texts: Map<string, StoredText>
+  /** dogtagy všech hráčských postav v běhu */
+  roster: DogTag[]
 }
 
 async function loadRunContext(runId: number): Promise<RunContext | null> {
   await ensureSpisTables()
-  const [runs, units, states, circles, texts] = await Promise.all([
+  const [runs, units, states, circles, texts, meta] = await Promise.all([
     sql`SELECT name, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs WHERE id = ${runId}`,
     sql`SELECT team_id, unit_id FROM team_units WHERE run_id = ${runId}`,
     sql`SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${runId}`,
     sql`SELECT circle_id, character_id FROM circle_members WHERE run_id = ${runId} ORDER BY circle_id`,
     sql`SELECT entity_type, entity_id, field, body, status FROM doc_texts WHERE entity_type <> 'role'`,
+    sql`SELECT character_id, gender FROM character_meta`,
   ])
   if (runs.length === 0) return null
   const circleOf = new Map<string, string>()
   for (const r of circles) if (!circleOf.has(r.character_id as string)) circleOf.set(r.character_id as string, r.circle_id as string)
-  return {
+  const ctx: Omit<RunContext, "roster"> = {
     runName: runs[0].name as string,
     runDate: formatRunDate(runs[0].starts_on as string | null, runs[0].ends_on as string | null),
     unitOfTeam: new Map(units.map(r => [r.team_id as string, r.unit_id as string])),
@@ -67,11 +71,43 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
       specialization: r.specialization as string | null, origin: r.origin as string | null,
     }])),
     circleOf,
+    gender: new Map(meta.map(r => [r.character_id as string, r.gender as string | null])),
     texts: new Map(texts.map(r => [
       `${r.entity_type}:${r.entity_id}:${r.field}`,
       { body: r.body as string, status: r.status as string | null },
     ])),
   }
+  return { ...ctx, roster: DOC_PLAYERS.map(c => dogTag(ctx, c.id, c.name)) }
+}
+
+const GENDER_LABEL: Record<string, string> = { m: "muž", f: "žena" }
+const nameOf = (id: string) => DOC_PLAYERS.find(c => c.id === id)?.name ?? id
+
+function dogTag(ctx: Omit<RunContext, "roster">, id: string, name: string): DogTag {
+  const team = TEAMS.find(t => t.memberIds.includes(id))
+  const st = ctx.state.get(id)
+  const g = ctx.gender.get(id)
+  const tag: DogTag = {
+    id, name,
+    gender: g ? GENDER_LABEL[g] : undefined,
+    team: team?.name,
+    unit: UNITS.find(u => team && u.id === ctx.unitOfTeam.get(team.id))?.name,
+    circle: CIRCLES.find(c => c.id === ctx.circleOf.get(id))?.name,
+    specialization: SPECIALIZATION_OPTIONS.find(o => o.value === st?.specialization)?.label,
+    origin: ORIGIN_OPTIONS.find(o => o.value === st?.origin)?.label,
+  }
+  return Object.fromEntries(Object.entries(tag).filter(([, v]) => v !== undefined)) as DogTag
+}
+
+/** Členové jednotky po týmech v tomto běhu. */
+function unitMembers(ctx: Omit<RunContext, "roster">, unitId: string): MemberGroup[] {
+  return TEAMS.filter(t => ctx.unitOfTeam.get(t.id) === unitId)
+    .map(t => ({ label: t.name, names: t.memberIds.map(nameOf) }))
+}
+
+/** Členové kruhu v tomto běhu, v pořadí postav. */
+function circleMembers(ctx: Omit<RunContext, "roster">, circleId: string): string[] {
+  return DOC_PLAYERS.filter(c => ctx.circleOf.get(c.id) === circleId).map(c => c.name)
 }
 
 function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
@@ -84,15 +120,15 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
   const st = ctx.state.get(characterId)
   const spec = SPECIALIZATION_OPTIONS.find(o => o.value === st?.specialization)
   const origin = ORIGIN_OPTIONS.find(o => o.value === st?.origin)
-  const nameOf = (id: string) => DOC_PLAYERS.find(c => c.id === id)?.name ?? id
 
   return composeCharacterDoc({
     runName: ctx.runName,
     runDate: ctx.runDate,
     character: { id: character.id, name: character.name },
     team: team && { id: team.id, name: team.name, teammates: team.memberIds.filter(id => id !== characterId).map(nameOf) },
-    unit: unit && { id: unit.id, name: unit.name },
-    circle: circle && { id: circle.id, name: circle.name },
+    unit: unit && { id: unit.id, name: unit.name, members: unitMembers(ctx, unit.id) },
+    circle: circle && { id: circle.id, name: circle.name, members: circleMembers(ctx, circle.id) },
+    roster: ctx.roster,
     specialization: spec && { id: `specialization:${spec.value}`, label: spec.label },
     origin: origin && { id: `origin:${origin.value}`, label: origin.label },
     text: (type, id, field) => ctx.texts.get(`${type}:${id}:${field}`),
@@ -101,20 +137,17 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
 
 /** Ostatní skupiny akademie pro osobní knihovnu: jen medailonky a veřejné texty. */
 function buildAcademy(ctx: RunContext, characterId: string): AcademyEntry[] {
-  const nameOf = (id: string) => DOC_PLAYERS.find(c => c.id === id)?.name ?? id
   const team = TEAMS.find(t => t.memberIds.includes(characterId))
-  const circleCount = (id: string) => [...ctx.circleOf.values()].filter(c => c === id).length
+  // Pod jménem skupiny vždy, kdo v ní je.
+  const sub = (names: string[]) => names.length ? names.join(", ") : undefined
   return composeAcademy({
     groups: [
-      ...TEAMS.map(t => ({ kind: "team" as const, id: t.id, name: t.name, sub: t.memberIds.map(nameOf).join(", ") })),
+      ...TEAMS.map(t => ({ kind: "team" as const, id: t.id, name: t.name, sub: sub(t.memberIds.map(nameOf)) })),
       ...UNITS.map(u => {
-        const teams = TEAMS.filter(t => ctx.unitOfTeam.get(t.id) === u.id).map(t => t.name)
-        return { kind: "unit" as const, id: u.id, name: u.name, sub: teams.length ? teams.join(" a ") : undefined }
+        const groups = unitMembers(ctx, u.id)
+        return { kind: "unit" as const, id: u.id, name: u.name, sub: groups.length ? groups.map(g => `${g.label}: ${g.names.join(", ")}`).join(" · ") : undefined }
       }),
-      ...CIRCLES.map(c => {
-        const n = circleCount(c.id)
-        return { kind: "circle" as const, id: c.id, name: c.name, sub: n ? peopleCount(n) : undefined }
-      }),
+      ...CIRCLES.map(c => ({ kind: "circle" as const, id: c.id, name: c.name, sub: sub(circleMembers(ctx, c.id)) })),
     ],
     mine: {
       team: team?.id,

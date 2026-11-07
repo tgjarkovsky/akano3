@@ -1013,10 +1013,6 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   letter-spacing: 0.06em; font-size: 1.02em;
 }
 /* Příběh (3. osoba) jako sazba knihy, vnitřní svět (1. osoba) jako hlas v hlavě. */
-.spis-voice-note {
-  margin-left: 10px; font-family: var(--font-sans); font-style: italic; font-weight: 400;
-  text-transform: none; letter-spacing: 0; font-size: 0.82em; color: #5a534b;
-}
 .spis-voice-story .spis-text { text-align: justify; }
 .spis-voice-story .spis-text p { margin: 0; }
 .spis-voice-story .spis-text p + p { text-indent: 1.5em; }
@@ -1031,6 +1027,40 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 }
 .spis-voice-inner .spis-text em { font-style: normal; }
 .spis-voice-inner .spis-subhead { font-style: normal; }
+/* Členové skupiny na začátku kapitoly */
+.spis-members { margin: -3mm 0 8mm; display: grid; gap: 2px; font-size: 0.92em; }
+.spis-members > div { display: grid; grid-template-columns: 30mm 1fr; gap: 12px; align-items: baseline; padding: 3px 0; border-bottom: 0.75px dotted #b9b1a7; }
+.spis-members dt { font-family: var(--font-mono); font-size: 0.7em; letter-spacing: 0.12em; text-transform: uppercase; color: #5a534b; }
+.spis-members dd { margin: 0; }
+.spis-members-self { color: #5a534b; font-style: italic; }
+@media (max-width: 640px) { .spis-members > div { grid-template-columns: 1fr; gap: 0; } }
+
+/* Dogtag: jméno postavy v textu, při najetí nebo klepnutí základní údaje */
+.dogtag { position: relative; cursor: help; border-radius: 2px; hyphens: manual; -webkit-hyphens: manual; white-space: nowrap; }
+.dogtag:focus { outline: none; }
+.dogtag:focus-visible { outline: 2px solid #701010; outline-offset: 1px; }
+.dogtag-card {
+  display: none; position: absolute; z-index: 40; left: 0; top: calc(100% + 4px);
+  width: max-content; min-width: 190px; max-width: min(260px, 80vw);
+  padding: 10px 12px; background: #141210; color: #f3f1ed; border-radius: 4px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.45; font-style: normal; font-weight: 400;
+  text-align: left; text-indent: 0; text-transform: none; letter-spacing: 0.02em; hyphens: manual;
+  white-space: normal;
+}
+.dogtag:hover > .dogtag-card, .dogtag:focus > .dogtag-card { display: grid; gap: 1px; }
+.dogtag-name { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; font-size: 15px; letter-spacing: 0.04em; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #8a8178; }
+.dogtag-row { display: grid; grid-template-columns: 88px 1fr; gap: 8px; }
+.dogtag-key { color: #a39b91; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; padding-top: 1px; }
+@media screen {
+  .dogtag { text-decoration: underline dotted #8a8178; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .dogtag:hover { text-decoration-color: #141210; }
+}
+@media (max-width: 640px) {
+  .dogtag-card { position: fixed; left: 16px; right: 16px; bottom: 16px; top: auto; width: auto; max-width: none; font-size: 13px; }
+}
+@media print { .dogtag-card { display: none !important; } }
+
 .spis-draft { display: inline-block; margin: 0 0 8px; padding: 2px 8px; border-radius: 3px; background: #fff3c4; font-family: var(--font-mono); font-size: 0.7rem; color: #6b4a00; }
 .spis-empty { margin: 20mm 0; text-align: center; font-style: italic; color: #5a534b; }
 

@@ -3,8 +3,8 @@
 import React, { useEffect, useId, useRef, useState } from "react"
 import { IconArrowLeft, IconChevronRight, IconFileText, IconX } from "@tabler/icons-react"
 import { excerpt, type AcademyEntry, type AcademyKind, type CharacterDoc, type DocChapter } from "@/lib/character-doc"
-import { SpisBlock, SpisDocument } from "./spis-document"
-import { SpisText } from "./spis-text"
+import { Members, SpisBlock, SpisDocument } from "./spis-document"
+import { SpisText, WithNames } from "./spis-text"
 import { PrintButton } from "./print-button"
 
 // Osobní knihovna hráče. Nahoře všechno, co je hráčovo: on sám a jeho skupiny
@@ -58,7 +58,7 @@ export function Knihovna({ doc, academy }: { doc: CharacterDoc; academy: Academy
       </div>
       {place.view === "home" && <Home doc={doc} academy={academy} />}
       {place.view === "document" && <div className="spis-sheet"><SpisDocument doc={doc} /></div>}
-      {place.view === "chapter" && <Page kicker={place.chapter.kicker} title={place.chapter.title} blocks={place.chapter.blocks} />}
+      {place.view === "chapter" && <Page chapter={place.chapter} doc={doc} />}
     </div>
   )
 }
@@ -110,7 +110,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
           <section key={kind} aria-labelledby={`kn-${kind}`}>
             <h2 id={`kn-${kind}`} className="spis-label kn-section">{KIND_LABEL[kind].others}</h2>
             <div className="kn-grid">
-              {list.map(e => <GroupTile key={e.id} entry={e} />)}
+              {list.map(e => <GroupTile key={e.id} entry={e} roster={doc.roster} />)}
             </div>
           </section>
         )
@@ -119,22 +119,19 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
   )
 }
 
-function Page({ kicker, title, sub, blocks, empty }: {
-  kicker: string; title: string; sub?: string
-  blocks: DocChapter["blocks"]; empty?: string
-}) {
+function Page({ chapter: c, doc }: { chapter: DocChapter; doc: CharacterDoc }) {
   return (
     <article className="spis-sheet spis kn-page" lang="cs">
       <header className="spis-chapter-head">
         <div>
-          <p className="spis-label">{kicker}</p>
-          <h1 className="spis-chapter-title">{title}</h1>
-          {sub && <p className="kn-card-sub" style={{ marginTop: 4 }}>{sub}</p>}
+          <p className="spis-label">{c.kicker}</p>
+          <h1 className="spis-chapter-title">{c.title}</h1>
         </div>
       </header>
-      {blocks.length === 0
-        ? <p className="spis-empty">{empty ?? "Zatím tu nic není."}</p>
-        : blocks.map(b => <SpisBlock key={b.key} block={b} />)}
+      {c.members && <Members groups={c.members} roster={doc.roster} self={doc.character.name} />}
+      {c.blocks.length === 0
+        ? <p className="spis-empty">Zatím tu nic není.</p>
+        : c.blocks.map(b => <SpisBlock key={b.key} block={b} roster={doc.roster} />)}
     </article>
   )
 }
@@ -146,7 +143,7 @@ function textCount(n: number) {
 // Skupina, kde hráč není: dlaždice a náhled s medailonkem a veřejným textem.
 // Myš: náhled se ukáže při najetí a zmizí po odjetí (i z náhledu).
 // Klepnutí nebo Enter: náhled zůstane otevřený, zavře ho křížek, Esc nebo klik jinam.
-function GroupTile({ entry: e }: { entry: AcademyEntry }) {
+function GroupTile({ entry: e, roster }: { entry: AcademyEntry; roster?: CharacterDoc["roster"] }) {
   const [open, setOpen] = useState<"hover" | "pinned" | null>(null)
   const [alignRight, setAlignRight] = useState(false)
   const [above, setAbove] = useState(false)
@@ -200,7 +197,7 @@ function GroupTile({ entry: e }: { entry: AcademyEntry }) {
             <div>
               <p className="spis-label">{KIND_LABEL[e.kind].one}</p>
               <p className="kn-peek-title">{e.name}</p>
-              {e.sub && <p className="kn-card-sub">{e.sub}</p>}
+              {e.sub && <p className="kn-card-sub"><WithNames text={e.sub} roster={roster} /></p>}
             </div>
             <button type="button" className="kn-peek-close" aria-label="Zavřít náhled" onClick={() => setOpen(null)}>
               <IconX size={16} />
@@ -211,7 +208,7 @@ function GroupTile({ entry: e }: { entry: AcademyEntry }) {
             : e.blocks.map(b => (
               <section key={b.key} className="kn-peek-block">
                 <p className="kn-peek-label">{b.title}</p>
-                <SpisText body={b.body} />
+                <SpisText body={b.body} roster={roster} />
               </section>
             ))}
         </div>
