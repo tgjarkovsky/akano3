@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { requireAdmin } from "@/lib/admin-password"
+import { requireAdmin, requireAdminOrImport } from "@/lib/admin-password"
 import { isDocEntityType } from "@/lib/doc-fields"
 import { parseTextSave, isKnownEntity } from "@/lib/doc-validation"
 import { DOC_IDS } from "@/lib/doc-ids"
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 // GET /api/priprava/texts                          — přehled: stavy všech textů (bez těl), role, gendery
 // GET /api/priprava/texts?entityType=X&entityId=Y  — plné texty jedné entity
 export async function GET(req: Request) {
-  const denied = await requireAdmin(req)
+  const { denied } = await requireAdminOrImport(req)
   if (denied) return denied
   try {
     const { searchParams } = new URL(req.url)

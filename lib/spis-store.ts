@@ -6,6 +6,7 @@ import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { computeUnitSlots, slotOfTeam } from "@/lib/unit-slots"
+import { resolveGender, type Gender } from "@/lib/gender-markup"
 import type { Triplet } from "@/lib/types"
 import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, type AcademyEntry, type CharacterDoc, type DogTag, type MemberGroup, type StoredText } from "@/lib/character-doc"
 
@@ -152,6 +153,21 @@ function roleOf(ctx: Omit<RunContext, "roster">, characterId: string, teamId: st
   return { id, name: ctx.gender.get(characterId) === "f" ? role.nameF : role.nameM }
 }
 
+/** Texty s dosazenými rodovými značkami pro čtenáře (lib/gender-markup.ts). */
+function textsFor(ctx: Omit<RunContext, "roster">, characterId: string) {
+  const asGender = (g: string | null | undefined): Gender | null => g === "m" || g === "f" ? g : null
+  const of = (who: string) => {
+    const w = who.toLocaleLowerCase("cs")
+    const c = DOC_PLAYERS.find(p => p.id.toLowerCase() === w || p.name.toLocaleLowerCase("cs") === w)
+    return c ? asGender(ctx.gender.get(c.id)) : null
+  }
+  const self = asGender(ctx.gender.get(characterId))
+  return (type: string, id: string, field: string): StoredText | undefined => {
+    const t = ctx.texts.get(`${type}:${id}:${field}`)
+    return t && { ...t, body: resolveGender(t.body, { self, of }) }
+  }
+}
+
 function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
   const character = DOC_PLAYERS.find(c => c.id === characterId)
   if (!character) return null
@@ -173,7 +189,7 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
     roster: ctx.roster,
     specialization: spec && { id: `specialization:${spec.value}`, label: spec.label },
     origin: origin && { id: `origin:${origin.value}`, label: origin.label },
-    text: (type, id, field) => ctx.texts.get(`${type}:${id}:${field}`),
+    text: textsFor(ctx, characterId),
   })
 }
 
@@ -196,7 +212,7 @@ function buildAcademy(ctx: RunContext, characterId: string): AcademyEntry[] {
       unit: team ? ctx.unitOfTeam.get(team.id) : undefined,
       circle: ctx.circleOf.get(characterId),
     },
-    text: (type, id, field) => ctx.texts.get(`${type}:${id}:${field}`),
+    text: textsFor(ctx, characterId),
   })
 }
 

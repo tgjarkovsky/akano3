@@ -45,3 +45,13 @@ export function adminDenied(result: AdminCheck): Response | null {
   if (result === "unset") return new Response("Heslo Přípravy ještě není nastavené", { status: 503 })
   return new Response("Unauthorized", { status: 401 })
 }
+
+/**
+ * Token importu (hlavička x-import-token, proměnná prostředí IMPORT_TOKEN).
+ * Smí jen číst texty a posílat návrhy importu; uložit je musí Příprava.
+ * Bez nastavené proměnné neprojde nic. Kratší token než 24 znaků se nebere.
+ */
+export function checkImportToken(presented: string | null, envToken?: string | null): boolean {
+  if (!envToken || envToken.length < 24 || !presented) return false
+  return sameString(presented, envToken)
+}

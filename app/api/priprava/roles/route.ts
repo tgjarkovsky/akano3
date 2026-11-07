@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/admin-password"
+import { requireAdmin, requireAdminOrImport } from "@/lib/admin-password"
 import { parseRoleInput } from "@/lib/doc-validation"
 import { DOC_IDS } from "@/lib/doc-ids"
 import { createRole, updateRole, deleteRole, getRoles } from "@/lib/docs-store"
@@ -9,7 +9,7 @@ const DUPLICATE = "Jednotka už má roli s tímhle klíčem"
 
 // GET /api/priprava/roles — všechny role jednotek (pro pravidla obsazení)
 export async function GET(req: Request) {
-  const denied = await requireAdmin(req)
+  const { denied } = await requireAdminOrImport(req)
   if (denied) return denied
   try {
     return Response.json(await getRoles())

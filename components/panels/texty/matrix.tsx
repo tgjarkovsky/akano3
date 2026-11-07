@@ -6,6 +6,7 @@ import { DOC_FIELDS, docKey } from "@/lib/doc-fields"
 import { countStatuses, STATUS_LABELS, type DocStatus } from "@/lib/doc-status"
 import { getOrganizer } from "@/lib/admin-client"
 import { TextStats } from "./stats"
+import { useDrafts } from "./import-panel"
 import { CATEGORIES, STATUS_COLORS, StatusDot, buildEntities, useTexty, type Category, type DocEntity } from "./texty-data"
 
 // Přehled postupu: řádek = entita, sloupec = pole, buňka = stav. Klik otevře editor.
@@ -29,6 +30,7 @@ export function TextMatrix({ category, onCategory, onOpen, onImport }: {
   const { loaded, meta, roles, statusOfField } = useTexty()
   const [filter, setFilter] = useState<Filter>("all")
   const [showStats, setShowStats] = useState(false)
+  const { pending } = useDrafts()
   const me = getOrganizer()
 
   const fields = DOC_FIELDS[category]
@@ -69,7 +71,7 @@ export function TextMatrix({ category, onCategory, onOpen, onImport }: {
             <button className="tool-btn" onClick={() => setShowStats(v => !v)} aria-expanded={showStats} style={{ fontWeight: 400 }}>
               <IconChartBar size={15} /> {showStats ? "Skrýt statistiky" : "Statistiky"}
             </button>
-            <button className="tool-btn" onClick={onImport} style={{ fontWeight: 400 }}><IconFileImport size={15} /> Import</button>
+            <button className="tool-btn" onClick={onImport} style={{ fontWeight: 400 }}><IconFileImport size={15} /> Import{pending.length > 0 && <span className="import-badge" title="Návrhy importu ke schválení">{pending.length}</span>}</button>
           </span>
           <span style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.8rem", color: "var(--c-text-muted)" }}>
             {(["empty", "draft", "done", "approved"] as DocStatus[]).map(s => (

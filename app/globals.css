@@ -873,6 +873,15 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .import-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0 28px; }
 .import-chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--c-border-mid); color: var(--c-text-muted); }
 .import-chip-over { border-color: color-mix(in srgb, var(--destructive) 55%, transparent); color: var(--destructive); }
+.import-drafts { margin: 0 0 16px; border: 1px solid var(--c-accent); border-radius: 10px; overflow: hidden; }
+.import-drafts h3 { display: flex; align-items: center; gap: 6px; margin: 0; padding: 10px 14px; font-size: 0.92rem; font-weight: 800; color: var(--c-text); background-color: color-mix(in srgb, var(--c-accent) 10%, transparent); }
+.import-drafts ul { list-style: none; margin: 0; padding: 0; }
+.import-drafts li { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-top: 1px solid var(--c-border); }
+.import-drafts li[data-active] { background-color: var(--c-bg-section); }
+.import-draft-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; border: none; background: transparent; color: var(--c-text); text-align: left; cursor: pointer; padding: 4px 0; font-size: 0.92rem; }
+.import-draft-meta { font-size: 0.78rem; color: var(--c-text-faint); overflow-wrap: anywhere; }
+.import-draft-notes { font-size: 0.84rem; color: var(--c-text-muted); white-space: pre-line; }
+.import-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: 9px; font-size: 0.72rem; font-weight: 800; color: var(--c-bg-card); background-color: var(--c-accent); }
 .import-preview { margin: 10px 0 4px 28px; padding: 6px 16px; border-radius: 8px; background-color: var(--c-bg-card); color: var(--c-text); max-height: 520px; overflow-y: auto; }
 
 /* ── Příprava → Spisy ── */

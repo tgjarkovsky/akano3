@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
-import { IconArrowLeft, IconUpload, IconFileImport, IconChevronDown, IconCheck } from "@tabler/icons-react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { IconArrowLeft, IconUpload, IconFileImport, IconChevronDown, IconCheck, IconSparkles, IconTrash } from "@tabler/icons-react"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { DOC_FIELDS, docKey, type DocEntityType } from "@/lib/doc-fields"
 import { parseImport, type ImportPayload, type ImportRole } from "@/lib/doc-validation"
@@ -10,10 +10,32 @@ import { DOC_IDS } from "@/lib/doc-ids"
 import { WikiRenderer } from "@/components/shared/wiki-renderer"
 import { buildEntities, useTexty } from "./texty-data"
 
-// Import textů ze souboru (převod Google dokumentu „Jádra + Týmy“).
+// Import textů ze souboru (převod Google dokumentu „Jádra + Týmy“) nebo z návrhu,
+// který poslal Claude přes token importu (scripts/akano-mcp.mjs, lib/import-drafts.ts).
 // Ukáže, co se vyplní a co přepíše, a nechá vybrat entity, které se mají importovat.
 
 type Result = { created: number; updated: number; unchanged: number; genders: number; roles: number }
+
+type Draft = {
+  id: number; title: string; source: string | null; notes: string | null
+  payload: unknown; status: "pending" | "applied" | "discarded"
+  createdBy: string | null; createdAt: string; resolvedBy: string | null
+}
+
+/** Návrhy importu ze serveru; pending = čekající na schválení. */
+export function useDrafts() {
+  const [drafts, setDrafts] = useState<Draft[]>([])
+  const reload = useCallback(async () => {
+    try {
+      const res = await adminFetch("/api/priprava/drafts")
+      if (res.ok) setDrafts(await res.json())
+    } catch { /* bez sítě se návrhy jen neukážou */ }
+  }, [])
+  useEffect(() => { reload() }, [reload])
+  return { drafts, pending: drafts.filter(d => d.status === "pending"), reload }
+}
+
+const when = (iso: string) => new Date(iso).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })
 
 export function ImportPanel({ onBack }: { onBack: () => void }) {
   const { meta, roles, genders: currentGenders, reload } = useTexty()
@@ -25,9 +47,29 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
   const [open, setOpen] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
+  const { pending, reload: reloadDrafts } = useDrafts()
+  const [draft, setDraft] = useState<Draft | null>(null)
+
+  const openDraft = (d: Draft) => {
+    setError(""); setResult(null); setPayload(null); setExcluded(new Set()); setFileName(""); setDraft(null)
+    const parsed = parseImport(d.payload, DOC_IDS)
+    if (!parsed.ok) { setError(`Návrh „${d.title}“ nejde načíst: ${parsed.error}`); return }
+    setDraft(d); setPayload(parsed.value); setSource(d.source ?? "")
+  }
+
+  const discardDraft = async (d: Draft) => {
+    if (!window.confirm(`Zahodit návrh „${d.title}“? Nic z něj se neuloží.`)) return
+    const res = await adminFetch("/api/priprava/drafts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: d.id, status: "discarded", by: getOrganizer() }),
+    }).catch(() => null)
+    if (!res?.ok) { setError("Návrh se nepodařilo zahodit."); return }
+    if (draft?.id === d.id) { setDraft(null); setPayload(null) }
+    await reloadDrafts()
+  }
 
   const readFile = async (file: File) => {
-    setError(""); setResult(null); setPayload(null); setExcluded(new Set()); setFileName(file.name)
+    setError(""); setResult(null); setPayload(null); setExcluded(new Set()); setFileName(file.name); setDraft(null)
     try {
       const raw = JSON.parse(await file.text())
       const parsed = parseImport(raw, DOC_IDS)
@@ -87,6 +129,13 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
       })
       if (!res.ok) { setError(await res.text() || `Import selhal (${res.status})`); return }
       setResult(await res.json())
+      if (draft) {
+        await adminFetch("/api/priprava/drafts", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: draft.id, status: "applied", by: getOrganizer() }),
+        }).catch(() => null)
+        await reloadDrafts()
+      }
       await reload()
     } catch {
       setError("Chyba sítě, import neproběhl.")
@@ -114,6 +163,24 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
           onChange={e => { const f = e.target.files?.[0]; if (f) readFile(f); e.target.value = "" }} />
       </label>
 
+      {pending.length > 0 && (
+        <section className="import-drafts" aria-labelledby="import-drafts-h">
+          <h3 id="import-drafts-h"><IconSparkles size={16} /> Návrhy ke schválení</h3>
+          <ul>
+            {pending.map(d => (
+              <li key={d.id} data-active={draft?.id === d.id ? "true" : undefined}>
+                <button className="import-draft-open" onClick={() => openDraft(d)}>
+                  <span style={{ fontWeight: 700 }}>{d.title}</span>
+                  <span className="import-draft-meta">{[d.createdBy, when(d.createdAt), d.source].filter(Boolean).join(" · ")}</span>
+                  {d.notes && <span className="import-draft-notes">{d.notes}</span>}
+                </button>
+                <button className="tool-btn" onClick={() => discardDraft(d)} aria-label={`Zahodit návrh ${d.title}`}><IconTrash size={15} /></button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {error && <p role="alert" className="conflict" style={{ marginTop: 12 }}>{error}</p>}
 
       {result && (
@@ -126,6 +193,7 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
         <>
           <div className="texty-progress" style={{ marginTop: 16 }}>
             <p style={{ margin: 0, fontWeight: 700, color: "var(--c-text)" }}>
+              {draft && <span style={{ fontWeight: 400, color: "var(--c-text-muted)" }}>Návrh „{draft.title}“ · </span>}
               {source && <span style={{ fontWeight: 400, color: "var(--c-text-muted)" }}>{source} · </span>}
               Vybráno {selected.length} z {groups.length} · {selTexts.length} textů
               {overwrites > 0 && <span style={{ color: "var(--destructive)" }}> · přepíše {overwrites}</span>}

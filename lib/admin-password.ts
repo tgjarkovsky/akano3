@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { checkAdmin, adminDenied, readPresentedPassword } from "@/lib/admin-auth"
+import { checkAdmin, adminDenied, readPresentedPassword, checkImportToken } from "@/lib/admin-auth"
 import { hashPassword } from "@/lib/password-hash"
 
 // Heslo Přípravy v databázi: jeden řádek s otiskem (scrypt). Tabulka se
@@ -60,4 +60,13 @@ export async function requireAdmin(req: Request): Promise<Response | null> {
     console.error("[requireAdmin]", err)
     return new Response("Server error", { status: 500 })
   }
+}
+
+/**
+ * Heslo Přípravy, nebo token importu (x-import-token) pro čtení textů a návrhy
+ * importu z Claude (scripts/akano-mcp.mjs). Vrací, kdo prošel.
+ */
+export async function requireAdminOrImport(req: Request): Promise<{ denied: Response | null; via: "admin" | "import" }> {
+  if (checkImportToken(req.headers.get("x-import-token"), process.env.IMPORT_TOKEN)) return { denied: null, via: "import" }
+  return { denied: await requireAdmin(req), via: "admin" }
 }
