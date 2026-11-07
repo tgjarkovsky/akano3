@@ -1,7 +1,7 @@
 import { sql } from "@/lib/db"
 import type { DocEntityType } from "@/lib/doc-fields"
 import { statusAfterEdit, statusAfterAction, checkTransition, statusOf, type StoredStatus, type StatusAction } from "@/lib/doc-status"
-import type { RoleInput } from "@/lib/doc-validation"
+import type { ImportRole, RoleInput } from "@/lib/doc-validation"
 import type { Triplet } from "@/lib/types"
 
 // Texty dokumentů postav v databázi. Souběžné úpravy hlídá číslo verze:
@@ -236,8 +236,25 @@ export async function importTexts(
   texts: { entityType: DocEntityType; entityId: string; field: string; body: string }[],
   genders: { characterId: string; gender: "m" | "f" }[],
   by: string | null,
-): Promise<{ created: number; updated: number; unchanged: number; genders: number }> {
+  roles: ImportRole[] = [],
+): Promise<{ created: number; updated: number; unchanged: number; genders: number; roles: number }> {
   await ensureDocTables()
+  // Role napřed: jejich osobní text potřebuje id. Existující role (stejná jednotka
+  // a klíč) se nechá, jak je, i s názvy a trojicí, které mohl někdo upravit.
+  let newRoles = 0
+  if (roles.length > 0) {
+    const inserted = await sql.transaction(roles.map(r => sql`
+      INSERT INTO unit_roles (unit_id, triplet, key, name_m, name_f, sort_order)
+      VALUES (${r.unitId}, ${r.triplet}, ${r.key}, ${r.nameM}, ${r.nameF},
+        (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM unit_roles WHERE unit_id = ${r.unitId} AND triplet = ${r.triplet}))
+      ON CONFLICT (unit_id, key) DO NOTHING
+      RETURNING id
+    `))
+    newRoles = inserted.filter(rows => rows.length > 0).length
+    const all = await sql`SELECT id, unit_id, key FROM unit_roles`
+    const idOf = new Map(all.map(r => [`${r.unit_id}:${r.key}`, String(r.id)]))
+    texts = [...texts, ...roles.map(r => ({ entityType: "role" as const, entityId: idOf.get(`${r.unitId}:${r.key}`)!, field: "personal", body: r.body }))]
+  }
   const existing = await sql`SELECT entity_type, entity_id, field, body FROM doc_texts`
   const current = new Map(existing.map(r => [`${r.entity_type}:${r.entity_id}:${r.field}`, r.body as string]))
   let created = 0, updated = 0, unchanged = 0
@@ -266,5 +283,5 @@ export async function importTexts(
     `)
   }
   if (queries.length > 0) await sql.transaction(queries)
-  return { created, updated, unchanged, genders: genders.length }
+  return { created, updated, unchanged, genders: genders.length, roles: newRoles }
 }

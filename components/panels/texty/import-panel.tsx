@@ -4,7 +4,8 @@ import React, { useMemo, useState } from "react"
 import { IconArrowLeft, IconUpload, IconFileImport, IconChevronDown, IconCheck } from "@tabler/icons-react"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { DOC_FIELDS, docKey, type DocEntityType } from "@/lib/doc-fields"
-import { parseImport, type ImportPayload } from "@/lib/doc-validation"
+import { parseImport, type ImportPayload, type ImportRole } from "@/lib/doc-validation"
+import { UNITS } from "@/lib/data"
 import { DOC_IDS } from "@/lib/doc-ids"
 import { WikiRenderer } from "@/components/shared/wiki-renderer"
 import { buildEntities, useTexty } from "./texty-data"
@@ -12,7 +13,7 @@ import { buildEntities, useTexty } from "./texty-data"
 // Import textů ze souboru (převod Google dokumentu „Jádra + Týmy“).
 // Ukáže, co se vyplní a co přepíše, a nechá vybrat entity, které se mají importovat.
 
-type Result = { created: number; updated: number; unchanged: number; genders: number }
+type Result = { created: number; updated: number; unchanged: number; genders: number; roles: number }
 
 export function ImportPanel({ onBack }: { onBack: () => void }) {
   const { meta, roles, genders: currentGenders, reload } = useTexty()
@@ -42,20 +43,35 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
   const groups = useMemo(() => {
     if (!payload) return []
     const types: DocEntityType[] = ["character", "team", "unit", "circle", "trait"]
-    return types.flatMap(type => buildEntities(type, roles).map(e => {
+    const base = types.flatMap(type => buildEntities(type, roles).map(e => {
       const items = payload.texts.filter(t => t.entityType === type && t.entityId === e.id)
       const gender = type === "character" ? payload.genders.find(g => g.characterId === e.id)?.gender : undefined
-      return { key: `${type}:${e.id}`, entity: e, items, gender }
+      return { key: `${type}:${e.id}`, entity: e, items, gender, role: undefined as ImportRole | undefined }
     })).filter(g => g.items.length > 0 || g.gender)
+    // Role se poznají podle jednotky a klíče; nová role ještě nemá id.
+    const roleGroups = payload.roles.map(r => {
+      const existing = roles.find(x => x.unitId === r.unitId && x.key === r.key)
+      const unit = UNITS.find(u => u.id === r.unitId)?.name ?? r.unitId
+      return {
+        key: `role:${r.unitId}:${r.key}`,
+        entity: { type: "role" as const, id: existing ? String(existing.id) : "", name: r.nameM === r.nameF ? r.nameM : `${r.nameM} / ${r.nameF}`,
+          group: `${unit} · role · trojice ${existing?.triplet ?? r.triplet}${existing ? "" : " · nová role"}` },
+        items: [{ entityType: "role" as const, entityId: existing ? String(existing.id) : "", field: "personal", body: r.body }],
+        gender: undefined, role: r,
+      }
+    })
+    return [...base, ...roleGroups]
   }, [payload, roles])
 
   const kind = (t: { entityType: DocEntityType; entityId: string; field: string }) => {
+    if (!t.entityId) return "new"
     const m = meta.get(docKey(t.entityType, t.entityId, t.field))
     return !m || m.length === 0 ? "new" : "overwrite"
   }
 
   const selected = groups.filter(g => !excluded.has(g.key))
   const selTexts = selected.flatMap(g => g.items)
+  const selRoles = selected.flatMap(g => (g.role ? [g.role] : []))
   const overwrites = selTexts.filter(t => kind(t) === "overwrite").length
   const selGenders = selected.filter(g => g.gender).map(g => ({ characterId: g.entity.id, gender: g.gender! }))
 
@@ -67,7 +83,7 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
       const res = await adminFetch("/api/priprava/texts/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texts: selTexts, genders: selGenders, by: getOrganizer() }),
+        body: JSON.stringify({ texts: selTexts.filter(t => t.entityType !== "role"), genders: selGenders, roles: selRoles, by: getOrganizer() }),
       })
       if (!res.ok) { setError(await res.text() || `Import selhal (${res.status})`); return }
       setResult(await res.json())
@@ -102,7 +118,7 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
 
       {result && (
         <div className="import-result" role="status">
-          <IconCheck size={18} /> Hotovo: {result.created} nových, {result.updated} přepsaných, {result.unchanged} beze změny, {result.genders} rodů.
+          <IconCheck size={18} /> Hotovo: {result.created} nových, {result.updated} přepsaných, {result.unchanged} beze změny, {result.genders} rodů{result.roles > 0 ? `, ${result.roles} nových rolí` : ""}.
         </div>
       )}
 

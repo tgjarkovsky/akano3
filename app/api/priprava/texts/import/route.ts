@@ -5,7 +5,7 @@ import { importTexts } from "@/lib/docs-store"
 
 export const dynamic = "force-dynamic"
 
-// POST /api/priprava/texts/import { texts: [...], genders?: [...], by? }
+// POST /api/priprava/texts/import { texts: [...], genders?: [...], roles?: [...], by? }
 // Přepíše texty ze souboru importu (viz parseImport). Vrací počty.
 export async function POST(req: Request) {
   const denied = await requireAdmin(req)
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const parsed = parseImport(raw, DOC_IDS)
     if (!parsed.ok) return new Response(parsed.error, { status: 400 })
     const by = typeof raw?.by === "string" ? raw.by.slice(0, 80) : null
-    return Response.json(await importTexts(parsed.value.texts, parsed.value.genders, by))
+    return Response.json(await importTexts(parsed.value.texts, parsed.value.genders, by, parsed.value.roles))
   } catch (err) {
     console.error("[priprava/texts/import]", err)
     // Jen za heslem Přípravy: skutečný text chyby pomůže, když import selže.

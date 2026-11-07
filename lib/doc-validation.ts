@@ -111,18 +111,23 @@ export const MAX_IMPORT_ITEMS = 2000
 
 export type ImportText = { entityType: DocEntityType; entityId: string; field: string; body: string }
 export type ImportGender = { characterId: string; gender: "m" | "f" }
-export type ImportPayload = { texts: ImportText[]; genders: ImportGender[] }
+/** Role jednotky s osobním textem. Pozná se podle jednotky a klíče; chybějící se založí. */
+export type ImportRole = RoleInput & { body: string }
+export type ImportPayload = { texts: ImportText[]; genders: ImportGender[]; roles: ImportRole[] }
 
 /**
- * Ověří soubor importu. Role se importovat nedají (jejich id vzniká až
- * v databázi). Duplicitní pole v jednom souboru jsou chyba.
+ * Ověří soubor importu. Texty rolí se neimportují přes texts (id role vzniká
+ * až v databázi), ale přes roles: jednotka, trojice, klíč, názvy a osobní text.
+ * Duplicitní pole v jednom souboru jsou chyba.
  */
 export function parseImport(raw: unknown, ids: DocIds): Ok<ImportPayload> | Err {
   if (!isObj(raw)) return { ok: false, error: "Soubor není objekt JSON" }
   if (!Array.isArray(raw.texts)) return { ok: false, error: "Chybí seznam texts" }
   const gendersRaw = raw.genders ?? []
   if (!Array.isArray(gendersRaw)) return { ok: false, error: "genders musí být seznam" }
-  if (raw.texts.length + gendersRaw.length > MAX_IMPORT_ITEMS) return { ok: false, error: "Import je příliš velký" }
+  const rolesRaw = raw.roles ?? []
+  if (!Array.isArray(rolesRaw)) return { ok: false, error: "roles musí být seznam" }
+  if (raw.texts.length + gendersRaw.length + rolesRaw.length > MAX_IMPORT_ITEMS) return { ok: false, error: "Import je příliš velký" }
 
   const texts: ImportText[] = []
   const seen = new Set<string>()
@@ -147,5 +152,18 @@ export function parseImport(raw: unknown, ids: DocIds): Ok<ImportPayload> | Err 
     if (g.gender !== "m" && g.gender !== "f") return { ok: false, error: `genders[${i}]: rod musí být m nebo f` }
     genders.push({ characterId: g.characterId, gender: g.gender })
   }
-  return { ok: true, value: { texts, genders } }
+  const roles: ImportRole[] = []
+  const seenRoles = new Set<string>()
+  for (const [i, r] of rolesRaw.entries()) {
+    const where = `roles[${i}]`
+    const parsed = parseRoleInput(r, ids.unitIds)
+    if (!parsed.ok) return { ok: false, error: `${where}: ${parsed.error}` }
+    const body = (r as Record<string, unknown>).body
+    if (typeof body !== "string" || body.length > MAX_TEXT_LENGTH) return { ok: false, error: `${where}: neplatný text` }
+    const key = `${parsed.value.unitId}:${parsed.value.key}`
+    if (seenRoles.has(key)) return { ok: false, error: `${where}: role ${key} je v souboru dvakrát` }
+    seenRoles.add(key)
+    roles.push({ ...parsed.value, body })
+  }
+  return { ok: true, value: { texts, genders, roles } }
 }
