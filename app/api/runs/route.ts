@@ -3,12 +3,14 @@ import { CHARACTERS } from "@/lib/data"
 import { getActiveRunId } from "@/lib/runs"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { requireAdmin } from "@/lib/admin-password"
+import { isIsoDate } from "@/lib/character-doc"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const runs = await sql`SELECT id, name, is_active, created_at FROM runs ORDER BY id ASC`
+    await ensureSetupColumns()
+    const runs = await sql`SELECT id, name, is_active, created_at, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs ORDER BY id ASC`
     return Response.json(runs)
   } catch (err) {
     console.error("[api/runs GET]", err)
@@ -20,8 +22,10 @@ export async function POST(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
   try {
-    const { name } = await req.json() as { name: string }
+    const { name, startsOn, endsOn } = await req.json() as { name: string; startsOn?: string; endsOn?: string }
     if (!name?.trim()) return new Response("Název je povinný", { status: 400 })
+    const dates = checkDates(startsOn, endsOn)
+    if (typeof dates === "string") return new Response(dates, { status: 400 })
 
     const oldRunId = await getActiveRunId()
     await ensureSetupColumns()
@@ -32,7 +36,8 @@ export async function POST(req: Request) {
     ` as { team_id: string; unit_id: string; triplet: string | null }[]
 
     const [newRun] = await sql`
-      INSERT INTO runs (name, is_active) VALUES (${name.trim()}, FALSE) RETURNING id
+      INSERT INTO runs (name, is_active, starts_on, ends_on)
+      VALUES (${name.trim()}, FALSE, ${dates.startsOn}, ${dates.endsOn}) RETURNING id
     `
     const newRunId = newRun.id as number
 
@@ -84,11 +89,21 @@ export async function PATCH(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
   try {
-    const body = await req.json() as { action: "setActive"; runId: number }
-    if (body.action !== "setActive") return new Response("Bad request", { status: 400 })
+    const body = await req.json() as
+      | { action: "setActive"; runId: number }
+      | { action: "setDates"; runId: number; startsOn?: string; endsOn?: string }
+    if (body.action !== "setActive" && body.action !== "setDates") return new Response("Bad request", { status: 400 })
 
     const [existing] = await sql`SELECT id FROM runs WHERE id = ${body.runId}`
     if (!existing) return new Response("Run not found", { status: 404 })
+
+    if (body.action === "setDates") {
+      const dates = checkDates(body.startsOn, body.endsOn)
+      if (typeof dates === "string") return new Response(dates, { status: 400 })
+      await ensureSetupColumns()
+      await sql`UPDATE runs SET starts_on = ${dates.startsOn}, ends_on = ${dates.endsOn} WHERE id = ${body.runId}`
+      return new Response(null, { status: 204 })
+    }
 
     await sql.transaction([
       sql`UPDATE runs SET is_active = FALSE WHERE is_active = TRUE`,
@@ -100,4 +115,12 @@ export async function PATCH(req: Request) {
     console.error("[api/runs PATCH]", err)
     return new Response("Server error", { status: 500 })
   }
+}
+
+/** Běh je vždy vícedenní: začátek i konec jsou povinné a konec je po začátku. */
+function checkDates(startsOn: unknown, endsOn: unknown): { startsOn: string; endsOn: string } | string {
+  if (!isIsoDate(startsOn)) return "Datum začátku běhu je povinné"
+  if (!isIsoDate(endsOn)) return "Datum konce běhu je povinné"
+  if (endsOn <= startsOn) return "Konec běhu musí být po začátku"
+  return { startsOn, endsOn }
 }

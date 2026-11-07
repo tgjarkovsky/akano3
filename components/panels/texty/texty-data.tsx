@@ -44,7 +44,7 @@ export function buildEntities(category: Category, roles: readonly UnitRole[]): D
     case "character":
       return DOC_PLAYERS.map(c => {
         const team = TEAMS.find(t => t.id === c.teamId)
-        return { type: "character", id: c.id, name: c.name, sub: c.nickname, group: team?.name, color: team?.color }
+        return { type: "character", id: c.id, name: c.name, group: team?.name, color: team?.color }
       })
     case "team":
       return TEAMS.map(t => ({ type: "team", id: t.id, name: t.name, color: t.color }))

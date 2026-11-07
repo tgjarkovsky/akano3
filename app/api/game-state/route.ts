@@ -19,7 +19,7 @@ export async function GET() {
         sql`SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${runId} ORDER BY team_id`,
         sql`SELECT * FROM point_log WHERE run_id = ${runId} ORDER BY timestamp DESC LIMIT 200`,
         sql`SELECT * FROM qr_codes ORDER BY created_at DESC`,
-        sql`SELECT id, name, is_active, created_at FROM runs ORDER BY id ASC`,
+        sql`SELECT id, name, is_active, created_at, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs ORDER BY id ASC`,
       ])
 
     return Response.json({

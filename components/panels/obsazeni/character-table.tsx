@@ -53,7 +53,7 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
 
   const q = query.trim().toLowerCase()
   const visible = (c: Character) => {
-    if (q && !`${c.name} ${c.nickname ?? ""}`.toLowerCase().includes(q)) return false
+    if (q && !c.name.toLowerCase().includes(q)) return false
     if (filter.kind === "issues") return withIssues.has(c.id)
     if (filter.kind === "circle") return c.circleIds.includes(filter.id)
     return true
@@ -135,7 +135,6 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                   <div key={c.id} id={`postava-${c.id}`} className="char-row" role="row" data-issue={issue ? "true" : undefined}>
                     <span role="cell" style={{ minWidth: 0 }}>
                       <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{c.name}</span>
-                      {c.nickname && <span style={{ display: "block", fontSize: "0.78rem", fontStyle: "italic", color: "var(--c-text-muted)" }}>„{c.nickname}“</span>}
                     </span>
                     <span role="cell">
                       <span className="cell-label">Specializace{lock(specAllowed)}</span>

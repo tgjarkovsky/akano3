@@ -57,7 +57,7 @@ export function SpisyPanel({ onPrint }: { onPrint: (job: PrintJob) => void }) {
   const rows = useMemo(() => (data?.rows ?? []).map(r => {
     const c = DOC_PLAYERS.find(p => p.id === r.characterId)!
     const team = TEAMS.find(t => t.memberIds.includes(r.characterId))
-    return { ...r, name: c.name, nickname: c.nickname, team: team?.name ?? "" }
+    return { ...r, name: c.name, team: team?.name ?? "" }
   }), [data])
 
   const missing = rows.filter(r => !r.token).length
@@ -152,7 +152,6 @@ export function SpisyPanel({ onPrint }: { onPrint: (job: PrintJob) => void }) {
                   <tr key={r.characterId}>
                     <td>
                       <span style={{ fontWeight: 700 }}>{r.name}</span>
-                      {r.nickname && <span style={{ color: "var(--c-text-faint)", fontSize: "0.8rem", marginLeft: 6 }}>{r.nickname}</span>}
                     </td>
                     <td style={{ color: "var(--c-text-muted)" }}>{r.team}</td>
                     <td>

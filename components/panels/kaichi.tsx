@@ -60,7 +60,7 @@ export function KaichiPanel({ canEdit = false }: { canEdit?: boolean }) {
         <Table>
           <TableHeader>
             <TableRow style={{ borderColor:"var(--c-border-mid)" }}>
-              {["Jméno","Postava","Tým","Úroveň Kaichi", ...(canEdit ? ["Změnit"] : [])].map(h => (
+              {["Jméno","Tým","Úroveň Kaichi", ...(canEdit ? ["Změnit"] : [])].map(h => (
                 <TableHead key={h} style={{ color:"var(--c-text-muted)", fontSize:"0.75rem", letterSpacing:"0.05em" }}>{h}</TableHead>
               ))}
             </TableRow>
@@ -69,7 +69,6 @@ export function KaichiPanel({ canEdit = false }: { canEdit?: boolean }) {
             {students.map(c => (
               <TableRow key={c.id} style={{ borderColor:"var(--c-border)" }}>
                 <TableCell style={{ color:"var(--c-text)", fontWeight:600 }}>{c.name}</TableCell>
-                <TableCell style={{ color:"var(--c-text-muted)", fontStyle:"italic" }}>{c.nickname ?? "—"}</TableCell>
                 <TableCell>
                   <span style={{ display:"flex", alignItems:"center", gap:6 }}>
                     <TeamDot color={TEAMS.find(t=>t.id===c.teamId)?.color??"#888"} teamId={c.teamId} />

@@ -46,7 +46,7 @@ export function PravidlaPanel() {
     return TEAMS.map(t => ({
       teamId: t.id,
       subjects: CHARACTERS.filter(c => c.teamId === t.id && (c.role === "student" || c.role === "ruze"))
-        .map(c => ({ id: c.id, name: c.name, sub: c.nickname })),
+        .map(c => ({ id: c.id, name: c.name })),
     }))
   }, [subjectType])
 

@@ -9,11 +9,17 @@ import { PrintButton } from "@/components/spis/print-button"
 
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: "Osobní spis · AKANO",
-  robots: { index: false, follow: false },
-  // tajný odkaz nesmí odejít v hlavičce Referer
-  referrer: "no-referrer",
+// Titulek tiskne prohlížeč do záhlaví stránky a dává ho jako název PDF.
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params
+  const found = isSpisToken(token) ? await getSpisByToken(token) : null
+  const name = found?.state === "ok" ? found.doc.character.name : undefined
+  return {
+    title: ["Akademie Akano", "Osobní spis", name].filter(Boolean).join(" · "),
+    robots: { index: false, follow: false },
+    // tajný odkaz nesmí odejít v hlavičce Referer
+    referrer: "no-referrer",
+  }
 }
 
 // Čísla stránek jen u jednoho spisu; při hromadném tisku by běžela přes všechny.

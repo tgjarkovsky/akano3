@@ -27,6 +27,14 @@ export function SpisPrintScreen({ job, onClose }: { job: PrintJob; onClose: () =
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
+  // Titulek jde do záhlaví tisku a do názvu PDF.
+  useEffect(() => {
+    const prev = document.title
+    const who = job.characterId ? docs?.[0]?.character.name : "Spisy běhu"
+    document.title = ["Akademie Akano", "Osobní spis", who].filter(Boolean).join(" · ")
+    return () => { document.title = prev }
+  }, [docs, job.characterId])
+
   const title = docs && (job.characterId ? `Spis · ${docs[0]?.character.name ?? ""}` : `Spisy běhu · ${docs.length} postav`)
 
   return (
@@ -38,7 +46,7 @@ export function SpisPrintScreen({ job, onClose }: { job: PrintJob; onClose: () =
       </div>
       <p className="spis-hint">
         Náhled ukazuje i neschválené texty se žlutou poznámkou; ta se netiskne.
-        {docs && docs[0] && <> Běh: {docs[0].runName}.</>}
+        {docs && docs[0] && <> Běh: {docs[0].runName}{docs[0].runDate ? `, ${docs[0].runDate}` : " (bez termínu, doplň ho v Obsazení)"}.</>}
       </p>
       {error && <p className="spis-hint" role="alert" style={{ color: "#a40000" }}>{error}</p>}
       {docs?.map(d => (

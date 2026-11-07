@@ -1,15 +1,15 @@
 import React from "react"
 import { romanNumeral } from "@/lib/utils"
-import { DOC_VISIBILITY_LABELS, type CharacterDoc, type DocVisibility } from "@/lib/character-doc"
+import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocLevel, type DocVisibility } from "@/lib/character-doc"
 import { SpisText } from "./spis-text"
 
 // Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
 
-const TAG_ORDER: DocVisibility[] = ["self", "team", "unit", "circle", "public", "prelarp"]
+const LEVEL_ORDER: DocLevel[] = ["self", "group", "public"]
 
-function Tag({ v }: { v: DocVisibility }) {
-  return <span className={`spis-tag spis-tag-${v}`}>{DOC_VISIBILITY_LABELS[v]}</span>
+function Tag({ level }: { level: DocLevel }) {
+  return <span className={`spis-tag spis-tag-${level}`}>{DOC_LEVEL_LABELS[level]}</span>
 }
 
 export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; showStatus?: boolean }) {
@@ -22,19 +22,19 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
     ["Původ", h.origin],
     ["Kruh", h.circle],
   ]
-  const usedTags = TAG_ORDER.filter(v => doc.chapters.some(c => c.blocks.some(b => b.visibility === v)))
+  const used = new Set<DocVisibility>(doc.chapters.flatMap(c => c.blocks.map(b => b.visibility)))
+  const usedLevels = LEVEL_ORDER.filter(l => [...used].some(v => DOC_LEVEL[v] === l))
 
   return (
     <article className="spis" lang="cs">
       <section className="spis-cover">
         <div className="spis-cover-top">
           <span>Akademie Akano</span>
-          <span>{doc.runName}</span>
+          <span>{[doc.runName, doc.runDate].filter(Boolean).join(" · ")}</span>
         </div>
         <div className="spis-double-rule" />
         <p className="spis-cover-kicker">Osobní spis studenta</p>
         <h1 className="spis-name">{doc.character.name}</h1>
-        {doc.character.nickname && <p className="spis-nickname">„{doc.character.nickname}“</p>}
 
         <dl className="spis-facts">
           {facts.filter(([, v]) => v).map(([k, v]) => (
@@ -61,8 +61,8 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
           <p className="spis-cover-note-title">Jen pro tebe</p>
           <p>Tenhle spis patří jen tobě, neukazuj ho ostatním. U každého textu je štítek, kdo další ho zná:</p>
           <ul className="spis-tag-legend">
-            {usedTags.map(v => (
-              <li key={v}><Tag v={v} /> {LEGEND[v]}</li>
+            {usedLevels.map(l => (
+              <li key={l}><Tag level={l} /> {LEGEND[l]}</li>
             ))}
           </ul>
         </div>
@@ -78,10 +78,10 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
             </div>
           </header>
           {c.blocks.map(b => (
-            <section key={b.key} className="spis-block">
+            <section key={b.key} className={`spis-block${b.voice ? ` spis-voice-${b.voice}` : ""}`}>
               <div className="spis-block-head">
-                <h3>{b.title}</h3>
-                <Tag v={b.visibility} />
+                <h3>{b.title}{b.voice && <span className="spis-voice-note">{VOICE_NOTE[b.voice]}</span>}</h3>
+                <Tag level={DOC_LEVEL[b.visibility]} />
               </div>
               {showStatus && b.approved === false && <p className="spis-draft no-print">Text ještě není schválený</p>}
               <SpisText body={b.body} />
@@ -97,11 +97,10 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
   )
 }
 
-const LEGEND: Record<DocVisibility, string> = {
+const LEGEND: Record<DocLevel, string> = {
   self: "nikdo jiný",
-  team: "i tvůj tým",
-  unit: "celá tvoje jednotka",
-  circle: "členové tvého kruhu",
-  public: "všechny postavy na larpu",
-  prelarp: "všichni, už před přihláškou na larp",
+  group: "ostatní ze skupiny, o které kapitola je: tvůj tým, jednotka nebo kruh",
+  public: "všechny postavy na larpu; medailonky znají hráči už před přihláškou",
 }
+
+const VOICE_NOTE = { story: "jak to bylo", inner: "jak to prožíváš" } as const

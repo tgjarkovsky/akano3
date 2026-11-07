@@ -956,7 +956,6 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
   font-size: 3.4em; line-height: 1; letter-spacing: 0.02em;
 }
-.spis-nickname { margin: 6px 0 0; font-style: italic; font-size: 1.35em; color: #3b3630; }
 .spis-facts { margin: 12mm 0 0; display: grid; gap: 0; max-width: 125mm; }
 .spis-facts > div {
   display: grid; grid-template-columns: 38mm 1fr; gap: 12px; align-items: baseline;
@@ -987,9 +986,8 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.5;
 }
 .spis-tag-self   { background: #141210; color: #fff; }
+.spis-tag-group  { border-width: 1.25px; }
 .spis-tag-public { border-style: dashed; color: #5a534b; border-color: #5a534b; }
-.spis-tag-prelarp { border-style: dotted; color: #5a534b; border-color: #5a534b; }
-.spis-tag-team, .spis-tag-unit, .spis-tag-circle { border-width: 1.25px; }
 
 /* Kapitoly */
 .spis-chapter { margin-top: 20mm; }
@@ -1014,6 +1012,25 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   margin: 0; font-family: var(--font-display); font-weight: 500; text-transform: uppercase;
   letter-spacing: 0.06em; font-size: 1.02em;
 }
+/* Příběh (3. osoba) jako sazba knihy, vnitřní svět (1. osoba) jako hlas v hlavě. */
+.spis-voice-note {
+  margin-left: 10px; font-family: var(--font-sans); font-style: italic; font-weight: 400;
+  text-transform: none; letter-spacing: 0; font-size: 0.82em; color: #5a534b;
+}
+.spis-voice-story .spis-text { text-align: justify; }
+.spis-voice-story .spis-text p { margin: 0; }
+.spis-voice-story .spis-text p + p { text-indent: 1.5em; }
+.spis-voice-story .spis-text > p:first-child::first-letter {
+  float: left; font-family: var(--font-display); font-weight: 700; color: #701010;
+  font-size: 3.4em; line-height: 0.82; margin: 0.06em 0.1em 0 0;
+}
+.spis-voice-inner .spis-text {
+  margin-left: 4mm; padding: 12px 18px 10px 18px;
+  background: #f3f1ed; border-left: 3px solid #141210;
+  font-style: italic; color: #2c2824;
+}
+.spis-voice-inner .spis-text em { font-style: normal; }
+.spis-voice-inner .spis-subhead { font-style: normal; }
 .spis-draft { display: inline-block; margin: 0 0 8px; padding: 2px 8px; border-radius: 3px; background: #fff3c4; font-family: var(--font-mono); font-size: 0.7rem; color: #6b4a00; }
 .spis-empty { margin: 20mm 0; text-align: center; font-style: italic; color: #5a534b; }
 
@@ -1053,5 +1070,6 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   .spis-cover + .spis-chapter { margin-top: 0; }
   .spis-block { break-inside: auto; }
   .spis-chapter-head, .spis-block-head, .spis-subhead, .spis-minorhead { break-after: avoid; break-inside: avoid; }
-  .spis-tag { font-size: 6.5pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .spis-tag, .spis-voice-inner .spis-text { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .spis-tag { font-size: 6.5pt; }
 }

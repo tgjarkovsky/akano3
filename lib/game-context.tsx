@@ -49,7 +49,8 @@ export interface GameCtx {
   activeRunId:   number | null
   runs:          RunSummary[]
   setActiveRun:  (runId: number) => Promise<void>
-  createRun:     (name: string) => Promise<void>
+  createRun:     (name: string, startsOn: string, endsOn: string) => Promise<boolean>
+  setRunDates:   (runId: number, startsOn: string, endsOn: string) => Promise<boolean>
 }
 
 export const GameContext = createContext<GameCtx | null>(null)
@@ -185,10 +186,11 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     const tu      = data.teamUnits as TeamUnitRow[]
     const pl      = data.pointLog as Record<string, unknown>[]
     const qr      = data.qrCodes as Record<string, unknown>[]
-    const runsRaw = data.runs as { id: number; name: string; is_active: boolean; created_at: string }[]
+    const runsRaw = data.runs as { id: number; name: string; is_active: boolean; created_at: string; starts_on: string | null; ends_on: string | null }[]
 
     setActiveRunId(data.activeRunId as number ?? null)
-    setRuns(runsRaw?.map(r => ({ id: r.id, name: r.name, isActive: r.is_active, createdAt: new Date(r.created_at) })) ?? [])
+    setRuns(runsRaw?.map(r => ({ id: r.id, name: r.name, isActive: r.is_active, createdAt: new Date(r.created_at),
+      startsOn: r.starts_on ?? null, endsOn: r.ends_on ?? null })) ?? [])
     setAlarmState({ active: alarm.active as boolean, type: alarm.type as AlarmState["type"], message: alarm.message as string, color: alarm.color as string })
     setLessonWindowActive(config.lesson_window_active as boolean)
     setLessonWindowEnd(config.lesson_window_end ? new Date(config.lesson_window_end as string) : null)
@@ -379,10 +381,18 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     fetchGameState()
   }, [callApi, addToast, fetchGameState])
 
-  const createRun = useCallback(async (name: string) => {
-    if (!await callApi("/api/runs", { name }, "Chyba při vytváření běhu")) return
+  const createRun = useCallback(async (name: string, startsOn: string, endsOn: string) => {
+    if (!await callApi("/api/runs", { name, startsOn, endsOn }, "Chyba při vytváření běhu")) return false
     addToast(`Běh "${name}" vytvořen`)
     fetchGameState()
+    return true
+  }, [callApi, addToast, fetchGameState])
+
+  const setRunDates = useCallback(async (runId: number, startsOn: string, endsOn: string) => {
+    if (!await callApi("/api/runs", { action:"setDates", runId, startsOn, endsOn }, "Chyba při ukládání termínu", "PATCH")) return false
+    addToast("Termín běhu uložen")
+    fetchGameState()
+    return true
   }, [callApi, addToast, fetchGameState])
 
   const value = useMemo<GameCtx>(() => ({
@@ -392,13 +402,13 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
     toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
     refreshGameState: fetchGameState,
-    activeRunId, runs, setActiveRun, createRun,
+    activeRunId, runs, setActiveRun, createRun, setRunDates,
   }), [teams, characters, pointLog, alarmState, broadcastActive,
     lessonWindowActive, lessonWindowEnd, qrCodes, toasts, currentUser,
     login, logout, assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
     toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast, fetchGameState,
-    activeRunId, runs, setActiveRun, createRun])
+    activeRunId, runs, setActiveRun, createRun, setRunDates])
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
 }

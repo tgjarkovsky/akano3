@@ -5,14 +5,13 @@ import { IconUser } from "@tabler/icons-react"
 
 interface PersonCardProps {
   name: string
-  nickname?: string
   isYou?: boolean
   badge: ReactNode
   /** dospělí: bez přezdívky a bez minWidth:0 na textovém bloku */
   compact?: boolean
 }
 
-export function PersonCard({ name, nickname, isYou, badge, compact }: PersonCardProps) {
+export function PersonCard({ name, isYou, badge, compact }: PersonCardProps) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:12, backgroundColor:"var(--c-bg-card)", borderRadius:6, padding:"12px 16px", border: isYou ? "2px solid rgba(16,128,128,0.45)" : "2px solid var(--c-border-mid)", boxShadow:"var(--shadow-print-sm)", }}>
       <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0, backgroundColor: isYou ? "rgba(16,128,128,0.1)" : "var(--c-bg-section)", display:"flex", alignItems:"center", justifyContent:"center", }}>
@@ -26,7 +25,6 @@ export function PersonCard({ name, nickname, isYou, badge, compact }: PersonCard
             <span style={{ fontWeight:700, fontSize:"0.95rem", color:"var(--c-text)" }}>{name}</span>
             {isYou && <span style={{ fontSize:"0.65rem", color:"var(--c-teal)", backgroundColor:"rgba(16,128,128,0.1)", padding:"1px 7px", borderRadius:20 }}>ty</span>}
           </div>
-          {nickname && <p style={{ color:"var(--c-text-muted)", fontSize:"0.75rem", fontStyle:"italic", margin:0 }}>„{nickname}"</p>}
         </div>
       )}
       {badge}

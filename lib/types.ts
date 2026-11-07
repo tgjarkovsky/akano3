@@ -17,7 +17,7 @@ export interface Team {
   triplet?: Triplet
 }
 export interface Character {
-  id: string; code: string; name: string; nickname?: string
+  id: string; code: string; name: string
   role: Role; teamId?: string; unitId?: string; circleIds: string[]
   specialization?: Specialization; origin?: Origin; kaichiLevel: number
   points: number; peerPointPool: number; lessonClaimedThisWindow: boolean
@@ -51,6 +51,9 @@ export interface RunSummary {
   name: string
   isActive: boolean
   createdAt: Date
+  /** YYYY-MM-DD; starší běhy ho mohou mít prázdný */
+  startsOn: string | null
+  endsOn: string | null
 }
 
 export interface WikiArticle {

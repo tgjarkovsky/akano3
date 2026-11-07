@@ -19,7 +19,7 @@ export function PeopleTab({ studentId }: { studentId: string }) {
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               {members.map(c => (
-                <PersonCard key={c.id} name={c.name} nickname={c.nickname} isYou={c.id === studentId} badge={<SpecBadge spec={c.specialization} />} />
+                <PersonCard key={c.id} name={c.name} isYou={c.id === studentId} badge={<SpecBadge spec={c.specialization} />} />
               ))}
             </div>
           </div>

@@ -5,7 +5,7 @@ import { DOC_PLAYERS } from "@/lib/doc-ids"
 import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
-import { composeCharacterDoc, docStats, type CharacterDoc, type StoredText } from "@/lib/character-doc"
+import { composeCharacterDoc, docStats, formatRunDate, type CharacterDoc, type StoredText } from "@/lib/character-doc"
 
 // Spisy postav pro hráče. Každá postava má na každý běh tajný odkaz;
 // spis přes něj jde otevřít, až Příprava běh zveřejní.
@@ -40,6 +40,7 @@ const newToken = () => randomBytes(18).toString("base64url")
 
 type RunContext = {
   runName: string
+  runDate?: string
   unitOfTeam: Map<string, string>
   state: Map<string, { specialization: string | null; origin: string | null }>
   circleOf: Map<string, string>
@@ -49,7 +50,7 @@ type RunContext = {
 async function loadRunContext(runId: number): Promise<RunContext | null> {
   await ensureSpisTables()
   const [runs, units, states, circles, texts] = await Promise.all([
-    sql`SELECT name FROM runs WHERE id = ${runId}`,
+    sql`SELECT name, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs WHERE id = ${runId}`,
     sql`SELECT team_id, unit_id FROM team_units WHERE run_id = ${runId}`,
     sql`SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${runId}`,
     sql`SELECT circle_id, character_id FROM circle_members WHERE run_id = ${runId} ORDER BY circle_id`,
@@ -60,6 +61,7 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
   for (const r of circles) if (!circleOf.has(r.character_id as string)) circleOf.set(r.character_id as string, r.circle_id as string)
   return {
     runName: runs[0].name as string,
+    runDate: formatRunDate(runs[0].starts_on as string | null, runs[0].ends_on as string | null),
     unitOfTeam: new Map(units.map(r => [r.team_id as string, r.unit_id as string])),
     state: new Map(states.map(r => [r.character_id as string, {
       specialization: r.specialization as string | null, origin: r.origin as string | null,
@@ -86,7 +88,8 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
 
   return composeCharacterDoc({
     runName: ctx.runName,
-    character: { id: character.id, name: character.name, nickname: character.nickname },
+    runDate: ctx.runDate,
+    character: { id: character.id, name: character.name },
     team: team && { id: team.id, name: team.name, teammates: team.memberIds.filter(id => id !== characterId).map(nameOf) },
     unit: unit && { id: unit.id, name: unit.name },
     circle: circle && { id: circle.id, name: circle.name },

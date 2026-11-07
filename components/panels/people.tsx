@@ -18,7 +18,7 @@ export function PeoplePanel() {
   const students = useMemo(() =>
     characters
       .filter(c => c.role === "student" || c.role === "ruze")
-      .filter(c => !term || c.name.toLowerCase().includes(term) || (c.nickname ?? "").toLowerCase().includes(term))
+      .filter(c => !term || c.name.toLowerCase().includes(term))
       .sort((a, b) => {
         if (a.teamId !== b.teamId) return (a.teamId ?? "").localeCompare(b.teamId ?? "")
         return a.name.localeCompare(b.name, "cs")
@@ -55,7 +55,7 @@ export function PeoplePanel() {
         <Table>
           <TableHeader>
             <TableRow style={{ borderColor:"var(--c-border-mid)" }}>
-              {["Jméno","Přezdívka","Role","Tým","Jednotka","Kruhy","Specializace","Kaichi"].map(h => (
+              {["Jméno","Role","Tým","Jednotka","Kruhy","Specializace","Kaichi"].map(h => (
                 <TableHead key={h} style={{ color:"var(--c-text-muted)", fontSize:"0.75rem", letterSpacing:"0.05em", whiteSpace:"nowrap" }}>{h}</TableHead>
               ))}
             </TableRow>
@@ -63,7 +63,7 @@ export function PeoplePanel() {
           <TableBody>
             {students.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} style={{ textAlign:"center", color:"var(--c-text-muted)", padding:"24px 0" }}>Nikdo nenalezen</TableCell>
+                <TableCell colSpan={7} style={{ textAlign:"center", color:"var(--c-text-muted)", padding:"24px 0" }}>Nikdo nenalezen</TableCell>
               </TableRow>
             )}
             {students.map(c => {
@@ -73,7 +73,6 @@ export function PeoplePanel() {
               return (
                 <TableRow key={c.id} style={{ borderColor:"var(--c-border)" }}>
                   <TableCell style={{ fontWeight:600, color:"var(--c-text)", fontSize:"0.85rem", whiteSpace:"nowrap" }}>{c.name}</TableCell>
-                  <TableCell style={{ color:"var(--c-text-muted)", fontStyle:"italic", fontSize:"0.82rem" }}>{c.nickname ?? "—"}</TableCell>
                   <TableCell><RoleBadge role={c.role} /></TableCell>
                   <TableCell>
                     {team ? (
