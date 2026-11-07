@@ -5,7 +5,7 @@ import { DOC_PLAYERS } from "@/lib/doc-ids"
 import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
-import { composeCharacterDoc, docStats, formatRunDate, type CharacterDoc, type StoredText } from "@/lib/character-doc"
+import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, peopleCount, type AcademyEntry, type CharacterDoc, type StoredText } from "@/lib/character-doc"
 
 // Spisy postav pro hráče. Každá postava má na každý běh tajný odkaz;
 // spis přes něj jde otevřít, až Příprava běh zveřejní.
@@ -99,12 +99,38 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
   })
 }
 
+/** Ostatní skupiny akademie pro osobní knihovnu: jen medailonky a veřejné texty. */
+function buildAcademy(ctx: RunContext, characterId: string): AcademyEntry[] {
+  const nameOf = (id: string) => DOC_PLAYERS.find(c => c.id === id)?.name ?? id
+  const team = TEAMS.find(t => t.memberIds.includes(characterId))
+  const circleCount = (id: string) => [...ctx.circleOf.values()].filter(c => c === id).length
+  return composeAcademy({
+    groups: [
+      ...TEAMS.map(t => ({ kind: "team" as const, id: t.id, name: t.name, sub: t.memberIds.map(nameOf).join(", ") })),
+      ...UNITS.map(u => {
+        const teams = TEAMS.filter(t => ctx.unitOfTeam.get(t.id) === u.id).map(t => t.name)
+        return { kind: "unit" as const, id: u.id, name: u.name, sub: teams.length ? teams.join(" a ") : undefined }
+      }),
+      ...CIRCLES.map(c => {
+        const n = circleCount(c.id)
+        return { kind: "circle" as const, id: c.id, name: c.name, sub: n ? peopleCount(n) : undefined }
+      }),
+    ],
+    mine: {
+      team: team?.id,
+      unit: team ? ctx.unitOfTeam.get(team.id) : undefined,
+      circle: ctx.circleOf.get(characterId),
+    },
+    text: (type, id, field) => ctx.texts.get(`${type}:${id}:${field}`),
+  })
+}
+
 // ── Hráč ──────────────────────────────────────────────────────────────
 
 export type SpisLookup =
   | { state: "missing" }
   | { state: "unpublished"; name: string }
-  | { state: "ok"; doc: CharacterDoc }
+  | { state: "ok"; doc: CharacterDoc; academy: AcademyEntry[] }
 
 export async function getSpisByToken(token: string): Promise<SpisLookup> {
   await ensureSpisTables()
@@ -118,7 +144,7 @@ export async function getSpisByToken(token: string): Promise<SpisLookup> {
   if (!link.published_at) return { state: "unpublished", name: DOC_PLAYERS.find(c => c.id === characterId)?.name ?? "" }
   const ctx = await loadRunContext(link.run_id as number)
   const doc = ctx && buildDoc(ctx, characterId)
-  return doc ? { state: "ok", doc } : { state: "missing" }
+  return ctx && doc ? { state: "ok", doc, academy: buildAcademy(ctx, characterId) } : { state: "missing" }
 }
 
 // ── Příprava ──────────────────────────────────────────────────────────

@@ -1053,11 +1053,43 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .spis-text .spis-motto { margin: 0.2em 0 0.9em; font-size: 1.08em; font-weight: 600; letter-spacing: 0.01em; }
 .spis-asterism { text-align: center; margin: 0.9em 0 !important; color: #5a534b; letter-spacing: 0.3em; }
 
+/* Osobní knihovna (nástěnka na obrazovce; tiskne se celý spis) */
+.spis-print-only { display: none; }
+.kn-home { max-width: 980px; }
+.kn-page { max-width: 210mm; }
+.kn-name {
+  margin: 14px 0 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(2.2rem, 7vw, 3.4rem); line-height: 1; letter-spacing: 0.02em; color: #141210;
+}
+.kn-facts { margin: 6px 0 0; color: #3b3630; font-size: 1.02rem; }
+.kn-section { margin: 30px 0 10px !important; padding-bottom: 6px; border-bottom: 0.75px solid #b9b1a7; }
+.kn-mine { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+.kn-card, .kn-tile {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding: 14px 16px; border: 1px solid #b9b1a7; border-radius: 4px; background: #fff;
+  color: #141210; text-decoration: none; font-family: var(--font-sans);
+}
+.kn-card:hover, .kn-tile:hover { border-color: #141210; background: #faf9f7; }
+.kn-card:focus-visible, .kn-tile:focus-visible { outline: 2px solid #701010; outline-offset: 2px; }
+.kn-card-self { border: 2px solid #141210; }
+.kn-card-title { font-family: var(--font-display); font-weight: 600; text-transform: uppercase; font-size: 1.35rem; line-height: 1.1; letter-spacing: 0.02em; }
+.kn-card-sub { font-size: 0.86rem; color: #5a534b; }
+.kn-card-lead { font-size: 0.92rem; line-height: 1.45; color: #3b3630; margin-top: 4px; }
+.kn-card-more { margin-top: auto; padding-top: 8px; display: inline-flex; align-items: center; gap: 2px; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #5a534b; }
+.kn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.kn-tile { padding: 11px 13px; }
+.kn-tile-mine { border-color: #141210; }
+.kn-tile-title { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.kn-tile-lead { font-size: 0.85rem; line-height: 1.4; color: #3b3630; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kn-mine-mark { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 1px 6px; background: #141210; color: #fff; border-radius: 2px; }
+a.spis-btn { text-decoration: none; }
+
 /* Tisk: jen spis, A4, každá kapitola na nové stránce */
 @media print {
   @page { size: A4; margin: 18mm 20mm 18mm; }
   html, body { background: #fff !important; }
   .no-print, .spis-toolbar, .spis-hint { display: none !important; }
+  .spis-print-only { display: block; }
   .spis-screen { background: #fff; padding: 0; min-height: 0; }
   .spis-sheet { max-width: none; margin: 0; padding: 0; box-shadow: none; break-after: page; }
   .spis-sheet:last-child { break-after: auto; }

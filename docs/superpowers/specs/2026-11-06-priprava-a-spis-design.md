@@ -252,6 +252,15 @@ Hráči dostanou **odkaz do aplikace**, tisk je tlačítko na té stránce.
 - Role v jednotce a šablony rodů ve spisu zatím nejsou: obsazení rolí na běh
   ještě neexistuje. Osobní wiki v aplikaci (pavouk) přijde jako další krok.
 
+### Revize 2026-11-07: osobní knihovna na odkazu
+
+Odkaz `/spis/…` na obrazovce ukazuje **nástěnku** (varianta B): karty Já,
+můj tým, moje jednotka, můj kruh, Specializace a původ a pod nimi celou
+akademii (týmy, jednotky, kruhy). Klik otevře stránku, adresa za `#`
+drží místo, takže funguje tlačítko Zpět. U cizích skupin jen medailonek
+a veřejný text, interní texty ani začerněné pruhy se neposílají. Seznam
+lidí zatím ne. Tisk dál tiskne celý spis. Pavouk přijde nad nástěnku.
+
 ## API
 
 | Routa | Přístup | Vrací |

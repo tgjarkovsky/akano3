@@ -1,6 +1,6 @@
 import React from "react"
 import { romanNumeral } from "@/lib/utils"
-import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocLevel, type DocVisibility } from "@/lib/character-doc"
+import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocBlock, type DocLevel, type DocVisibility } from "@/lib/character-doc"
 import { SpisText } from "./spis-text"
 
 // Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
@@ -8,7 +8,7 @@ import { SpisText } from "./spis-text"
 
 const LEVEL_ORDER: DocLevel[] = ["self", "group", "public"]
 
-function Tag({ level }: { level: DocLevel }) {
+export function Tag({ level }: { level: DocLevel }) {
   return <span className={`spis-tag spis-tag-${level}`}>{DOC_LEVEL_LABELS[level]}</span>
 }
 
@@ -77,16 +77,7 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
               <h2 className="spis-chapter-title">{c.title}</h2>
             </div>
           </header>
-          {c.blocks.map(b => (
-            <section key={b.key} className={`spis-block${b.voice ? ` spis-voice-${b.voice}` : ""}`}>
-              <div className="spis-block-head">
-                <h3>{b.title}{b.voice && <span className="spis-voice-note">{VOICE_NOTE[b.voice]}</span>}</h3>
-                <Tag level={DOC_LEVEL[b.visibility]} />
-              </div>
-              {showStatus && b.approved === false && <p className="spis-draft no-print">Text ještě není schválený</p>}
-              <SpisText body={b.body} />
-            </section>
-          ))}
+          {c.blocks.map(b => <SpisBlock key={b.key} block={b} showStatus={showStatus} />)}
         </section>
       ))}
 
@@ -94,6 +85,20 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
         <p className="spis-empty">Spis zatím nemá žádné texty.</p>
       )}
     </article>
+  )
+}
+
+/** Jeden text spisu s nadpisem a štítkem; sdílí ho tisk i osobní knihovna. */
+export function SpisBlock({ block: b, showStatus = false }: { block: DocBlock; showStatus?: boolean }) {
+  return (
+    <section className={`spis-block${b.voice ? ` spis-voice-${b.voice}` : ""}`}>
+      <div className="spis-block-head">
+        <h3>{b.title}{b.voice && <span className="spis-voice-note">{VOICE_NOTE[b.voice]}</span>}</h3>
+        <Tag level={DOC_LEVEL[b.visibility]} />
+      </div>
+      {showStatus && b.approved === false && <p className="spis-draft no-print">Text ještě není schválený</p>}
+      <SpisText body={b.body} />
+    </section>
   )
 }
 

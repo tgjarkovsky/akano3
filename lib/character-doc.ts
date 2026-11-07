@@ -201,3 +201,62 @@ export function formatRunDate(start: string | null | undefined, end?: string | n
   if (m1 !== m2) return `${d1}. ${MONTHS[m1 - 1]} – ${d2}. ${MONTHS[m2 - 1]} ${y2}`
   return `${d1}.–${d2}. ${MONTHS[m2 - 1]} ${y2}`
 }
+
+// ── Osobní knihovna: akademie ─────────────────────────────────────────
+// Ostatní týmy, jednotky a kruhy vidí hráč jen přes medailonek a veřejný text.
+// Interní texty sem nikdy nejdou, ani u vlastních skupin (ty má hráč ve spisu).
+
+export type AcademyKind = "team" | "unit" | "circle"
+
+export type AcademyEntry = {
+  kind: AcademyKind
+  id: string
+  name: string
+  /** krátký řádek pod jménem: členové týmu, týmy jednotky, počet v kruhu */
+  sub?: string
+  /** je to hráčova vlastní skupina (odkaz vede na kapitolu spisu) */
+  mine: boolean
+  blocks: DocBlock[]
+}
+
+export type AcademyInput = {
+  groups: { kind: AcademyKind; id: string; name: string; sub?: string }[]
+  mine: Partial<Record<AcademyKind, string>>
+  text: TextLookup
+}
+
+export function composeAcademy({ groups, mine, text }: AcademyInput): AcademyEntry[] {
+  return groups.map(g => {
+    const blocks: DocBlock[] = []
+    for (const [field, title, visibility] of [
+      ["medallion", "Medailonek", "prelarp"],
+      ["public", "Co vědí všichni", "public"],
+    ] as const) {
+      const t = text(g.kind, g.id, field)
+      if (t && t.body.trim()) blocks.push({ key: `${g.kind}:${g.id}:${field}`, title, body: t.body.trim(), visibility })
+    }
+    return { kind: g.kind, id: g.id, name: g.name, ...(g.sub ? { sub: g.sub } : {}), mine: mine[g.kind] === g.id, blocks }
+  })
+}
+
+/** Ukázka textu na kartu: bez úsloví a nadpisů, bez značek, zkrácená na celé slovo. */
+export function excerpt(body: string, max = 160): string {
+  const plain = body.split("\n")
+    .filter(l => l.trim() && !/^\s*(>|#|-{3,}\s*$)/.test(l))
+    .join(" ")
+    .replace(/\[\[\s*[a-z0-9-]+\s*\|([^\]]*)\]\]/g, "$1")
+    .replace(/\[\[\s*([a-z0-9-]+)\s*\]\]/g, "$1")
+    .replace(/\*+/g, "")
+    .replace(/^[-–]\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (plain.length <= max) return plain
+  const cut = plain.slice(0, max + 1)
+  const space = cut.lastIndexOf(" ")
+  return `${(space > max * 0.6 ? cut.slice(0, space) : plain.slice(0, max)).replace(/[\s,;:–-]+$/, "")}…`
+}
+
+/** „1 člověk“, „3 lidé“, „5 lidí“. */
+export function peopleCount(n: number): string {
+  return n === 1 ? "1 člověk" : n >= 2 && n <= 4 ? `${n} lidé` : `${n} lidí`
+}

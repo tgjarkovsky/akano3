@@ -2,10 +2,11 @@ import type { Metadata } from "next"
 import { isSpisToken, forPlayer } from "@/lib/character-doc"
 import { getSpisByToken } from "@/lib/spis-store"
 import { SpisDocument } from "@/components/spis/spis-document"
-import { PrintButton } from "@/components/spis/print-button"
+import { Knihovna } from "@/components/spis/knihovna"
 
-// Spis jedné postavy pro hráče. Odkaz je tajný a platí pro jeden běh;
-// spis se ukáže, až ho organizátoři v Přípravě zveřejní.
+// Osobní knihovna a spis jedné postavy pro hráče. Odkaz je tajný a platí pro
+// jeden běh; ukáže se, až ho organizátoři v Přípravě zveřejní. Na obrazovce je
+// nástěnka s kartami, tisk vždy vytiskne celý spis.
 
 export const dynamic = "force-dynamic"
 
@@ -54,15 +55,13 @@ export default async function SpisPage({ params }: { params: Promise<{ token: st
   return (
     <main className="spis-screen">
       <style>{PAGE_NUMBERS}</style>
-      <div className="spis-toolbar">
-        <span className="spis-toolbar-title">Osobní spis · {doc.character.name}</span>
-        <PrintButton />
+      <div className="no-print">
+        <Knihovna doc={doc} academy={found.academy} />
       </div>
-      <p className="spis-hint">
-        V tisku zvol „Uložit jako PDF“, nebo rovnou tiskárnu. Spis je připravený na A4 a černobílý tisk.
-      </p>
-      <div className="spis-sheet">
-        <SpisDocument doc={doc} />
+      <div className="spis-print-only">
+        <div className="spis-sheet">
+          <SpisDocument doc={doc} />
+        </div>
       </div>
     </main>
   )
