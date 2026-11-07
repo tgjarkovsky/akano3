@@ -12,7 +12,10 @@
 #   - medailonky jednotek a kruhů (úsloví jako citát „> “ a text pod ním) → Medailonek,
 #   - popis specializací (Úloha, Zaměření, Klíčová odpovědnost) → Specializace · Popis,
 #   - popis původů (záložka „Původ“) → Původ · Popis.
-# Medailonky týmů a dospělých se nepřevádějí. Všechno jsou veřejné texty webu.
+#   - medailonky týmů (záložka „medailonky týmů“, úsloví jako citát „> “, text a Témata
+#     jako odrážky, od „# **Tým N**“ po první jméno) → Tým · Medailonek (od 2026-11-07,
+#     Web je zdroj pravdy medailonků).
+# Medailonky dospělých se nepřevádějí. Všechno jsou veřejné texty webu.
 
 import json, re, sys
 from datetime import datetime, timezone
@@ -95,6 +98,32 @@ for k, i in enumerate(stops[:-1]):
     add("character", CHARACTERS[name], "medallion", "\n\n".join(paragraphs(lines[i + 1:stops[k + 1]])))
 for name in CHARACTERS:
     if name not in found: warnings.append(f"chybí medailonek postavy {name}")
+
+# ── Týmy ───────────────────────────────────────────────────────────────
+a, b = tab("medailonky týmů")
+team_heads = [(i, int(m.group(1))) for i in range(a, b) if (m := re.match(r"^# \*\*Tým (\d+)\*\*", lines[i]))]
+for k, (i, n) in enumerate(team_heads):
+    end = team_heads[k + 1][0] if k + 1 < len(team_heads) else b
+    first_name = find(lambda l: name_re.match(l) is not None, i + 1, end) or end
+    out, para, motto = [], [], None
+    def flush():
+        if para: out.append(" ".join(para)); para.clear()
+    for raw in lines[i + 1:first_name]:
+        l = clean(raw).strip()
+        if not l: flush(); continue
+        if plain(l).rstrip(":") == "Medailonek": continue  # popisek u Týmu 6, není součást textu
+        if re.match(r"^-\s", l):
+            flush(); out.append("- " + plain(l[1:])); continue
+        if motto is None and not out and not para:
+            motto = plain(l); continue
+        para.append(l)
+    flush()
+    body, prev_bullet = [], False
+    for x in out:
+        bullet = x.startswith("- ")
+        if body: body.append("\n" if bullet and prev_bullet else "\n\n")
+        body.append(x); prev_bullet = bullet
+    add("team", f"T{n:02d}", "medallion", (f"> {motto}\n\n" if motto else "") + "".join(body))
 
 # ── Jednotky a kruhy ───────────────────────────────────────────────────
 UNITS = {"Hagakure": "U2", "Murakami": "U1", "Hvězdy": "U3", "VIRA": "U4", "Ucuro": "U5"}
