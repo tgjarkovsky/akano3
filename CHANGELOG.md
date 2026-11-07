@@ -1,3 +1,4 @@
+## [2026-11-07] - Medailonky týmů začínají úslovím v kanji (citát „> “); ve spisu se úsloví na začátku textu vysází jako motto
 ## [2026-11-07] - Texty: pole Medailonek (známé před přihláškou na larp) u postav, týmů, jednotek a kruhů; dosavadní veřejné texty týmů se jednorázově přesunou do medailonků; převodní skript bere i medailonky postav ze záložek týmů; statistiky stavů po kategoriích a polích; medailonky ve spisu se štítkem „před hrou“
 ## [2026-11-06] - Spisy hráčů: tajný odkaz na spis postavy pro každý běh (/spis/[odkaz]), tisk a uložení do PDF na A4 v černobílém vzhledu; Příprava → Spisy hráčů vytváří a kopíruje odkazy, zveřejňuje běh a tiskne jednu postavu nebo celý běh
 ## [2026-11-06] - Oprava importu textů: přepis rozepsaného textu už nezapisuje NULL do changed_after_approval; chyba importu vrací svůj text

@@ -27,12 +27,12 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
     { key: "stands_out",  label: "Čím vystupuju", hint: "Čím vystupuju z řady?",                           visibility: "private" },
   ],
   team: [
-    { key: "medallion", label: "Medailonek", hint: "Co o týmu vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "medallion", label: "Medailonek", hint: "Co o týmu vědí lidi už před přihláškou na larp (web). Může začínat úslovím: > 迷い子 – překlad", visibility: "prelarp" },
     { key: "public",   label: "Veřejné", hint: "Co o týmu vědí na larpu všechny postavy. Platí ve všech bězích, nezmiňuj jednotku.", visibility: "public" },
     { key: "internal", label: "Interní", hint: "Co ví jen členové týmu. Platí ve všech bězích.",              visibility: "internal" },
   ],
   unit: [
-    { key: "medallion", label: "Medailonek", hint: "Co o jednotce vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "medallion", label: "Medailonek", hint: "Co o jednotce vědí lidi už před přihláškou na larp (web). Může začínat úslovím: > 迷い子 – překlad", visibility: "prelarp" },
     { key: "public",   label: "Veřejné", hint: "Co o jednotce vědí na larpu všechny postavy. Lidi z jednotky piš šablonou, mění se mezi běhy.", visibility: "public" },
     { key: "internal", label: "Interní", hint: "Co ví jen členové jednotky. Lidi z jednotky piš šablonou.",               visibility: "internal" },
   ],
@@ -40,7 +40,7 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
     { key: "personal", label: "Osobní", hint: "Co ví jen držitel role. Roli může v různých bězích držet kdokoli z týmu.", visibility: "private" },
   ],
   circle: [
-    { key: "medallion", label: "Medailonek", hint: "Co o kruhu vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "medallion", label: "Medailonek", hint: "Co o kruhu vědí lidi už před přihláškou na larp (web). Může začínat úslovím: > 迷い子 – překlad", visibility: "prelarp" },
     { key: "public",   label: "Veřejné",  hint: "Co o kruhu vědí na larpu všechny postavy.",  visibility: "public" },
     { key: "internal", label: "Společné", hint: "Co ví jen členové kruhu.", visibility: "internal" },
   ],

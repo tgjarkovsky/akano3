@@ -9,7 +9,7 @@
 #
 # Pravidla převodu (rozhodnuta 2026-11-06, viz CHANGELOG):
 #   - postavy C001–C030 → S001–S030, sekce dokumentu → pole aplikace,
-#   - z týmu jen medailonek (odstavec pod úslovím) → Tým · Medailonek,
+#   - z týmu jen medailonek (úsloví v kanji jako citát „> “ a odstavec pod ním) → Tým · Medailonek,
 #   - medailonky postav (v záložce týmu pod jménem postavy) → Postava · Medailonek,
 #   - z hlavičky postavy jen pohlaví → rod,
 #   - v legendách jsou čáry „---“/„—“ předěly; v ostatních sekcích je text mezi
@@ -289,6 +289,12 @@ for t in tabs:
                 paras = first_paragraphs(body[labelled[0] + 1:], only_first=True)
                 warnings.append({"where": title, "issue": "medallion_from_label"})
         medal = clean([l for p in paras for l in p + [""]])
+        # Úsloví v kanji nad medailonkem patří k medailonku: dá se na začátek jako citát.
+        proverb = next((l for l in body[:20] if cjk.search(l)), None)
+        if proverb:
+            q = UNESCAPE.sub(r"\1", re.sub(r"^#+\s*", "", proverb)).replace("*", "").strip()
+            q = re.sub(r"\s{2,}", " ", q)
+            medal = f"> {q}\n\n{medal}" if medal else f"> {q}"
         if medal:
             texts.append({"entityType": "team", "entityId": tid, "field": "medallion", "body": medal})
         else:

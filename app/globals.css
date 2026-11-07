@@ -1033,6 +1033,7 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 }
 .spis-text > .spis-subhead:first-child { margin-top: 0.2em; }
 .spis-minorhead { margin: 1em 0 0.3em; font-family: var(--font-sans); font-weight: 700; font-size: 1em; }
+.spis-text .spis-motto { margin: 0.2em 0 0.9em; font-size: 1.08em; font-weight: 600; letter-spacing: 0.01em; }
 .spis-asterism { text-align: center; margin: 0.9em 0 !important; color: #5a534b; letter-spacing: 0.3em; }
 
 /* Tisk: jen spis, A4, každá kapitola na nové stránce */

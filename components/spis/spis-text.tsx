@@ -30,6 +30,8 @@ function groupLines(body: string): Group[] {
   return out
 }
 
+const CJK = /[\u3040-\u30ff\u4e00-\u9fff]/
+
 function inline(text: string): React.ReactNode {
   const plain = parseInlineLinks(text).map(s => s.type === "link" ? s.label : s.text).join("")
   const parts: React.ReactNode[] = []
@@ -52,7 +54,10 @@ export function SpisText({ body }: { body: string }) {
           case "p":     return <p key={i}>{inline(g.text)}</p>
           case "h2":    return <h4 key={i} className="spis-subhead">{inline(g.text)}</h4>
           case "h3":    return <h5 key={i} className="spis-minorhead">{inline(g.text)}</h5>
-          case "quote": return <blockquote key={i}>{inline(g.text)}</blockquote>
+          // Úsloví v kanji na začátku textu (medailonky týmů a jednotek) jako motto.
+          case "quote": return i === 0 && CJK.test(g.text)
+            ? <p key={i} className="spis-motto">{inline(g.text)}</p>
+            : <blockquote key={i}>{inline(g.text)}</blockquote>
           case "hr":    return <p key={i} className="spis-asterism" aria-hidden="true">⁂</p>
           case "ul":    return <ul key={i}>{g.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ul>
           case "ol":    return <ol key={i}>{g.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ol>
