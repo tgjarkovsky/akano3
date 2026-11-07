@@ -6,16 +6,23 @@ import { TEAMS, CHARACTERS, UNITS } from "@/lib/data"
 import { getUnitName } from "@/lib/utils"
 import { roleLabel, roleRuleOptions } from "@/lib/role-rules"
 import { TeamIcon } from "@/components/shared/team-icon"
-import { allowedValues, describeRule, PROPERTY_SUBJECT, type RuleKind, type RuleProperty } from "@/lib/assignment-rules"
+import { allowedValues, describeRule, type RuleKind, type RuleProperty, type RuleSubject } from "@/lib/assignment-rules"
 import { ruleOptionsFor, PROPERTY_LABELS } from "@/lib/rule-options"
 import { SectionTitle } from "@/components/panels/obsazeni/shared"
 import { useRules } from "./rules-context"
 
 // Pravidla obsazení: pro každou postavu (specializace, původ, kruh, role) a tým
-// (jednotka) které hodnoty smí dostat. Platí ve všech bězích. Role jde jen
-// napevno a s ní i jednotka a trojice týmu.
+// (jednotka) které hodnoty smí dostat. Platí ve všech bězích. Jednotka a role
+// jsou v jedné záložce: u týmu jeho jednotka, pod ním pevné role členů.
+// Role jde jen napevno a s ní i jednotka a trojice týmu.
 
-const PROPERTIES: RuleProperty[] = ["specialization", "origin", "circle", "role", "unit"]
+type Tab = "specialization" | "origin" | "circle" | "unit"
+const TABS: { key: Tab; label: string; properties: RuleProperty[] }[] = [
+  { key: "specialization", label: PROPERTY_LABELS.specialization, properties: ["specialization"] },
+  { key: "origin", label: PROPERTY_LABELS.origin, properties: ["origin"] },
+  { key: "circle", label: PROPERTY_LABELS.circle, properties: ["circle"] },
+  { key: "unit", label: "Jednotka a role", properties: ["unit", "role"] },
+]
 
 const KIND_STYLE: Record<RuleKind, React.CSSProperties> = {
   any:    { color: "var(--c-text-faint)", borderColor: "var(--c-border)" },
@@ -24,16 +31,16 @@ const KIND_STYLE: Record<RuleKind, React.CSSProperties> = {
   some:   { color: "var(--c-teal)", borderColor: "color-mix(in srgb, var(--c-teal) 55%, transparent)", fontWeight: 700 },
 }
 
-type Subject = { id: string; name: string; sub?: string; teamId?: string }
+type Subject = { id: string; name: string; sub?: string; teamId?: string; subjectType: RuleSubject; property: RuleProperty }
 
 export function PravidlaPanel() {
   const { rules, index, roles, loaded, pending, saveRule } = useRules()
-  const [property, setProperty] = useState<RuleProperty>("specialization")
+  const [tabKey, setTabKey] = useState<Tab>("specialization")
   const [onlyRules, setOnlyRules] = useState(false)
   const [query, setQuery] = useState("")
 
-  const subjectType = PROPERTY_SUBJECT[property]
-  const options = useMemo(() => (property === "role" ? roleRuleOptions(roles, getUnitName) : ruleOptionsFor(property)), [property, roles])
+  const roleOptions = useMemo(() => roleRuleOptions(roles, getUnitName), [roles])
+  const optionsOf = (p: RuleProperty) => (p === "role" ? roleOptions : ruleOptionsFor(p))
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {}
@@ -41,30 +48,34 @@ export function PravidlaPanel() {
     return m
   }, [rules])
 
-  // Postavy po týmech, nebo týmy samotné (pro jednotku).
-  const groups = useMemo((): { teamId: string | null; subjects: Subject[] }[] => {
-    if (subjectType === "team") {
-      return [{ teamId: null, subjects: TEAMS.map(t => ({ id: t.id, name: t.name, teamId: t.id })) }]
+  // Postavy po týmech; u jednotky nejdřív řádek týmu, pod ním role členů.
+  const groups = useMemo((): { teamId: string; subjects: Subject[] }[] => TEAMS.map(t => {
+    const members = CHARACTERS.filter(c => c.teamId === t.id && (c.role === "student" || c.role === "ruze"))
+    if (tabKey === "unit") {
+      return {
+        teamId: t.id,
+        subjects: [
+          { id: t.id, name: "Jednotka týmu", teamId: t.id, subjectType: "team" as const, property: "unit" as const },
+          ...members.map(c => ({ id: c.id, name: c.name, subjectType: "character" as const, property: "role" as const })),
+        ],
+      }
     }
-    return TEAMS.map(t => ({
-      teamId: t.id,
-      subjects: CHARACTERS.filter(c => c.teamId === t.id && (c.role === "student" || c.role === "ruze"))
-        .map(c => ({ id: c.id, name: c.name })),
-    }))
-  }, [subjectType])
+    return { teamId: t.id, subjects: members.map(c => ({ id: c.id, name: c.name, subjectType: "character" as const, property: tabKey })) }
+  }), [tabKey])
 
   const q = query.trim().toLowerCase()
   const visible = (s: Subject) => {
-    if (q && !`${s.name} ${s.sub ?? ""}`.toLowerCase().includes(q)) return false
-    if (onlyRules && allowedValues(index, subjectType, s.id, property) === null) return false
+    const team = TEAMS.find(t => t.id === s.teamId)?.name ?? ""
+    if (q && !`${s.name} ${s.sub ?? ""} ${team}`.toLowerCase().includes(q)) return false
+    if (onlyRules && allowedValues(index, s.subjectType, s.id, s.property) === null) return false
     return true
   }
 
   const toggle = (s: Subject, value: string) => {
-    const current = allowedValues(index, subjectType, s.id, property) ?? options.map(o => o.value)
+    const current = allowedValues(index, s.subjectType, s.id, s.property) ?? optionsOf(s.property).map(o => o.value)
     const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value]
     if (next.length === 0) return
-    saveRule(subjectType, s.id, property, next)
+    saveRule(s.subjectType, s.id, s.property, next)
   }
 
   const tab = (active: boolean): React.CSSProperties => ({
@@ -79,24 +90,27 @@ export function PravidlaPanel() {
         Které hodnoty smí postava nebo tým dostat. Klikni na možnost a vypneš ji: všechny zapnuté znamenají
         <b> libovolná</b>, jedna zapnutá <b>napevno</b>, všechny kromě jedné <b>kterákoli až na</b>.
         Pravidla platí ve všech bězích a obsazení podle nich zamyká volby.
-        {property === "role" && <> Roli jde dát jen <b>napevno</b>: tým postavy pak smí jen do jednotky a trojice té role.
-          Role se zakládají v Texty → Role.</>}
+        {tabKey === "unit" && <> U týmu nastavíš jednotku, pod ním členům pevnou roli. Roli jde dát jen <b>napevno</b>:
+          tým pak smí jen do jednotky a trojice té role. Role se zakládají v Texty → Role.</>}
       </p>
 
       <div role="tablist" aria-label="Vlastnost" style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--c-border)", marginBottom: 16, overflowX: "auto" }}>
-        {PROPERTIES.map(p => (
-          <button key={p} role="tab" aria-selected={p === property} style={tab(p === property)} onClick={() => setProperty(p)}>
-            {PROPERTY_LABELS[p]}{p === "unit" ? " týmu" : ""}
-            {counts[p] ? <span style={{ marginLeft: 6, fontSize: "0.75rem", color: "var(--c-accent)" }}>{counts[p]}</span> : null}
-          </button>
-        ))}
+        {TABS.map(t => {
+          const n = t.properties.reduce((sum, p) => sum + (counts[p] ?? 0), 0)
+          return (
+            <button key={t.key} role="tab" aria-selected={t.key === tabKey} style={tab(t.key === tabKey)} onClick={() => setTabKey(t.key)}>
+              {t.label}
+              {n ? <span style={{ marginLeft: 6, fontSize: "0.75rem", color: "var(--c-accent)" }}>{n}</span> : null}
+            </button>
+          )
+        })}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 14 }}>
         <label style={{ position: "relative", flex: "1 1 200px", maxWidth: 260 }}>
           <span className="sr-only">Hledat</span>
           <IconSearch size={14} color="var(--c-text-faint)" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={subjectType === "team" ? "Hledat tým" : "Hledat postavu"}
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={tabKey === "unit" ? "Hledat tým nebo postavu" : "Hledat postavu"}
             style={{
               width: "100%", boxSizing: "border-box", minHeight: 34, padding: "0 10px 0 30px",
               backgroundColor: "var(--c-input)", border: "1px solid var(--c-input-border)", borderRadius: 6,
@@ -114,24 +128,27 @@ export function PravidlaPanel() {
           {groups.map(g => {
             const rows = g.subjects.filter(visible)
             if (rows.length === 0) return null
-            const team = g.teamId ? TEAMS.find(t => t.id === g.teamId) : null
+            const team = TEAMS.find(t => t.id === g.teamId)
             return (
-              <div key={g.teamId ?? "teams"}>
+              <div key={g.teamId}>
                 {team && (
                   <div className="char-group" style={{ borderLeftColor: team.color }}>
                     <TeamIcon teamId={team.id} size={14} /> <span style={{ fontWeight: 700 }}>{team.name}</span>
                   </div>
                 )}
                 {rows.map(s => {
+                  const { subjectType, property } = s
+                  const options = optionsOf(property)
                   const allowed = allowedValues(index, subjectType, s.id, property)
                   const desc = describeRule(allowed, options)
                   const busy = pending === `${subjectType}:${s.id}:${property}`
                   return (
-                    <div key={s.id} className="rule-row" style={{ opacity: busy ? 0.55 : 1 }}>
+                    <div key={`${subjectType}:${s.id}`} className="rule-row" style={{ opacity: busy ? 0.55 : 1 }}>
                       <span style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                        {s.teamId && <TeamIcon teamId={s.teamId} size={14} />}
                         <span>
-                          <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{s.name}</span>
+                          <span style={subjectType === "team"
+                            ? { fontWeight: 600, color: "var(--c-text-muted)", fontSize: "0.85rem" }
+                            : { fontWeight: 700, color: "var(--c-text)" }}>{s.name}</span>
                           {s.sub && <span style={{ display: "block", fontSize: "0.78rem", fontStyle: "italic", color: "var(--c-text-muted)" }}>„{s.sub}“</span>}
                         </span>
                       </span>
