@@ -42,6 +42,10 @@ type RunContext = {
   runName: string
   runDate?: string
   unitOfTeam: Map<string, string>
+  tripletOfTeam: Map<string, string | null>
+  /** pevná role postavy (Příprava → Pravidla), id role v unit_roles */
+  fixedRoleOf: Map<string, string>
+  roles: Map<string, { unitId: string; triplet: string; nameM: string; nameF: string }>
   state: Map<string, { specialization: string | null; origin: string | null }>
   circleOf: Map<string, string>
   gender: Map<string, string | null>
@@ -52,13 +56,15 @@ type RunContext = {
 
 async function loadRunContext(runId: number): Promise<RunContext | null> {
   await ensureSpisTables()
-  const [runs, units, states, circles, texts, meta] = await Promise.all([
+  const [runs, units, states, circles, texts, meta, roleRows, roleRules] = await Promise.all([
     sql`SELECT name, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs WHERE id = ${runId}`,
-    sql`SELECT team_id, unit_id FROM team_units WHERE run_id = ${runId}`,
+    sql`SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${runId}`,
     sql`SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${runId}`,
     sql`SELECT circle_id, character_id FROM circle_members WHERE run_id = ${runId} ORDER BY circle_id`,
-    sql`SELECT entity_type, entity_id, field, body, status FROM doc_texts WHERE entity_type <> 'role'`,
+    sql`SELECT entity_type, entity_id, field, body, status FROM doc_texts`,
     sql`SELECT character_id, gender FROM character_meta`,
+    sql`SELECT id, unit_id, triplet, name_m, name_f FROM unit_roles`,
+    sql`SELECT subject_id, allowed FROM assignment_rules WHERE subject_type = 'character' AND property = 'role'`,
   ])
   if (runs.length === 0) return null
   const circleOf = new Map<string, string>()
@@ -67,6 +73,11 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     runName: runs[0].name as string,
     runDate: formatRunDate(runs[0].starts_on as string | null, runs[0].ends_on as string | null),
     unitOfTeam: new Map(units.map(r => [r.team_id as string, r.unit_id as string])),
+    tripletOfTeam: new Map(units.map(r => [r.team_id as string, (r.triplet as string | null) ?? null])),
+    fixedRoleOf: new Map(roleRules.filter(r => (r.allowed as string[]).length === 1).map(r => [r.subject_id as string, (r.allowed as string[])[0]])),
+    roles: new Map(roleRows.map(r => [String(r.id), {
+      unitId: r.unit_id as string, triplet: r.triplet as string, nameM: r.name_m as string, nameF: r.name_f as string,
+    }])),
     state: new Map(states.map(r => [r.character_id as string, {
       specialization: r.specialization as string | null, origin: r.origin as string | null,
     }])),
@@ -110,6 +121,18 @@ function circleMembers(ctx: Omit<RunContext, "roster">, circleId: string): strin
   return DOC_PLAYERS.filter(c => ctx.circleOf.get(c.id) === circleId).map(c => c.name)
 }
 
+/**
+ * Role postavy v jednotce. Zatím jen pevná role z pravidel, a jen když tým
+ * v běhu opravdu stojí v její jednotce a trojici (jinak to hlásí kontroly obsazení).
+ */
+function roleOf(ctx: Omit<RunContext, "roster">, characterId: string, teamId: string | undefined) {
+  const id = ctx.fixedRoleOf.get(characterId)
+  const role = id ? ctx.roles.get(id) : undefined
+  if (!id || !role || !teamId) return undefined
+  if (ctx.unitOfTeam.get(teamId) !== role.unitId || ctx.tripletOfTeam.get(teamId) !== role.triplet) return undefined
+  return { id, name: ctx.gender.get(characterId) === "f" ? role.nameF : role.nameM }
+}
+
 function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
   const character = DOC_PLAYERS.find(c => c.id === characterId)
   if (!character) return null
@@ -126,7 +149,7 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
     runDate: ctx.runDate,
     character: { id: character.id, name: character.name },
     team: team && { id: team.id, name: team.name, teammates: team.memberIds.filter(id => id !== characterId).map(nameOf) },
-    unit: unit && { id: unit.id, name: unit.name, members: unitMembers(ctx, unit.id) },
+    unit: unit && { id: unit.id, name: unit.name, members: unitMembers(ctx, unit.id), role: roleOf(ctx, characterId, team?.id) },
     circle: circle && { id: circle.id, name: circle.name, members: circleMembers(ctx, circle.id) },
     roster: ctx.roster,
     specialization: spec && { id: `specialization:${spec.value}`, label: spec.label },

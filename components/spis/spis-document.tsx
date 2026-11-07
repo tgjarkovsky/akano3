@@ -18,6 +18,7 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
     ["Tým", h.team],
     ["V týmu s tebou", h.teammates.length ? h.teammates.join(", ") : undefined],
     ["Jednotka", h.unit],
+    ["Role v jednotce", h.role],
     ["Specializace", h.specialization],
     ["Původ", h.origin],
     ["Kruh", h.circle],

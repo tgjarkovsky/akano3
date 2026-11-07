@@ -60,6 +60,8 @@ export type CharacterDoc = {
     team?: string
     teammates: string[]
     unit?: string
+    /** role v jednotce (zatím jen pevná role z pravidel), v rodě postavy */
+    role?: string
     specialization?: string
     origin?: string
     circle?: string
@@ -80,7 +82,7 @@ export type DocInput = {
   runDate?: string
   character: { id: string; name: string }
   team?: Named & { teammates: string[] }
-  unit?: Named & { members?: MemberGroup[] }
+  unit?: Named & { members?: MemberGroup[]; role?: Named }
   circle?: Named & { members?: string[] }
   roster?: DogTag[]
   /** id ve tvaru „specialization:combat“, stejně jako entity textů */
@@ -141,6 +143,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
       ...block("unit", unit.id, "medallion", "Medailonek", "prelarp"),
       ...block("unit", unit.id, "public", "Co o jednotce vědí všichni", "public"),
       ...block("unit", unit.id, "internal", "Jen v jednotce", "unit"),
+      ...(unit.role ? block("role", unit.role.id, "personal", `Tvoje role: ${unit.role.name}`, "self") : []),
     ],
   })
   if (circle) chapters.push({
@@ -168,6 +171,7 @@ export function composeCharacterDoc(input: DocInput): CharacterDoc {
       team: team?.name,
       teammates: team?.teammates ?? [],
       unit: unit?.name,
+      ...(unit?.role ? { role: unit.role.name } : {}),
       specialization: specialization?.label,
       origin: origin?.label,
       circle: circle?.name,

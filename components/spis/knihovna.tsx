@@ -86,7 +86,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
       </div>
       <div className="spis-double-rule" />
       <h1 className="kn-name">{doc.character.name}</h1>
-      <p className="kn-facts">{[h.team, h.unit && `jednotka ${h.unit}`, h.circle && `kruh ${h.circle}`].filter(Boolean).join(" · ")}</p>
+      <p className="kn-facts">{[h.team, h.unit && `jednotka ${h.unit}${h.role ? ` (${h.role})` : ""}`, h.circle && `kruh ${h.circle}`].filter(Boolean).join(" · ")}</p>
 
       <section aria-labelledby="kn-ty">
         <h2 id="kn-ty" className="spis-label kn-section kn-section-first">Ty a tvoje skupiny</h2>
