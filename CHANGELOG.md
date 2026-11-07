@@ -1,3 +1,5 @@
+## [2026-11-07] - Spis, Vztahy: v osobní knihovně dlaždice po osobách jako na nástěnce, celý vztah v náhledu při najetí myší nebo klepnutí; v dokumentu a tisku karty; údaje z textu, které ukazuje dogtag (rod, tým, původ, jednotka, kruh, specializace), a nevyplněné hodnoty ze šablony se nevypisují, tým a jednotka jsou z aktuálního běhu; náhledy dlaždic se nově vejdou do okna
+## [2026-11-07] - Oprava: spis bere trojici týmu stejně jako Obsazení (u běhů bez uložené trojice ji dopočítá), takže pevná role se ve spisu ukáže i tam
 ## [2026-11-07] - Spis: postava s pevnou rolí (Příprava → Pravidla) dostane v kapitole Jednotka osobní text role jako „Tvoje role: …“ se štítkem jen ty a roli v hlavičce spisu i nástěnky; jen když tým v běhu stojí v jednotce a trojici té role
 ## [2026-11-07] - Pravidla: pevnou roli jde vybrat jen v týmu s jednotkou napevno a jen z rolí té jednotky; jednotku týmu s pevnými rolemi nejde změnit ani uvolnit, dokud se role nezruší
 ## [2026-11-07] - Pravidla: záložky Role a Jednotka týmu jsou jedna „Jednotka a role“; u každého týmu je nahoře jeho jednotka a pod ní pevné role členů

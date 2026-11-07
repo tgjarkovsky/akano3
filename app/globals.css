@@ -1035,6 +1035,17 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .spis-members-self { color: #5a534b; font-style: italic; }
 @media (max-width: 640px) { .spis-members > div { grid-template-columns: 1fr; gap: 0; } }
 
+/* Vztahy: v knihovně dlaždice s náhledem, v dokumentu a tisku karty s celým textem */
+.spis-rel-grid { margin: 4px 0 6px; }
+.spis-rel-facts { margin: 0 0 8px; display: grid; gap: 1px; font-size: 0.86em; }
+.spis-rel-facts > div { display: grid; grid-template-columns: 26mm 1fr; gap: 10px; align-items: baseline; padding: 2px 0; border-bottom: 0.75px dotted #d8d2ca; }
+.spis-rel-facts dt { font-family: var(--font-mono); font-size: 0.72em; letter-spacing: 0.12em; text-transform: uppercase; color: #5a534b; }
+.spis-rel-facts dd { margin: 0; }
+.spis-rel-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 72mm), 1fr)); gap: 4mm; margin-top: 2mm; }
+.spis-rel-card { border: 0.75px solid #141210; border-radius: 3px; padding: 3mm 4mm 1mm; break-inside: avoid; page-break-inside: avoid; }
+.spis-rel-name { margin: 0 0 2mm; font-family: var(--font-display); font-weight: 600; text-transform: uppercase; font-size: 1.05em; letter-spacing: 0.02em; }
+.spis-rel-card .spis-text { max-width: none; font-size: 0.95em; }
+
 /* Dogtag: jméno postavy v textu, při najetí nebo klepnutí základní údaje */
 .dogtag { position: relative; cursor: help; border-radius: 2px; hyphens: manual; -webkit-hyphens: manual; white-space: nowrap; }
 .dogtag:focus { outline: none; }
@@ -1140,7 +1151,7 @@ button.kn-tile { width: 100%; height: 100%; text-align: left; cursor: pointer; f
 /* Na telefonu jako list ze spodu obrazovky */
 @media (max-width: 640px) {
   .kn-peek, .kn-peek-right, .kn-peek-above {
-    position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; width: auto; max-height: 70vh;
+    position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; width: auto; max-height: 70vh !important; /* přebije výšku spočítanou pro desktop */
   }
 }
 

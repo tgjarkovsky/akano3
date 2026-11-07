@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useEffect, useId, useRef, useState } from "react"
-import { IconArrowLeft, IconChevronRight, IconFileText, IconX } from "@tabler/icons-react"
+import React, { useEffect, useState } from "react"
+import { IconArrowLeft, IconChevronRight, IconFileText } from "@tabler/icons-react"
 import { excerpt, type AcademyEntry, type AcademyKind, type CharacterDoc, type DocChapter } from "@/lib/character-doc"
 import { Members, SpisBlock, SpisDocument } from "./spis-document"
 import { SpisText, WithNames } from "./spis-text"
 import { PrintButton } from "./print-button"
+import { PeekTile } from "./peek-tile"
 
 // Osobní knihovna hráče. Nahoře všechno, co je hráčovo: on sám a jeho skupiny
 // (tým, jednotka, kruh) jako karty s vlastní stránkou. Pod tím ostatní skupiny
@@ -131,7 +132,7 @@ function Page({ chapter: c, doc }: { chapter: DocChapter; doc: CharacterDoc }) {
       {c.members && <Members groups={c.members} roster={doc.roster} self={doc.character.name} />}
       {c.blocks.length === 0
         ? <p className="spis-empty">Zatím tu nic není.</p>
-        : c.blocks.map(b => <SpisBlock key={b.key} block={b} roster={doc.roster} />)}
+        : c.blocks.map(b => <SpisBlock key={b.key} block={b} roster={doc.roster} interactive />)}
     </article>
   )
 }
@@ -141,78 +142,25 @@ function textCount(n: number) {
 }
 
 // Skupina, kde hráč není: dlaždice a náhled s medailonkem a veřejným textem.
-// Myš: náhled se ukáže při najetí a zmizí po odjetí (i z náhledu).
-// Klepnutí nebo Enter: náhled zůstane otevřený, zavře ho křížek, Esc nebo klik jinam.
 function GroupTile({ entry: e, roster }: { entry: AcademyEntry; roster?: CharacterDoc["roster"] }) {
-  const [open, setOpen] = useState<"hover" | "pinned" | null>(null)
-  const [alignRight, setAlignRight] = useState(false)
-  const [above, setAbove] = useState(false)
-  const wrap = useRef<HTMLDivElement>(null)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const id = useId()
   const medal = e.blocks.find(b => b.title === "Medailonek") ?? e.blocks[0]
-
-  const place = () => {
-    const r = wrap.current?.getBoundingClientRect()
-    if (!r) return
-    setAlignRight(r.left + 380 > window.innerWidth)
-    // U spodního okraje okna se náhled otevře nad dlaždicí.
-    setAbove(window.innerHeight - r.bottom < 320 && r.top > window.innerHeight - r.bottom)
-  }
-  const clear = () => { if (timer.current) clearTimeout(timer.current); timer.current = null }
-  const hoverIn = (ev: React.PointerEvent) => {
-    if (ev.pointerType !== "mouse") return
-    clear()
-    if (open) return
-    timer.current = setTimeout(() => { place(); setOpen("hover") }, 180)
-  }
-  const hoverOut = (ev: React.PointerEvent) => {
-    if (ev.pointerType !== "mouse") return
-    clear()
-    setOpen(o => (o === "hover" ? null : o))
-  }
-
-  useEffect(() => {
-    if (open !== "pinned") return
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") setOpen(null) }
-    const onDown = (ev: PointerEvent) => { if (!wrap.current?.contains(ev.target as Node)) setOpen(null) }
-    document.addEventListener("keydown", onKey)
-    document.addEventListener("pointerdown", onDown)
-    return () => { document.removeEventListener("keydown", onKey); document.removeEventListener("pointerdown", onDown) }
-  }, [open])
-  useEffect(() => clear, [])
-
   return (
-    <div ref={wrap} className="kn-peek-wrap" onPointerEnter={hoverIn} onPointerLeave={hoverOut}>
-      <button type="button" className="kn-tile" aria-expanded={open !== null} aria-controls={id}
-        onClick={() => { clear(); place(); setOpen(o => (o === "pinned" ? null : "pinned")) }}>
-        <span className="kn-tile-title">{e.name}</span>
+    <PeekTile label={KIND_LABEL[e.kind].one} title={e.name}
+      tile={<>
         {e.sub && <span className="kn-card-sub">{e.sub}</span>}
         <span className="kn-tile-lead">{medal ? excerpt(medal.body, 110) : "Zatím bez popisu."}</span>
-      </button>
-      {open && (
-        <div id={id} role="dialog" aria-label={`${KIND_LABEL[e.kind].one} ${e.name}`}
-          className={`kn-peek${alignRight ? " kn-peek-right" : ""}${above ? " kn-peek-above" : ""}`}>
-          <div className="kn-peek-head">
-            <div>
-              <p className="spis-label">{KIND_LABEL[e.kind].one}</p>
-              <p className="kn-peek-title">{e.name}</p>
-              {e.sub && <p className="kn-card-sub"><WithNames text={e.sub} roster={roster} /></p>}
-            </div>
-            <button type="button" className="kn-peek-close" aria-label="Zavřít náhled" onClick={() => setOpen(null)}>
-              <IconX size={16} />
-            </button>
-          </div>
-          {e.blocks.length === 0
-            ? <p className="kn-peek-empty">O této skupině zatím nic veřejného nevíme.</p>
-            : e.blocks.map(b => (
-              <section key={b.key} className="kn-peek-block">
-                <p className="kn-peek-label">{b.title}</p>
-                <SpisText body={b.body} roster={roster} />
-              </section>
-            ))}
-        </div>
-      )}
-    </div>
+      </>}>
+      {{
+        sub: e.sub && <p className="kn-card-sub"><WithNames text={e.sub} roster={roster} /></p>,
+        body: e.blocks.length === 0
+          ? <p className="kn-peek-empty">O této skupině zatím nic veřejného nevíme.</p>
+          : e.blocks.map(b => (
+            <section key={b.key} className="kn-peek-block">
+              <p className="kn-peek-label">{b.title}</p>
+              <SpisText body={b.body} roster={roster} />
+            </section>
+          )),
+      }}
+    </PeekTile>
   )
 }

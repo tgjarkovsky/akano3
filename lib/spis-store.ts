@@ -5,6 +5,8 @@ import { DOC_PLAYERS } from "@/lib/doc-ids"
 import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
+import { computeUnitSlots, slotOfTeam } from "@/lib/unit-slots"
+import type { Triplet } from "@/lib/types"
 import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, type AcademyEntry, type CharacterDoc, type DogTag, type MemberGroup, type StoredText } from "@/lib/character-doc"
 
 // Spisy postav pro hráče. Každá postava má na každý běh tajný odkaz;
@@ -42,7 +44,8 @@ type RunContext = {
   runName: string
   runDate?: string
   unitOfTeam: Map<string, string>
-  tripletOfTeam: Map<string, string | null>
+  /** trojice týmu stejně jako v Obsazení: uložená, u starších běhů dopočítaná */
+  tripletOfTeam: Map<string, Triplet>
   /** pevná role postavy (Příprava → Pravidla), id role v unit_roles */
   fixedRoleOf: Map<string, string>
   roles: Map<string, { unitId: string; triplet: string; nameM: string; nameF: string }>
@@ -73,7 +76,10 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     runName: runs[0].name as string,
     runDate: formatRunDate(runs[0].starts_on as string | null, runs[0].ends_on as string | null),
     unitOfTeam: new Map(units.map(r => [r.team_id as string, r.unit_id as string])),
-    tripletOfTeam: new Map(units.map(r => [r.team_id as string, (r.triplet as string | null) ?? null])),
+    tripletOfTeam: tripletsOf(units.map(r => ({
+      teamId: r.team_id as string, unitId: r.unit_id as string | null,
+      triplet: r.triplet === "A" || r.triplet === "B" ? r.triplet : null,
+    }))),
     fixedRoleOf: new Map(roleRules.filter(r => (r.allowed as string[]).length === 1).map(r => [r.subject_id as string, (r.allowed as string[])[0]])),
     roles: new Map(roleRows.map(r => [String(r.id), {
       unitId: r.unit_id as string, triplet: r.triplet as string, nameM: r.name_m as string, nameF: r.name_f as string,
@@ -89,6 +95,19 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     ])),
   }
   return { ...ctx, roster: DOC_PLAYERS.map(c => dogTag(ctx, c.id, c.name)) }
+}
+
+/** Trojice týmů v běhu. Chybějící trojici doplní stejně jako Obsazení (lib/unit-slots.ts). */
+function tripletsOf(placements: { teamId: string; unitId: string | null; triplet: Triplet | null }[]): Map<string, Triplet> {
+  const order = TEAMS.map(t => t.id)
+  const sorted = [...placements].sort((a, b) => order.indexOf(a.teamId) - order.indexOf(b.teamId))
+  const slots = computeUnitSlots(UNITS.map(u => u.id), sorted)
+  const out = new Map<string, Triplet>()
+  for (const p of sorted) {
+    const at = slotOfTeam(slots, p.teamId)
+    if (at) out.set(p.teamId, at.triplet)
+  }
+  return out
 }
 
 const GENDER_LABEL: Record<string, string> = { m: "muž", f: "žena" }

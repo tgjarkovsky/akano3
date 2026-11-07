@@ -2,6 +2,8 @@ import React from "react"
 import { romanNumeral } from "@/lib/utils"
 import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocBlock, type DocLevel, type DocVisibility, type DogTag, type MemberGroup } from "@/lib/character-doc"
 import { SpisText, WithNames } from "./spis-text"
+import { parseRelationships } from "@/lib/relationships"
+import { RelationshipCards, RelationshipTiles } from "./relationships"
 
 // Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
@@ -90,8 +92,14 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
   )
 }
 
-/** Jeden text spisu s nadpisem a štítkem; sdílí ho tisk i osobní knihovna. */
-export function SpisBlock({ block: b, showStatus = false, roster }: { block: DocBlock; showStatus?: boolean; roster?: DogTag[] }) {
+/**
+ * Jeden text spisu s nadpisem a štítkem; sdílí ho tisk i osobní knihovna.
+ * Vztahy s nadpisy ### po osobách: v knihovně (interactive) dlaždice, jinak karty.
+ */
+export function SpisBlock({ block: b, showStatus = false, roster, interactive = false }: {
+  block: DocBlock; showStatus?: boolean; roster?: DogTag[]; interactive?: boolean
+}) {
+  const rel = b.key.endsWith(":relationships") ? parseRelationships(b.body) : null
   return (
     <section className={`spis-block${b.voice ? ` spis-voice-${b.voice}` : ""}`}>
       <div className="spis-block-head">
@@ -99,7 +107,9 @@ export function SpisBlock({ block: b, showStatus = false, roster }: { block: Doc
         <Tag level={DOC_LEVEL[b.visibility]} />
       </div>
       {showStatus && b.approved === false && <p className="spis-draft no-print">Text ještě není schválený</p>}
-      <SpisText body={b.body} roster={roster} />
+      {rel
+        ? (interactive ? <RelationshipTiles rel={rel} roster={roster} /> : <RelationshipCards rel={rel} roster={roster} />)
+        : <SpisText body={b.body} roster={roster} />}
     </section>
   )
 }
