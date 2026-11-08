@@ -26,13 +26,15 @@ type Props = {
   onCircle: (characterId: string, circleId: string) => void
   rules: Map<string, string[]>
   roles: RuleRole[]
+  /** role v běhu: id postavy → id role */
+  held: ReadonlyMap<string, string>
   /** kolik pevných hodnot z pravidel postavám ještě chybí */
   fixedPending: number
   applyingFixed: boolean
   onApplyFixed: () => void
 }
 
-export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, roles, fixedPending, applyingFixed, onApplyFixed }: Props) {
+export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, roles, held, fixedPending, applyingFixed, onApplyFixed }: Props) {
   const [filter, setFilter] = useState<Filter>({ kind: "all" })
   const [query, setQuery] = useState("")
 
@@ -138,11 +140,13 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                     <span role="cell" style={{ minWidth: 0 }}>
                       <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{c.name}</span>
                       {(() => {
-                        const r = fixedRole(rules, roles, c.id)
+                        // Pevná role z Pravidel (se zámkem), jinak role rozdělená v běhu.
+                        const fixed = fixedRole(rules, roles, c.id)
+                        const r = fixed ?? roles.find(x => String(x.id) === held.get(c.id))
                         return r && (
                           <span style={{ display: "block", fontSize: "0.76rem", color: "var(--c-accent)" }}
-                            title={`Pevná role v jednotce ${getUnitName(r.unitId)}, trojice ${r.triplet}`}>
-                            <IconLock size={11} aria-hidden style={{ verticalAlign: "-1px" }} /> {roleLabel(r)}
+                            title={`${fixed ? "Pevná role" : "Role v běhu"}: ${getUnitName(r.unitId)}, trojice ${r.triplet}`}>
+                            {fixed && <IconLock size={11} aria-hidden style={{ verticalAlign: "-1px" }} />} {roleLabel(r)}
                           </span>
                         )
                       })()}

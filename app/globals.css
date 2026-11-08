@@ -619,6 +619,13 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   color: var(--c-text-muted); font-size: 0.78rem; cursor: pointer;
 }
 .circle-select { color: var(--c-text); font-size: 0.84rem; min-height: 34px; }
+.role-select {
+  width: 100%; min-height: 28px; padding: 0 6px;
+  background-color: var(--c-input); border: 1px solid var(--c-input-border); border-radius: 6px;
+  color: var(--c-accent); font-size: 0.76rem; cursor: pointer;
+}
+.role-select[data-empty] { color: var(--c-text-faint); border-style: dashed; }
+.role-fixed { margin: 3px 0 0; font-size: 0.76rem; color: var(--c-accent); }
 .circle-select[data-empty] { border-color: var(--destructive); color: var(--destructive); }
 
 .seg { display: flex; border: 1px solid var(--c-border-mid); border-radius: 6px; overflow: hidden; }

@@ -60,7 +60,7 @@ export type CharacterDoc = {
     team?: string
     teammates: string[]
     unit?: string
-    /** role v jednotce (zatím jen pevná role z pravidel), v rodě postavy */
+    /** role v jednotce v běhu (pevná z Pravidel nebo rozdělená v Obsazení), v rodě postavy */
     role?: string
     specialization?: string
     origin?: string

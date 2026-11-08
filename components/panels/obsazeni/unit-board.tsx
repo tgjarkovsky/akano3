@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState } from "react"
-import { IconGripVertical, IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react"
+import { IconGripVertical, IconAlertTriangle, IconCircleCheck, IconLock } from "@tabler/icons-react"
 import { UNITS, TEAMS } from "@/lib/data"
 import { TeamIcon } from "@/components/shared/team-icon"
 import { getUnitName } from "@/lib/utils"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
-import { planTeamMove, type UnitSlots } from "@/lib/unit-slots"
+import { planTeamMove, slotOfTeam, type UnitSlots } from "@/lib/unit-slots"
 import { isAllowed } from "@/lib/assignment-rules"
-import { slotBlockedByRoles, type RuleRole } from "@/lib/role-rules"
+import { roleLabel, slotBlockedByRoles, type RuleRole } from "@/lib/role-rules"
 import type { Character, Triplet } from "@/lib/types"
 import { SectionTitle } from "./shared"
 
@@ -25,9 +25,15 @@ type Props = {
   onMove: (teamId: string, unitId: string, triplet: Triplet) => void
   rules: Map<string, string[]>
   roles: RuleRole[]
+  /** role v běhu: id postavy → id role */
+  held: ReadonlyMap<string, string>
+  /** postavy s pevnou rolí z Pravidel */
+  fixedHolders: ReadonlySet<string>
+  rolePending: string | null
+  onAssignRole: (characterId: string, roleId: string | null) => void
 }
 
-export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues, pendingTeamId, onMove, rules, roles }: Props) {
+export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues, pendingTeamId, onMove, rules, roles, held, fixedHolders, rolePending, onAssignRole }: Props) {
   const [dragTeam, setDragTeam] = useState<string | null>(null)
   const [overSlot, setOverSlot] = useState<string | null>(null)
 
@@ -49,6 +55,7 @@ export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues,
   const card = (teamId: string, warn = false) => (
     <TeamCard key={teamId} teamId={teamId} warn={warn} characters={characters}
       slots={slots} busy={pendingTeamId === teamId} rules={rules} roles={roles}
+      held={held} fixedHolders={fixedHolders} rolePending={rolePending} onAssignRole={onAssignRole}
       onDragStart={() => setDragTeam(teamId)} onDragEnd={() => { setDragTeam(null); setOverSlot(null) }}
       onMove={onMove} />
   )
@@ -98,7 +105,7 @@ export function UnitBoard({ slots, unplacedTeamIds, characters, unitsWithIssues,
   )
 }
 
-function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEnd, onMove, rules, roles }: {
+function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEnd, onMove, rules, roles, held, fixedHolders, rolePending, onAssignRole }: Pick<Props, "held" | "fixedHolders" | "rolePending" | "onAssignRole"> & {
   rules: Map<string, string[]>
   roles: RuleRole[]
   teamId: string
@@ -112,6 +119,9 @@ function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEn
 }) {
   const team = TEAMS.find(t => t.id === teamId)
   const members = characters.filter(c => c.teamId === teamId)
+  // Role trojice, ve které tým stojí; tým si je rozdělí (pevné role jsou zamčené).
+  const at = slotOfTeam(slots, teamId)
+  const slotRoles = at ? roles.filter(r => r.unitId === at.unitId && r.triplet === at.triplet) : []
 
   return (
     <div id={`team-${teamId}`} className="team-card" draggable={!busy}
@@ -129,13 +139,49 @@ function TeamCard({ teamId, warn, characters, slots, busy, onDragStart, onDragEn
         {members.map(m => {
           const spec = specLabel(m.specialization), origin = originLabel(m.origin)
           return (
-            <li key={m.id} style={{ display: "flex", justifyContent: "space-between", gap: 6, fontSize: "0.8rem" }}>
-              <span style={{ color: "var(--c-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</span>
-              <span style={{ whiteSpace: "nowrap", color: "var(--c-text-faint)" }}>
-                <span style={spec ? undefined : { color: "var(--destructive)" }}>{spec ?? "spec. ?"}</span>
-                {" · "}
-                <span style={origin ? undefined : { color: "var(--destructive)" }}>{origin ?? "původ ?"}</span>
-              </span>
+            <li key={m.id} style={{ fontSize: "0.8rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                <span style={{ color: "var(--c-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</span>
+                <span style={{ whiteSpace: "nowrap", color: "var(--c-text-faint)" }}>
+                  <span style={spec ? undefined : { color: "var(--destructive)" }}>{spec ?? "spec. ?"}</span>
+                  {" · "}
+                  <span style={origin ? undefined : { color: "var(--destructive)" }}>{origin ?? "původ ?"}</span>
+                </span>
+              </div>
+              {slotRoles.length > 0 && (() => {
+                const roleId = held.get(m.id)
+                const locked = fixedHolders.has(m.id)
+                const role = slotRoles.find(r => String(r.id) === roleId)
+                if (locked && role) {
+                  return (
+                    <p className="role-fixed" title="Pevná role z Pravidel">
+                      <IconLock size={11} aria-hidden style={{ verticalAlign: "-1px" }} /> {roleLabel(role)}
+                    </p>
+                  )
+                }
+                // Role, kterou má napevno někdo jiný, nejde vybrat.
+                const lockedIds = new Set([...fixedHolders].map(id => held.get(id)))
+                return (
+                  <label style={{ display: "block", marginTop: 3 }}>
+                    <span className="sr-only">Role {m.name}</span>
+                    <select className="role-select" value={roleId ?? ""} disabled={busy || rolePending === m.id}
+                      data-empty={roleId ? undefined : "true"}
+                      onChange={e => onAssignRole(m.id, e.target.value || null)}>
+                      <option value="">{rolePending === m.id ? "ukládám…" : "Role ?"}</option>
+                      {slotRoles.map(r => {
+                        const id = String(r.id)
+                        const holder = [...held].find(([c, x]) => x === id && c !== m.id)?.[0]
+                        const holderName = holder ? characters.find(c => c.id === holder)?.name : null
+                        return (
+                          <option key={id} value={id} disabled={lockedIds.has(id)}>
+                            {roleLabel(r)}{lockedIds.has(id) ? " (napevno)" : holderName ? ` (vyměnit s ${holderName})` : ""}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </label>
+                )
+              })()}
             </li>
           )
         })}

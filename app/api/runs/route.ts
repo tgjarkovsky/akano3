@@ -50,6 +50,11 @@ export async function POST(req: Request) {
       SELECT circle_id, character_id FROM circle_members WHERE run_id = ${oldRunId}
     ` as { circle_id: string; character_id: string }[]
 
+    // Rozdělení rolí jednotek (lib/role-holders.ts) taky
+    const holderRows = await sql`
+      SELECT role_id, character_id FROM role_holders WHERE run_id = ${oldRunId}
+    ` as { role_id: number; character_id: string }[]
+
     const pointChars = CHARACTERS.filter(c => c.role === "student" || c.role === "ruze")
 
     await sql.transaction([
@@ -75,6 +80,10 @@ export async function POST(req: Request) {
       // Kruhy (zkopírovat z předchozího běhu)
       ...circleRows.map(r =>
         sql`INSERT INTO circle_members (circle_id, character_id, run_id) VALUES (${r.circle_id}, ${r.character_id}, ${newRunId})`
+      ),
+      // Role jednotek (zkopírovat z předchozího běhu)
+      ...holderRows.map(r =>
+        sql`INSERT INTO role_holders (run_id, role_id, character_id) VALUES (${newRunId}, ${r.role_id}, ${r.character_id})`
       ),
     ])
 

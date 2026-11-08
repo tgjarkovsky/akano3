@@ -37,6 +37,8 @@ export function checkAssignment(input: {
   optionsFor?: (p: RuleProperty) => readonly RuleOption[]
   /** role jednotek; s nimi se kontrolují pevné role (tým ve správné jednotce a trojici) */
   roles?: readonly RuleRole[]
+  /** role v běhu: id postavy → id role (lib/role-holders.ts); s nimi se hlásí nerozdělené role */
+  held?: ReadonlyMap<string, string>
 }): AssignmentIssue[] {
   const issues: AssignmentIssue[] = []
   const rules = input.rules
@@ -97,6 +99,25 @@ export function checkAssignment(input: {
         issues.push({
           level: "error",
           message: `${input.teamName(teamId)} patří do ${input.unitName(slot.unitId)} · trojice ${slot.triplet} (pevná role ${fixed.join(", ")})`,
+          target: { type: "team", id: teamId },
+        })
+      }
+    }
+  }
+  // Tým v trojici s rolemi si je má rozdělit (varování, spis se ukáže i bez nich).
+  if (input.roles && input.held) {
+    const held = input.held
+    const taken = new Set(held.values())
+    for (const s of input.slots) {
+      for (const t of ["A", "B"] as const) {
+        const teamId = s[t]
+        if (!teamId) continue
+        const free = input.roles.filter(r => r.unitId === s.unitId && r.triplet === t && !taken.has(String(r.id)))
+        const without = input.players.filter(c => c.teamId === teamId && !held.has(c.id))
+        if (free.length === 0 || without.length === 0) continue
+        issues.push({
+          level: "warning",
+          message: `${input.teamName(teamId)} (${input.unitName(s.unitId)} · ${t}): nerozdělené role ${free.map(roleLabel).join(", ")}`,
           target: { type: "team", id: teamId },
         })
       }

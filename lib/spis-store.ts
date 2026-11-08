@@ -7,6 +7,7 @@ import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { computeUnitSlots, slotOfTeam } from "@/lib/unit-slots"
 import { resolveGender, resolveRoleNames, type Gender } from "@/lib/gender-markup"
+import { effectiveRoles } from "@/lib/role-holders"
 import type { Triplet } from "@/lib/types"
 import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, type AcademyEntry, type CharacterDoc, type DogTag, type MemberGroup, type StoredText } from "@/lib/character-doc"
 
@@ -47,8 +48,8 @@ type RunContext = {
   unitOfTeam: Map<string, string>
   /** trojice týmu stejně jako v Obsazení: uložená, u starších běhů dopočítaná */
   tripletOfTeam: Map<string, Triplet>
-  /** pevná role postavy (Příprava → Pravidla), id role v unit_roles */
-  fixedRoleOf: Map<string, string>
+  /** role postavy v běhu (pevná z Pravidel nebo rozdělená v Obsazení), id role v unit_roles */
+  heldRoleOf: Map<string, string>
   roles: Map<string, { unitId: string; triplet: string; key: string; nameM: string; nameF: string }>
   state: Map<string, { specialization: string | null; origin: string | null }>
   circleOf: Map<string, string>
@@ -60,7 +61,7 @@ type RunContext = {
 
 async function loadRunContext(runId: number): Promise<RunContext | null> {
   await ensureSpisTables()
-  const [runs, units, states, circles, texts, meta, roleRows, roleRules] = await Promise.all([
+  const [runs, units, states, circles, texts, meta, roleRows, roleRules, holderRows] = await Promise.all([
     sql`SELECT name, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs WHERE id = ${runId}`,
     sql`SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${runId}`,
     sql`SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${runId}`,
@@ -69,19 +70,32 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     sql`SELECT character_id, gender FROM character_meta`,
     sql`SELECT id, unit_id, triplet, key, name_m, name_f FROM unit_roles`,
     sql`SELECT subject_id, allowed FROM assignment_rules WHERE subject_type = 'character' AND property = 'role'`,
+    sql`SELECT role_id, character_id FROM role_holders WHERE run_id = ${runId} ORDER BY updated_at, role_id`,
   ])
   if (runs.length === 0) return null
   const circleOf = new Map<string, string>()
   for (const r of circles) if (!circleOf.has(r.character_id as string)) circleOf.set(r.character_id as string, r.circle_id as string)
+  const unitOfTeam = new Map(units.map(r => [r.team_id as string, r.unit_id as string]))
+  const tripletOfTeam = tripletsOf(units.map(r => ({
+    teamId: r.team_id as string, unitId: r.unit_id as string | null,
+    triplet: r.triplet === "A" || r.triplet === "B" ? r.triplet : null,
+  })))
+  const heldRoleOf = effectiveRoles({
+    roles: roleRows.map(r => ({ id: String(r.id), unitId: r.unit_id as string, triplet: r.triplet as Triplet })),
+    fixedRoleOf: new Map(roleRules.filter(r => (r.allowed as string[]).length === 1).map(r => [r.subject_id as string, (r.allowed as string[])[0]])),
+    stored: holderRows.map(r => ({ roleId: String(r.role_id), characterId: r.character_id as string })),
+    teamOf: id => TEAMS.find(t => t.memberIds.includes(id))?.id,
+    slotOf: teamId => {
+      const unitId = unitOfTeam.get(teamId), triplet = tripletOfTeam.get(teamId)
+      return unitId && triplet ? { unitId, triplet } : null
+    },
+  })
   const ctx: Omit<RunContext, "roster"> = {
     runName: runs[0].name as string,
     runDate: formatRunDate(runs[0].starts_on as string | null, runs[0].ends_on as string | null),
-    unitOfTeam: new Map(units.map(r => [r.team_id as string, r.unit_id as string])),
-    tripletOfTeam: tripletsOf(units.map(r => ({
-      teamId: r.team_id as string, unitId: r.unit_id as string | null,
-      triplet: r.triplet === "A" || r.triplet === "B" ? r.triplet : null,
-    }))),
-    fixedRoleOf: new Map(roleRules.filter(r => (r.allowed as string[]).length === 1).map(r => [r.subject_id as string, (r.allowed as string[])[0]])),
+    unitOfTeam,
+    tripletOfTeam,
+    heldRoleOf,
     roles: new Map(roleRows.map(r => [String(r.id), {
       unitId: r.unit_id as string, triplet: r.triplet as string, key: r.key as string, nameM: r.name_m as string, nameF: r.name_f as string,
     }])),
@@ -141,28 +155,19 @@ function circleMembers(ctx: Omit<RunContext, "roster">, circleId: string): strin
   return DOC_PLAYERS.filter(c => ctx.circleOf.get(c.id) === circleId).map(c => c.name)
 }
 
-/**
- * Role postavy v jednotce. Zatím jen pevná role z pravidel, a jen když tým
- * v běhu opravdu stojí v její jednotce a trojici (jinak to hlásí kontroly obsazení).
- */
-function roleOf(ctx: Omit<RunContext, "roster">, characterId: string, teamId: string | undefined) {
-  const id = ctx.fixedRoleOf.get(characterId)
+/** Role postavy v jednotce v tomto běhu (pevná nebo rozdělená v Obsazení), v rodě postavy. */
+function roleOf(ctx: Omit<RunContext, "roster">, characterId: string) {
+  const id = ctx.heldRoleOf.get(characterId)
   const role = id ? ctx.roles.get(id) : undefined
-  if (!id || !role || !teamId) return undefined
-  if (ctx.unitOfTeam.get(teamId) !== role.unitId || ctx.tripletOfTeam.get(teamId) !== role.triplet) return undefined
+  if (!id || !role) return undefined
   return { id, name: ctx.gender.get(characterId) === "f" ? role.nameF : role.nameM }
 }
 
-/**
- * Kdo v běhu drží roli: klíč „jednotka:klíč role“ → id postavy. Zatím jen
- * pevné role, které roleOf uzná (tým stojí v jednotce a trojici role).
- */
+/** Kdo v běhu drží roli: klíč „jednotka:klíč role“ → id postavy. */
 function roleHolders(ctx: Omit<RunContext, "roster">): Map<string, string> {
   const out = new Map<string, string>()
-  for (const characterId of ctx.fixedRoleOf.keys()) {
-    const team = TEAMS.find(t => t.memberIds.includes(characterId))
-    const held = roleOf(ctx, characterId, team?.id)
-    const role = held && ctx.roles.get(held.id)
+  for (const [characterId, roleId] of ctx.heldRoleOf) {
+    const role = ctx.roles.get(roleId)
     if (role) out.set(`${role.unitId}:${role.key}`, characterId)
   }
   return out
@@ -218,7 +223,7 @@ function buildDoc(ctx: RunContext, characterId: string): CharacterDoc | null {
     runDate: ctx.runDate,
     character: { id: character.id, name: character.name },
     team: team && { id: team.id, name: team.name, teammates: team.memberIds.filter(id => id !== characterId).map(nameOf) },
-    unit: unit && { id: unit.id, name: unit.name, members: unitMembers(ctx, unit.id), role: roleOf(ctx, characterId, team?.id) },
+    unit: unit && { id: unit.id, name: unit.name, members: unitMembers(ctx, unit.id), role: roleOf(ctx, characterId) },
     circle: circle && { id: circle.id, name: circle.name, members: circleMembers(ctx, circle.id) },
     roster: ctx.roster,
     specialization: spec && { id: `specialization:${spec.value}`, label: spec.label },

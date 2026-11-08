@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useGame } from "@/lib/game-context"
-import { adminFetch } from "@/lib/admin-client"
+import { adminFetch, getOrganizer } from "@/lib/admin-client"
 
 // Společné kousky obsazení běhu: ukládání, segmentový přepínač, nadpis sekce.
 
@@ -39,6 +39,48 @@ export function useSetupSave() {
   }, [addToast, refreshGameState])
 
   return { save, pending }
+}
+
+type HolderRow = { characterId: string; roleId: string; fixed: boolean }
+
+/**
+ * Role jednotek v aktivním běhu (lib/role-holders.ts): kdo drží kterou roli.
+ * `held` je id postavy → id role, `fixed` postavy s pevnou rolí z Pravidel.
+ * Po přesunu týmu nebo změně běhu zavolej reload.
+ */
+export function useRoleHolders() {
+  const { addToast, activeRunId } = useGame()
+  const [rows, setRows] = useState<HolderRow[]>([])
+  const [pending, setPending] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    try {
+      const res = await adminFetch("/api/priprava/role-holders")
+      if (res.ok) setRows(await res.json())
+    } catch { /* bez sítě zůstane poslední stav */ }
+  }, [])
+  useEffect(() => { void reload() }, [reload, activeRunId])
+
+  const assign = useCallback(async (characterId: string, roleId: string | null) => {
+    setPending(characterId)
+    try {
+      const res = await adminFetch("/api/priprava/role-holders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId, roleId, by: getOrganizer() }),
+      })
+      if (!res.ok) { addToast(res.status === 409 || res.status === 400 ? await res.text() : "Roli se nepodařilo uložit", "error"); return }
+      setRows(await res.json())
+    } catch {
+      addToast("Chyba sítě, role se neuložila", "error")
+    } finally {
+      setPending(null)
+    }
+  }, [addToast])
+
+  const held = useMemo(() => new Map(rows.map(r => [r.characterId, r.roleId])), [rows])
+  const fixed = useMemo(() => new Set(rows.filter(r => r.fixed).map(r => r.characterId)), [rows])
+  return { held, fixed, assign, pending, reload }
 }
 
 export function SectionTitle({ children, note }: { children: React.ReactNode; note?: React.ReactNode }) {

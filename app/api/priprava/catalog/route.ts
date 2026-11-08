@@ -14,7 +14,7 @@ const GUIDE = [
   "Rodové značky: {byl|byla} = rod čtenáře spisu (ve sdíleném textu týmu, jednotky či kruhu taky čtenář);",
   "{Skála: byl|byla} = rod jmenované postavy (jméno z characters nebo id). Mužský tvar první.",
   "Jen změněná část slova: přiš{el|la}, člen{|ka}, vysmál{|a}. Bez známého rodu se ukáže byl/byla.",
-  "Role v textu: {@ctitel} = jméno držitele role (klíč z roles, v jednotce textu; bez držitele název role);",
+  "Role v textu: {@ctitel} = jméno držitele role v běhu (klíč z roles, v jednotce textu; bez držitele název role);",
   "{@ctitel: zranil|zranila} = rod držitele role.",
   "Rod postavy, kterou dokument jasně určuje, patří do genders; jinak ho nevyplňuj.",
   "Role jednotek se posílají v roles (unitId, triplet A/B, key, nameM, nameF, body); existující role se pozná podle jednotky a klíče.",

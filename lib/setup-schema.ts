@@ -32,6 +32,18 @@ export function ensureSetupColumns(): Promise<void> {
         PRIMARY KEY (subject_type, subject_id, property)
       )
     `
+    // Rozdělení rolí jednotek v běhu (lib/role-holders.ts). Pevné role z Pravidel sem nepatří.
+    await sql`
+      CREATE TABLE IF NOT EXISTS role_holders (
+        run_id       INT  NOT NULL,
+        role_id      INT  NOT NULL,
+        character_id TEXT NOT NULL,
+        updated_by   TEXT,
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (run_id, role_id),
+        UNIQUE (run_id, character_id)
+      )
+    `
   })().catch(err => { ready = null; throw err })
   return ready
 }

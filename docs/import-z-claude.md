@@ -35,8 +35,8 @@ Postavy můžou v různých bězích hrát muži i ženy. Spis dosadí správný
 | `{@ctitel}` | jméno postavy, která roli drží (klíč role v jednotce textu); bez držitele název role |
 | `{@ctitel: zranil\|zranila}` | rod držitele role |
 
-Držitel role je zatím známý jen u pevných rolí (Příprava → Pravidla), a jen když
-tým v běhu stojí v jednotce a trojici té role. U textu jednotky nebo role platí
+Držitele role určuje Obsazení běhu (výběr role u člena týmu na nástěnce jednotek)
+nebo pevná role z Pravidel; platí jen, když tým v běhu stojí v jednotce a trojici té role. U textu jednotky nebo role platí
 klíč v té jednotce, u textů týmu a postavy v jednotce čtenáře.
 
 Mužský tvar je první. Bez známého rodu se ukáže `byl/byla`. Značky se rozvinou

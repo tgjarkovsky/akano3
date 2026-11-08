@@ -223,6 +223,8 @@ export async function deleteRole(id: number) {
     sql`DELETE FROM doc_texts WHERE entity_type = 'role' AND entity_id = ${String(id)}`,
     // pevná role v Příprava → Pravidla
     sql`DELETE FROM assignment_rules WHERE property = 'role' AND ${String(id)} = ANY(allowed)`,
+    // rozdělení rolí v bězích
+    sql`DELETE FROM role_holders WHERE role_id = ${id}`,
     sql`DELETE FROM unit_roles WHERE id = ${id}`,
   ])
 }
