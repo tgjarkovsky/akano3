@@ -1,7 +1,8 @@
 import { requireAdmin, requireAdminOrImport } from "@/lib/admin-password"
 import { parseImport } from "@/lib/doc-validation"
 import { DOC_IDS, DOC_PLAYERS } from "@/lib/doc-ids"
-import { unknownGenderNames } from "@/lib/gender-markup"
+import { unknownGenderNames, unknownRoleKeys } from "@/lib/gender-markup"
+import { getRoles } from "@/lib/docs-store"
 import { createDraft, listDrafts, resolveDraft } from "@/lib/import-drafts"
 
 export const dynamic = "force-dynamic"
@@ -39,9 +40,14 @@ export async function POST(req: Request) {
     if (!parsed.ok) return new Response(parsed.error, { status: 400 })
     const p = parsed.value
     if (p.texts.length + p.genders.length + p.roles.length === 0) return new Response("Návrh je prázdný", { status: 400 })
+    // Šablony rolí {@klic}: klíč musí mít některá role v databázi nebo v tomhle návrhu.
+    const roleKeys = new Set([...(await getRoles()).map(r => r.key), ...p.roles.map(r => r.key)])
     const warnings = [...p.texts, ...p.roles].flatMap(t => {
       const where = "field" in t ? `${t.entityType}:${t.entityId}:${t.field}` : `role ${t.unitId}:${t.key}`
-      return unknownGenderNames(t.body, isPlayer).map(n => `${where}: rodová značka s neznámým jménem „${n}“`)
+      return [
+        ...unknownGenderNames(t.body, isPlayer).map(n => `${where}: rodová značka s neznámým jménem „${n}“`),
+        ...unknownRoleKeys(t.body, k => roleKeys.has(k)).map(k => `${where}: šablona role s neznámým klíčem „@${k}“`),
+      ]
     })
     const draft = await createDraft({
       title, source: str(raw?.source, 300), notes: str(raw?.notes, 4000), payload: p,

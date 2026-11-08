@@ -6,7 +6,7 @@ import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { computeUnitSlots, slotOfTeam } from "@/lib/unit-slots"
-import { resolveGender, type Gender } from "@/lib/gender-markup"
+import { resolveGender, resolveRoleNames, type Gender } from "@/lib/gender-markup"
 import type { Triplet } from "@/lib/types"
 import { composeCharacterDoc, composeAcademy, docStats, formatRunDate, type AcademyEntry, type CharacterDoc, type DogTag, type MemberGroup, type StoredText } from "@/lib/character-doc"
 
@@ -49,7 +49,7 @@ type RunContext = {
   tripletOfTeam: Map<string, Triplet>
   /** pevná role postavy (Příprava → Pravidla), id role v unit_roles */
   fixedRoleOf: Map<string, string>
-  roles: Map<string, { unitId: string; triplet: string; nameM: string; nameF: string }>
+  roles: Map<string, { unitId: string; triplet: string; key: string; nameM: string; nameF: string }>
   state: Map<string, { specialization: string | null; origin: string | null }>
   circleOf: Map<string, string>
   gender: Map<string, string | null>
@@ -67,7 +67,7 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     sql`SELECT circle_id, character_id FROM circle_members WHERE run_id = ${runId} ORDER BY circle_id`,
     sql`SELECT entity_type, entity_id, field, body, status FROM doc_texts`,
     sql`SELECT character_id, gender FROM character_meta`,
-    sql`SELECT id, unit_id, triplet, name_m, name_f FROM unit_roles`,
+    sql`SELECT id, unit_id, triplet, key, name_m, name_f FROM unit_roles`,
     sql`SELECT subject_id, allowed FROM assignment_rules WHERE subject_type = 'character' AND property = 'role'`,
   ])
   if (runs.length === 0) return null
@@ -83,7 +83,7 @@ async function loadRunContext(runId: number): Promise<RunContext | null> {
     }))),
     fixedRoleOf: new Map(roleRules.filter(r => (r.allowed as string[]).length === 1).map(r => [r.subject_id as string, (r.allowed as string[])[0]])),
     roles: new Map(roleRows.map(r => [String(r.id), {
-      unitId: r.unit_id as string, triplet: r.triplet as string, nameM: r.name_m as string, nameF: r.name_f as string,
+      unitId: r.unit_id as string, triplet: r.triplet as string, key: r.key as string, nameM: r.name_m as string, nameF: r.name_f as string,
     }])),
     state: new Map(states.map(r => [r.character_id as string, {
       specialization: r.specialization as string | null, origin: r.origin as string | null,
@@ -153,7 +153,26 @@ function roleOf(ctx: Omit<RunContext, "roster">, characterId: string, teamId: st
   return { id, name: ctx.gender.get(characterId) === "f" ? role.nameF : role.nameM }
 }
 
-/** Texty s dosazenými rodovými značkami pro čtenáře (lib/gender-markup.ts). */
+/**
+ * Kdo v běhu drží roli: klíč „jednotka:klíč role“ → id postavy. Zatím jen
+ * pevné role, které roleOf uzná (tým stojí v jednotce a trojici role).
+ */
+function roleHolders(ctx: Omit<RunContext, "roster">): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const characterId of ctx.fixedRoleOf.keys()) {
+    const team = TEAMS.find(t => t.memberIds.includes(characterId))
+    const held = roleOf(ctx, characterId, team?.id)
+    const role = held && ctx.roles.get(held.id)
+    if (role) out.set(`${role.unitId}:${role.key}`, characterId)
+  }
+  return out
+}
+
+/**
+ * Texty s dosazenými rodovými značkami pro čtenáře a šablonami rolí
+ * (lib/gender-markup.ts). Šablona {@klic} míří na roli v jednotce textu:
+ * u textu jednotky či role je to ta jednotka, jinak jednotka čtenáře.
+ */
 function textsFor(ctx: Omit<RunContext, "roster">, characterId: string) {
   const asGender = (g: string | null | undefined): Gender | null => g === "m" || g === "f" ? g : null
   const of = (who: string) => {
@@ -162,9 +181,24 @@ function textsFor(ctx: Omit<RunContext, "roster">, characterId: string) {
     return c ? asGender(ctx.gender.get(c.id)) : null
   }
   const self = asGender(ctx.gender.get(characterId))
+  const team = TEAMS.find(t => t.memberIds.includes(characterId))
+  const readerUnit = team ? ctx.unitOfTeam.get(team.id) : undefined
+  const holders = roleHolders(ctx)
+  const roleByKey = new Map([...ctx.roles.values()].map(r => [`${r.unitId}:${r.key}`, r]))
+
   return (type: string, id: string, field: string): StoredText | undefined => {
     const t = ctx.texts.get(`${type}:${id}:${field}`)
-    return t && { ...t, body: resolveGender(t.body, { self, of }) }
+    if (!t) return undefined
+    const unitId = type === "unit" ? id : type === "role" ? ctx.roles.get(id)?.unitId : readerUnit
+    const holder = (key: string) => unitId ? holders.get(`${unitId}:${key}`) : undefined
+    const role = (key: string) => { const h = holder(key); return h ? asGender(ctx.gender.get(h)) : null }
+    const name = (key: string) => {
+      const h = holder(key)
+      if (h) return nameOf(h)
+      const r = unitId ? roleByKey.get(`${unitId}:${key}`) : undefined
+      return r && (r.nameM === r.nameF ? r.nameM : `${r.nameM}/${r.nameF}`)
+    }
+    return { ...t, body: resolveRoleNames(resolveGender(t.body, { self, of, role }), name) }
   }
 }
 
