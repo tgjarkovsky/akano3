@@ -84,7 +84,7 @@ export function ImportPanel({ onBack }: { onBack: () => void }) {
   // Seskupení podle entit v pořadí jako v matici.
   const groups = useMemo(() => {
     if (!payload) return []
-    const types: DocEntityType[] = ["character", "team", "unit", "circle", "trait"]
+    const types: DocEntityType[] = ["character", "team", "unit", "circle", "trait", "adult"]
     const base = types.flatMap(type => buildEntities(type, roles).map(e => {
       const items = payload.texts.filter(t => t.entityType === type && t.entityId === e.id)
       const gender = type === "character" ? payload.genders.find(g => g.characterId === e.id)?.gender : undefined

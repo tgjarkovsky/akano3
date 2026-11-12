@@ -16,6 +16,7 @@ A companion web app for the LARP *Akano* — runs on players' phones and the org
 - **In-game library** — a wiki of lore articles with internal links, search and a force-directed link map (d3-force).
 - **Scoreboard, charts and transaction log** for the organizers.
 - **Runs** — the same game can be played several times with separate state.
+- **Sign-up form** (`/prihlaska`) — players read character, team, unit and circle blurbs inline and mark each option as *want* / *fine* / *no*; the form flags clashes with fixed character traits, saves a draft in the browser and gives a secret link for later edits. Organizers browse and export sign-ups as CSV.
 
 ## Stack
 

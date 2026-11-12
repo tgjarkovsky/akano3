@@ -15,7 +15,11 @@
 #   - medailonky týmů (záložka „medailonky týmů“, úsloví jako citát „> “, text a Témata
 #     jako odrážky, od „# **Tým N**“ po první jméno) → Tým · Medailonek (od 2026-11-07,
 #     Web je zdroj pravdy medailonků).
-# Medailonky dospělých se nepřevádějí. Všechno jsou veřejné texty webu.
+#   - citlivá témata postav, jednotek, kruhů a dospělých → pole Citlivá témata
+#     („nic“ se nepřevádí), rod postav z odrážek „muž“/„žena“ → genders (od 2026-11-10,
+#     pro přihlášku),
+#   - medailonky dospělých (úsloví, role, text, hra za monstrum) → Dospělí · Medailonek.
+# Všechno jsou veřejné texty webu.
 
 import json, re, sys
 from datetime import datetime, timezone
@@ -71,7 +75,18 @@ def with_motto(block):
     if not ps: return ""
     return "\n\n".join([f"> {ps[0]}"] + ps[1:])
 
-texts = []
+texts, genders = [], []
+
+SENS = re.compile(r"^-?\s*citliv[áa] t[ée]mata\s*:\s*(.*)$", re.I)
+def add_sensitive(entity_type, entity_id, plain_lines):
+    """Citlivá témata z řádku „Citlivá témata: …“; „nic“ a prázdné se nepřevádí."""
+    for l in plain_lines:
+        m = SENS.match(l.strip())
+        if m:
+            v = m.group(1).strip().rstrip(".")
+            if v and v.lower() not in ("nic", "žádná"): add(entity_type, entity_id, "sensitive", v)
+            return
+
 def add(entity_type, entity_id, field, body):
     if not body.strip():
         warnings.append(f"prázdný text: {entity_type} {entity_id}"); return
@@ -95,7 +110,12 @@ for k, i in enumerate(stops[:-1]):
     if not m: continue
     name = m.group(2)
     found.add(name)
-    add("character", CHARACTERS[name], "medallion", "\n\n".join(paragraphs(lines[i + 1:stops[k + 1]])))
+    block = lines[i + 1:stops[k + 1]]
+    add("character", CHARACTERS[name], "medallion", "\n\n".join(paragraphs(block)))
+    add_sensitive("character", CHARACTERS[name], [plain(l).lstrip("- ") for l in block])
+    g = next((m.group(1) for l in block if (m := re.match(r"^-?\s*(muž|žena)$", plain(l).lstrip("- ").strip()))), None)
+    if g: genders.append({"characterId": CHARACTERS[name], "gender": "m" if g == "muž" else "f"})
+    else: warnings.append(f"chybí rod postavy {name}")
 for name in CHARACTERS:
     if name not in found: warnings.append(f"chybí medailonek postavy {name}")
 
@@ -133,7 +153,9 @@ for title, ids, kind in [("medailonky jednotek", UNITS, "unit"), ("medailonky kr
     got = {name: block for name, block in sections(a, b, r"^## ")}
     for name, eid in ids.items():
         if name not in got: warnings.append(f"chybí {kind} {name}"); continue
-        add(kind, eid, "medallion", with_motto(got[name]))
+        block = [l for l in got[name] if not SENS.match(plain(l))]
+        add(kind, eid, "medallion", with_motto(block))
+        add_sensitive(kind, eid, [plain(l) for l in got[name]])
 
 # ── Specializace ───────────────────────────────────────────────────────
 SPECS = {"Bojová": "combat", "Taktická": "tactical", "Podpůrná": "support"}
@@ -153,11 +175,33 @@ for name, block in sections(p + 1, q, r"^## "):
     ps = paragraphs(block)  # u Cizích zůstává i poznámka o mocnostech pod oddílem
     add("trait", f"origin:{ORIGINS[name]}", "public", "\n\n".join(ps))
 
+# ── Dospělí ────────────────────────────────────────────────────────────
+ADULTS = {"Arakami": "TCH6", "Širanagi": "TCH1", "Nakamura": "TCH2", "Ibuki": "TCH3", "Karasu": "TCH4", "Okuda": "TCH5"}
+a, b = tab("medailonky dospělých")
+got = {name: block for name, block in sections(a, b, r"^### ")}
+for name, eid in ADULTS.items():
+    if name not in got: warnings.append(f"chybí dospělý {name}"); continue
+    attrs = {}
+    for raw in got[name]:
+        m = re.match(r"^-?\s*([^:]{2,30}):\s*(.+)$", plain(raw).lstrip("- ").strip())
+        # „hráč\\\*ka“ z Google dokumentu zbyde po plain() jako „hráč\\ ka“
+        if m: attrs[m.group(1).strip().lower()] = re.sub(r"\\+ ", "*", m.group(2).strip())
+    parts = []
+    if attrs.get("úsloví"): parts.append(f"> {attrs['úsloví']}")
+    if attrs.get("role"): parts.append(f"**Role:** {attrs['role']}")
+    if attrs.get("gender"): parts.append(f"**Gender:** {'nebinární' if attrs['gender'] == 'není' else attrs['gender']}")
+    if attrs.get("text"): parts.append(attrs["text"])
+    if attrs.get("poznámka") or attrs.get("poznánka"): parts.append(f"**Poznámka:** {attrs.get('poznámka') or attrs.get('poznánka')}")
+    if attrs.get("hra za monstrum"): parts += ["## Hra za monstrum", attrs["hra za monstrum"]]
+    if not attrs.get("text"): warnings.append(f"dospělý {name}: chybí Text")
+    add("adult", eid, "medallion", "\n\n".join(parts))
+    add_sensitive("adult", eid, [f"citlivá témata: {attrs.get('citlivá témata', '')}"])
+
 out = {
     "source": "Google dokument „Web“",
     "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     "texts": texts,
-    "genders": [],
+    "genders": genders,
 }
 json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"{len(texts)} textů → {out_path}")

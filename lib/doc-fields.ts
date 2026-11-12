@@ -1,7 +1,7 @@
 // Textová pole dokumentů postav (viz docs/superpowers/specs/2026-11-06-dokumenty-postav-design.md).
 // Každá entita má pevný seznam polí; stav se vede pro každé pole zvlášť.
 
-export type DocEntityType = "character" | "team" | "unit" | "role" | "circle" | "trait"
+export type DocEntityType = "character" | "team" | "unit" | "role" | "circle" | "trait" | "adult"
 export type Visibility = "private" | "internal" | "public" | "prelarp"
 
 export type DocField = {
@@ -17,6 +17,7 @@ export type DocField = {
 export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
   character: [
     { key: "medallion", label: "Medailonek", hint: "Co o postavě vědí lidi už před přihláškou na larp (web). Krátký odstavec.", visibility: "prelarp" },
+    { key: "sensitive", label: "Citlivá témata", hint: "Citlivá témata pro přihlášku, krátce a čárkami. Prázdné = žádná.", visibility: "prelarp" },
     { key: "legends",     label: "Legendy",       hint: "Důležité momenty ze života postavy, ve 3. osobě. Každou legendu začni nadpisem ## Název.", visibility: "private", sections: { singular: "legenda" } },
     { key: "inner_world", label: "Vnitřní svět",  hint: "Jak postava přemýšlí, v 1. osobě.",               visibility: "private" },
     { key: "summary",     label: "Shrnutí",       hint: "To nejdůležitější v bodech.",                     visibility: "private" },
@@ -33,6 +34,7 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
   ],
   unit: [
     { key: "medallion", label: "Medailonek", hint: "Co o jednotce vědí lidi už před přihláškou na larp (web). Může začínat úslovím: > 迷い子 – překlad", visibility: "prelarp" },
+    { key: "sensitive", label: "Citlivá témata", hint: "Citlivá témata pro přihlášku, krátce a čárkami. Prázdné = žádná.", visibility: "prelarp" },
     { key: "public",   label: "Veřejné", hint: "Co o jednotce vědí na larpu všechny postavy. Lidi z jednotky piš šablonou, mění se mezi běhy.", visibility: "public" },
     { key: "internal", label: "Interní", hint: "Co ví jen členové jednotky. Lidi z jednotky piš šablonou.",               visibility: "internal" },
   ],
@@ -41,11 +43,16 @@ export const DOC_FIELDS: Record<DocEntityType, DocField[]> = {
   ],
   circle: [
     { key: "medallion", label: "Medailonek", hint: "Co o kruhu vědí lidi už před přihláškou na larp (web). Může začínat úslovím: > 迷い子 – překlad", visibility: "prelarp" },
+    { key: "sensitive", label: "Citlivá témata", hint: "Citlivá témata pro přihlášku, krátce a čárkami. Prázdné = žádná.", visibility: "prelarp" },
     { key: "public",   label: "Veřejné",  hint: "Co o kruhu vědí na larpu všechny postavy.",  visibility: "public" },
     { key: "internal", label: "Společné", hint: "Co ví jen členové kruhu.", visibility: "internal" },
   ],
   trait: [
     { key: "public", label: "Popis", hint: "Krátký veřejný popis specializace nebo původu.", visibility: "public" },
+  ],
+  adult: [
+    { key: "medallion", label: "Medailonek", hint: "Dospělá postava pro přihlášku (web). Může začínat úslovím: > 石の上にも三年 – překlad. Hru za monstrum dej pod nadpis ## Hra za monstrum.", visibility: "prelarp" },
+    { key: "sensitive", label: "Citlivá témata", hint: "Citlivá témata pro přihlášku, krátce a čárkami. Prázdné = žádná.", visibility: "prelarp" },
   ],
 }
 

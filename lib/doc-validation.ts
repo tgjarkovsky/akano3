@@ -14,6 +14,7 @@ export type DocIds = {
   unitIds: readonly string[]
   circleIds: readonly string[]
   traitIds: readonly string[]
+  adultIds: readonly string[]
 }
 
 type Ok<T> = { ok: true; value: T }
@@ -29,6 +30,7 @@ export function isKnownEntity(type: DocEntityType, id: unknown, ids: DocIds): bo
     case "unit":      return ids.unitIds.includes(id)
     case "circle":    return ids.circleIds.includes(id)
     case "trait":     return ids.traitIds.includes(id)
+    case "adult":     return ids.adultIds.includes(id)
     case "role":      return /^[1-9]\d{0,8}$/.test(id)
   }
 }

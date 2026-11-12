@@ -11,10 +11,14 @@ export const TRAIT_ENTITIES = [
 
 export const DOC_PLAYERS = CHARACTERS.filter(c => c.role === "student" || c.role === "ruze")
 
+/** Dospělé postavy (učitelé) mají jen texty pro přihlášku. */
+export const DOC_ADULTS = CHARACTERS.filter(c => c.role === "teacher")
+
 export const DOC_IDS: DocIds = {
   characterIds: DOC_PLAYERS.map(c => c.id),
   teamIds: TEAMS.map(t => t.id),
   unitIds: UNITS.map(u => u.id),
   circleIds: CIRCLES.map(c => c.id),
   traitIds: TRAIT_ENTITIES.map(t => t.id),
+  adultIds: DOC_ADULTS.map(c => c.id),
 }

@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { adminFetch } from "@/lib/admin-client"
 import { useGame } from "@/lib/game-context"
 import { TEAMS, UNITS, CIRCLES } from "@/lib/data"
-import { DOC_PLAYERS, TRAIT_ENTITIES } from "@/lib/doc-ids"
+import { DOC_PLAYERS, DOC_ADULTS, TRAIT_ENTITIES } from "@/lib/doc-ids"
 import { DOC_FIELDS, docKey, type DocEntityType } from "@/lib/doc-fields"
 import { statusOf, worstStatus, type DocStatus } from "@/lib/doc-status"
 import type { TextMeta, TextRecord, UnitRole } from "@/lib/docs-store"
@@ -21,6 +21,7 @@ export const CATEGORIES: { value: Category; label: string }[] = [
   { value: "role",      label: "Role" },
   { value: "circle",    label: "Kruhy" },
   { value: "trait",     label: "Specializace a původy" },
+  { value: "adult",     label: "Dospělí" },
 ]
 
 export type DocEntity = {
@@ -58,6 +59,8 @@ export function buildEntities(category: Category, roles: readonly UnitRole[]): D
       return CIRCLES.map(c => ({ type: "circle", id: c.id, name: c.name }))
     case "trait":
       return TRAIT_ENTITIES.map(t => ({ type: "trait", id: t.id, name: t.name, group: t.group }))
+    case "adult":
+      return DOC_ADULTS.map(c => ({ type: "adult", id: c.id, name: c.name }))
   }
 }
 

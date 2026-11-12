@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter, IconClipboardList,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -14,13 +14,15 @@ import { TextyPanel } from "@/components/panels/texty/texty-panel"
 import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 import { SpisyPanel, type PrintJob } from "@/components/panels/spisy/spisy-panel"
 import { SpisPrintScreen } from "@/components/panels/spisy/spis-print-screen"
+import { PrihlaskyPanel } from "@/components/panels/prihlasky/prihlasky-panel"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
 
-type Section = "overview" | "texts" | "runs" | "rules" | "docs" | "library"
+type Section = "overview" | "signups" | "texts" | "runs" | "rules" | "docs" | "library"
 
 const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
   { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
+  { value: "signups",  label: "Přihlášky",        hint: "Odpovědi z formuláře",       Icon: IconClipboardList },
   { value: "texts",    label: "Texty",            hint: "Psaní a schvalování",        Icon: IconFileText },
   { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
   { value: "rules",    label: "Pravidla",         hint: "Co je napevno, co zakázané", Icon: IconAdjustments },
@@ -116,6 +118,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
             {section === "docs"     && <SpisyPanel onPrint={setPrintJob} />}
           </RulesProvider>
           {section === "library"  && <WikiAdminPanel />}
+          {section === "signups"  && <PrihlaskyPanel />}
         </main>
       </div>
       <ToastContainer />
