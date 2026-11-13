@@ -58,6 +58,10 @@ export type Prihlaska = {
   visionImpaired: boolean
   noteCasting: string
   noteOrg: string
+  /** souhlas se zpracováním osobních údajů (zaškrtnutý hráčem) */
+  consent: boolean
+  /** hráč potvrdil, že četl citlivá témata svých voleb */
+  sensitiveOk: boolean
 }
 
 export type PrihlaskaIds = {
@@ -144,6 +148,8 @@ export function parsePrihlaska(raw: unknown, ids: PrihlaskaIds): Ok<Prihlaska> |
   const phone = text(raw.phone, "Telefon", 30, true); if (!phone.ok) return phone
   if (!PHONE.test(phone.value)) return { ok: false, error: "Telefon nevypadá správně." }
   if (raw.adult !== true) return { ok: false, error: "Účast je možná jen pro plnoleté." }
+  if (raw.consent !== true) return { ok: false, error: "Potvrď souhlas se zpracováním osobních údajů." }
+  if (raw.sensitiveOk !== true) return { ok: false, error: "Potvrď, že sis přečetl(a) citlivá témata a jsi s nimi v pořádku." }
   if (!oneOf(raw.run, RUN_CHOICES)) return { ok: false, error: "Vyber běh." }
   if (!oneOf(raw.substitute, SUBSTITUTE_CHOICES)) return { ok: false, error: "Vyber, jak dlouho chceš být náhradník*ice." }
   if (!oneOf(raw.newsletter, NEWSLETTER_CHOICES)) return { ok: false, error: "Vyber, jestli chceš newsletter." }
@@ -160,8 +166,10 @@ export function parsePrihlaska(raw: unknown, ids: PrihlaskaIds): Ok<Prihlaska> |
   if (!paths.adult) prefs.value.adult = {}
   if (!showsOtherCharacters(paths, team)) prefs.value.character = {}
   if (!paths.student && !paths.team) {
-    for (const k of ["unit", "circle", "specialization", "origin"] as const) prefs.value[k] = {}
+    for (const k of ["unit", "circle", "specialization"] as const) prefs.value[k] = {}
   }
+  // Původ je od 2026-11-13 pevný k jádru postavy, v přihlášce se nevybírá.
+  prefs.value.origin = {}
   const noteCasting = text(raw.noteCasting, "Poznámka k výběru postavy", MAX_NOTE, false); if (!noteCasting.ok) return noteCasting
   const noteOrg = text(raw.noteOrg, "Vzkaz organizátorům", MAX_NOTE, false); if (!noteOrg.ok) return noteOrg
   return {
@@ -173,6 +181,8 @@ export function parsePrihlaska(raw: unknown, ids: PrihlaskaIds): Ok<Prihlaska> |
       paths, genderPref: raw.genderPref, team, prefs: prefs.value,
       visionImpaired: paths.adult && raw.visionImpaired === true,
       noteCasting: noteCasting.value, noteOrg: noteOrg.value,
+      consent: true,
+      sensitiveOk: true,
     },
   }
 }
@@ -236,7 +246,7 @@ export function findConflicts(prefs: Prefs, limits: Limits): Conflict[] {
   for (const [characterId, lim] of Object.entries(limits)) {
     const pref = prefOf(prefs, "character", characterId)
     if (pref === "no") continue
-    for (const kind of ["unit", "circle", "specialization", "origin"] as const) {
+    for (const kind of ["unit", "circle", "specialization"] as const) {
       const allowed = lim[kind]
       if (allowed?.length && allowed.every(v => prefOf(prefs, kind, v) === "no")) {
         out.push({ characterId, kind, allowed, wanted: pref === "yes" })

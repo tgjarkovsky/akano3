@@ -35,15 +35,15 @@ export const UNITS: Unit[] = [
   { id:"U2", name:"Hagakure", teamIds:["T03","T04"] },
   { id:"U3", name:"Hvězdy",   teamIds:["T07","T08"] },
   { id:"U4", name:"V.I.R.A.", teamIds:["T09","T10"] },
-  { id:"U5", name:"Utsuro",   teamIds:["T05","T06"] },
+  { id:"U5", name:"Ucuro",   teamIds:["T05","T06"] },
 ]
 
 export const CIRCLES: Circle[] = [
-  { id:"C1", name:"Kuchi-Kuchi",     memberIds:["S003","S009","S015","S021","S026"] },
+  { id:"C1", name:"Kuči-Kuči",     memberIds:["S003","S009","S015","S021","S026"] },
   { id:"C2", name:"Kaligrafie",      memberIds:["S016","S017","S018","S006","S012"] },
   { id:"C3", name:"Vědecký",         memberIds:["S030","S002","S008","S011","S020"] },
   { id:"C4", name:"Rituální",        memberIds:["S023","S001","S010","S019","S024"] },
-  { id:"C5", name:"Akano Shōko-dan", memberIds:["S025","S026","S027","S004","S013"] },
+  { id:"C5", name:"Akano Šóko-dan", memberIds:["S025","S026","S027","S004","S013"] },
   { id:"C6", name:"Literární",       memberIds:["S007","S014","S022","S028","S029","S005"] },
 ]
 
@@ -54,7 +54,7 @@ export const CHARACTERS: Character[] = [
   // ── Učitelé ──
   { id:"TCH6", code:"TCH-006",  name:"Arakami",   role:"teacher",
     circleIds:[], kaichiLevel:6, points:0, peerPointPool:0, lessonClaimedThisWindow:false },
-  { id:"TCH1", code:"TCH-001",  name:"Shiranagi", role:"teacher",
+  { id:"TCH1", code:"TCH-001",  name:"Širanagi", role:"teacher",
     circleIds:[], kaichiLevel:5, points:0, peerPointPool:0, lessonClaimedThisWindow:false },
   { id:"TCH2", code:"TCH-002",  name:"Nakamura",  role:"teacher",
     circleIds:[], kaichiLevel:7, points:0, peerPointPool:0, lessonClaimedThisWindow:false },
@@ -96,10 +96,10 @@ export const CHARACTERS: Character[] = [
   { id:"S007", code:"STU-007", name:"Ikai",             role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C6"], specialization:"tactical",
     kaichiLevel:4, points:56, peerPointPool:12, lessonClaimedThisWindow:false },
-  { id:"S008", code:"STU-008", name:"Raidži", role:"student",
+  { id:"S008", code:"STU-008", name:"Will", role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C3"], specialization:"combat",
     kaichiLevel:4, points:54, peerPointPool:15, lessonClaimedThisWindow:false },
-  { id:"S009", code:"STU-009", name:"Airi",            role:"student",
+  { id:"S009", code:"STU-009", name:"Himavari",            role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C1"], specialization:"support",
     kaichiLevel:4, points:50, peerPointPool:20, lessonClaimedThisWindow:false },
   // ── Tým 4 ──
@@ -113,7 +113,7 @@ export const CHARACTERS: Character[] = [
     teamId:"T04", unitId:"U2", circleIds:["C2"], specialization:"tactical",
     kaichiLevel:2, points:30, peerPointPool:20, lessonClaimedThisWindow:false },
   // ── Tým 5 ──
-  { id:"S013", code:"STU-013", name:"Tecuja",  role:"student",
+  { id:"S013", code:"STU-013", name:"Tarun",  role:"student",
     teamId:"T05", unitId:"U5", circleIds:["C5"], specialization:"combat",
     kaichiLevel:3, points:42, peerPointPool:18, lessonClaimedThisWindow:false },
   { id:"S014", code:"STU-014", name:"Icuki", role:"student",
@@ -153,13 +153,13 @@ export const CHARACTERS: Character[] = [
     teamId:"T08", unitId:"U3", circleIds:["C4"], specialization:"support",
     kaichiLevel:2, points:33, peerPointPool:20, lessonClaimedThisWindow:false },
   // ── Tým 9 ──
-  { id:"S025", code:"STU-025", name:"Tomoe",  role:"student",
+  { id:"S025", code:"STU-025", name:"Juna",  role:"student",
     teamId:"T09", unitId:"U4", circleIds:["C5"], specialization:"tactical",
     kaichiLevel:3, points:52, peerPointPool:18, lessonClaimedThisWindow:false },
-  { id:"S026", code:"RUZE-001", name:"Nozomi",   role:"ruze",
+  { id:"S026", code:"RUZE-001", name:"Čiu",   role:"ruze",
     teamId:"T09", unitId:"U4", circleIds:["C1","C5"], specialization:"support",
     kaichiLevel:4, points:53, peerPointPool:12, lessonClaimedThisWindow:false },
-  { id:"S027", code:"STU-027", name:"Secuko", role:"student",
+  { id:"S027", code:"STU-027", name:"Minsu", role:"student",
     teamId:"T09", unitId:"U4", circleIds:["C5"], specialization:"combat",
     kaichiLevel:3, points:50, peerPointPool:18, lessonClaimedThisWindow:false },
   // ── Tým 10 ──
@@ -169,7 +169,7 @@ export const CHARACTERS: Character[] = [
   { id:"S029", code:"STU-029", name:"Makoto",   role:"student",
     teamId:"T10", unitId:"U4", circleIds:["C6"], specialization:"combat",
     kaichiLevel:4, points:47, peerPointPool:15, lessonClaimedThisWindow:false },
-  { id:"S030", code:"STU-030", name:"Čiharu", role:"student",
+  { id:"S030", code:"STU-030", name:"Ingrid", role:"student",
     teamId:"T10", unitId:"U4", circleIds:["C3"], specialization:"support",
     kaichiLevel:2, points:47, peerPointPool:20, lessonClaimedThisWindow:false },
 ]

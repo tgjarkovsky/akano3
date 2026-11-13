@@ -3,12 +3,12 @@
 import React, { useEffect, useRef } from "react"
 import { IconArrowLeft, IconArrowRight, IconX } from "@tabler/icons-react"
 import { SpisText } from "@/components/spis/spis-text"
-import { CIRCLE_ONLY_GENDER, type PrefKind } from "@/lib/prihlaska"
-import { entriesOf, genderMark, KIND_ONE } from "./draft"
-import { Motto, Tri, usePr } from "./parts"
+import { CIRCLE_ONLY_GENDER, fitsGender, type PrefKind } from "@/lib/prihlaska"
+import { adultGender, entriesOf, genderMark, KIND_ONE } from "./draft"
+import { Motto, OffNote, Tri, usePr } from "./parts"
 
-// Čtečka celého medailonku. Na širokém displeji panel vpravo, na úzkém list
-// zespodu. Šipky přechází po kartách v pořadí, v jakém jsou na stránce.
+// Čtečka celého medailonku jako modální okno (na telefonu list zespodu).
+// Šipky (i klávesy ← →) přechází po kartách v pořadí, v jakém jsou na stránce.
 
 export type ReaderState = { kind: PrefKind; id: string; list: string[] }
 
@@ -19,17 +19,30 @@ export function Reader({ state, onMove, onClose }: {
   onMove: (id: string, kind?: PrefKind, list?: string[]) => void
   onClose: () => void
 }) {
-  const { catalog } = usePr()
+  const { catalog, genderPref } = usePr()
   const ref = useRef<HTMLElement>(null)
   const { kind, id, list } = state
   const entry = entriesOf(catalog, kind).find(e => e.id === id)
   const i = list.indexOf(id)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+      const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, select")
+      if (typing || e.altKey || e.metaKey || e.ctrlKey) return
+      if (e.key === "ArrowLeft" && i > 0) onMove(list[i - 1])
+      if (e.key === "ArrowRight" && i >= 0 && i < list.length - 1) onMove(list[i + 1])
+    }
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
-  }, [onClose])
+  }, [onClose, onMove, i, list])
+  // Stránka pod oknem neroluje; po zavření se fokus vrátí tam, odkud se čtečka otevřela.
+  useEffect(() => {
+    const back = document.activeElement as HTMLElement | null
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = overflow; back?.focus?.({ preventScroll: true }) }
+  }, [])
   useEffect(() => { ref.current?.scrollTo(0, 0); ref.current?.focus() }, [kind, id])
 
   if (!entry) return null
@@ -38,15 +51,16 @@ export function Reader({ state, onMove, onClose }: {
 
   if (kind === "character") {
     const team = catalog.teams.find(t => t.id === entry.teamId)
-    if (team) rows.push(["Tým", <span key="t" className="pr-chip"><i className="pr-dot" style={{ background: team.color }} />{team.name}</span>])
     if (entry.gender) rows.push(["Gender", GENDER_WORD[entry.gender]])
-    entry.fixed?.forEach(f => rows.push(["Pravidla", f]))
+    entry.fixed?.forEach(f => rows.push(["Pevně dané", f]))
     if (team) {
       const mates = catalog.characters.filter(c => c.teamId === team.id && c.id !== id)
       extra = <>
-        <p className="pr-reader-sub">{team.name}</p>
-        <Motto motto={team.motto} />
-        {team.themes.length > 0 && <p className="pr-themes">Témata týmu: {team.themes.join(", ")}</p>}
+        <div className="pr-reader-team">
+          <p className="pr-reader-sub">{team.name}</p>
+          <Motto motto={team.motto} />
+          {team.themes.length > 0 && <p className="pr-themes">Témata týmu: {team.themes.join(", ")}</p>}
+        </div>
         <p className="pr-reader-sub">Spoluhráči v týmu</p>
         <div className="pr-mates">
           {mates.map(m => (
@@ -65,7 +79,7 @@ export function Reader({ state, onMove, onClose }: {
   if (entry.sensitive) rows.push(["Citlivá témata", entry.sensitive])
 
   return (
-    <aside ref={ref} className="pr-reader" aria-label={`${KIND_ONE[kind]} ${entry.name}`} tabIndex={-1}>
+    <section ref={ref} className="pr-reader" role="dialog" aria-modal="true" aria-label={`${KIND_ONE[kind]} ${entry.name}`} tabIndex={-1}>
       <div className="pr-reader-top">
         <p className="pr-label">{KIND_ONE[kind]}{i >= 0 ? ` · ${i + 1} z ${list.length}` : ""}</p>
         <div className="pr-reader-nav">
@@ -83,7 +97,11 @@ export function Reader({ state, onMove, onClose }: {
       )}
       {entry.body ? <SpisText body={entry.body} /> : <p className="pr-hint">Medailonek zatím chybí.</p>}
       {extra}
-      <div className="pr-reader-tri"><Tri kind={kind} id={id} name={entry.name} where="reader" /></div>
-    </aside>
+      <div className="pr-reader-tri">
+        {(kind === "character" || kind === "adult") && !fitsGender(genderPref, kind === "adult" ? adultGender(entry) : entry.gender)
+          ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} adult={kind === "adult"} />
+          : <Tri kind={kind} id={id} name={entry.name} where="reader" />}
+      </div>
+    </section>
   )
 }

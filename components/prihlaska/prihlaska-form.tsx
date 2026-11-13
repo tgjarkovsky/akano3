@@ -5,7 +5,7 @@ import { openCount, KIND_LABELS, type Catalog, type Pref, type PrefKind } from "
 import { activeSteps, draftOf, emptyDraft, isStepId, restoreDraft, stepError, visibleEntries, visiblePrefs, type Draft, type StepId } from "./draft"
 import { PrContext, type PrCtx } from "./parts"
 import { Reader, type ReaderState } from "./reader"
-import { Head, Intro, Person, Paths, Adults, Team, Characters, Elements, Summary } from "./steps"
+import { Head, Intro, Person, Paths, Adults, Team, Characters, Elements, Sensitive, Summary } from "./steps"
 import type { Prihlaska } from "@/lib/prihlaska"
 
 // Přihláška na hru. Nová se rozpracovává v localStorage a po odeslání dostane
@@ -14,7 +14,7 @@ import type { Prihlaska } from "@/lib/prihlaska"
 
 const DRAFT_KEY = "akano-prihlaska"
 const LOW: Partial<Record<PrefKind, number>> = { adult: 2, character: 8, unit: 2, circle: 2, specialization: 2, origin: 2 }
-const TALLY: Partial<Record<StepId, PrefKind[]>> = { dospeli: ["adult"], postavy: ["character"], prvky: ["unit", "circle", "specialization", "origin"] }
+const TALLY: Partial<Record<StepId, PrefKind[]>> = { dospeli: ["adult"], postavy: ["character"], prvky: ["unit", "circle", "specialization"] }
 
 export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
   catalog: Catalog
@@ -37,7 +37,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
     if (token) return
     let restored: Draft | null = null
     try { restored = restoreDraft(localStorage.getItem(DRAFT_KEY)) } catch { /* bez úložiště */ }
-    if (restored) { setDraft(restored); setSaved("Obnoveno z tohoto prohlížeče") }
+    if (restored) setDraft(restored)
   }, [token])
 
   const [touched, setTouched] = useState(false)
@@ -57,6 +57,8 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
   // Krok skrytý podle zvolených cest (třeba #tym bez týmu) ukáže volbu cest.
   const step = steps.some(s => s.id === wanted) ? wanted : "cesta"
   const index = steps.findIndex(s => s.id === step)
+  // Návod k volbám (★ / klidně / ✕) patří do prvního kroku, kde se volí.
+  const howTo = steps.find(s => s.id in TALLY)?.id === step
 
   // Krok podle adresy (#udaje …); neplatný nebo skrytý krok spadne na úvod.
   useEffect(() => {
@@ -131,13 +133,11 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
 
   if (sent) return <Done token={sent} edited={!!token} name={draft.nickname || draft.firstName} />
 
-  const tally = (TALLY[step] ?? []).map(k => {
+  // Počty se neukazují; lišta promluví, jen když hráč vyřadil skoro všechno.
+  const tally = (TALLY[step] ?? []).flatMap(k => {
     const c = openCount(draft.prefs, k, visibleEntries(catalog, k, draft.genderPref).map(e => e.id))
-    return (
-      <span key={k} className={c.open < (LOW[k] ?? 0) ? "pr-tally-low" : undefined}>
-        {KIND_LABELS[k].toLowerCase()}: <b>{c.open}/{c.total}</b> otevřeno{c.yes ? ` · ★${c.yes}` : ""}
-      </span>
-    )
+    if (c.open >= (LOW[k] ?? 0) || c.open >= c.total) return []
+    return [<span key={k} className="pr-tally-low">{KIND_LABELS[k]}: otevřeno jen {c.open}, nech jich víc</span>]
   })
 
   return (
@@ -160,15 +160,16 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
           </div>
         </header>
 
-        <div className={`pr-desk${reader ? " pr-desk-reading" : ""}`}>
+        <div className="pr-desk">
           <main className="pr-sheet">
             {step === "uvod" && <Intro />}
             {step === "udaje" && <Person draft={draft} update={update} />}
             {step === "cesta" && <Paths draft={draft} update={update} />}
-            {step === "dospeli" && <Adults draft={draft} update={update} />}
+            {step === "dospeli" && <Adults draft={draft} update={update} howTo={howTo} />}
             {step === "tym" && <Team draft={draft} update={update} />}
-            {step === "postavy" && <Characters />}
-            {step === "prvky" && <Elements />}
+            {step === "postavy" && <Characters howTo={howTo} />}
+            {step === "prvky" && <Elements howTo={howTo} />}
+            {step === "citliva" && <Sensitive draft={draft} update={update} goTo={goTo} />}
             {step === "souhrn" && <Summary draft={draft} update={update} goTo={goTo} />}
             {error && <div className="pr-warns" role="alert"><div className="pr-warn"><span className="pr-warn-tag">Chybí</span><span>{error}</span></div></div>}
           </main>

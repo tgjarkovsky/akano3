@@ -2,8 +2,9 @@
 
 import React, { createContext, useContext } from "react"
 import { excerpt } from "@/lib/character-doc"
+import { SpisText } from "@/components/spis/spis-text"
 import { CIRCLE_ONLY_GENDER, prefOf, type Catalog, type CatalogEntry, type GenderChoice, type Pref, type PrefKind, type Prefs } from "@/lib/prihlaska"
-import { genderMark, type KindEntry } from "./draft"
+import { adultGender, adultGenderMark, genderMark, onCard, type KindEntry } from "./draft"
 
 // Sdílené kousky formuláře: kontext, trojstavová volba a karta s medailonkem.
 
@@ -47,56 +48,83 @@ export function Tri({ kind, id, name, where = "card" }: { kind: PrefKind; id: st
   )
 }
 
-export function Motto({ motto }: { motto?: CatalogEntry["motto"] }) {
+export function Motto({ motto, inline }: { motto?: CatalogEntry["motto"]; inline?: boolean }) {
   if (!motto) return null
+  const Tag = inline ? "span" : "p"
   return (
-    <p className="pr-motto">
-      {motto.jp && <span className="pr-motto-jp" lang="ja">{motto.jp}</span>}
+    <Tag className="pr-motto">
+      {motto.jp && <span className="pr-motto-jp" lang="ja" aria-hidden="true">{motto.jp}</span>}
       {motto.text}
-    </p>
+    </Tag>
   )
 }
 
-export const SensChip = ({ text }: { text?: string }) =>
-  text ? <span className="pr-chip pr-chip-sens" title="Citlivá témata">citlivé: {text}</span> : null
+/** Proč postavu nejde vybrat: hráč chce hrát jen druhý gender. */
+export const OffNote = ({ gender, adult }: { gender?: "m" | "f" | null; adult?: boolean }) =>
+  <p className="pr-off-note">{gender === "f" ? (adult ? "Ženská" : "Dívčí") : (adult ? "Mužská" : "Chlapecká")} postava · podle tvé volby jen ke čtení</p>
 
 const ONLY: Record<string, string> = { f: "jen dívčí postavy", m: "jen chlapecké postavy" }
 
-/** Karta s výňatkem medailonku, štítky a volbou. */
-export function PrefCard({ kind, entry, list, children }: {
+/** Karta s výňatkem medailonku, štítky a volbou. Klik na jméno nebo výňatek otevře čtečku. */
+export function PrefCard({ kind, entry, list, inactive, shared, children }: {
   kind: PrefKind
   entry: KindEntry
   /** pořadí pro šipky ve čtečce */
   list: string[]
+  /** postava mimo hráčovu volbu genderu: jen ke čtení, bez volby */
+  inactive?: boolean
+  /** pevně dané prvky, které už ukazuje hlavička týmu */
+  shared?: string[]
   children?: React.ReactNode
 }) {
   const { catalog, prefs, openReader } = usePr()
   const v = prefOf(prefs, kind, entry.id)
-  const team = entry.teamId ? catalog.teams.find(t => t.id === entry.teamId) : undefined
-  const gender = kind === "adult" ? entry.facts.find(([k]) => k === "Gender")?.[1] : genderMark(entry.gender)
+  // U studentských postav je tým v hlavičce sekce; štítek by se opakoval.
+  const team = kind !== "character" && entry.teamId ? catalog.teams.find(t => t.id === entry.teamId) : undefined
+  const gender = kind === "adult" ? adultGenderMark(entry) : genderMark(entry.gender)
+  const genderWord = kind === "adult" ? entry.facts.find(([k]) => k === "Gender")?.[1] : entry.gender === "f" ? "dívka" : entry.gender === "m" ? "chlapec" : undefined
   const role = kind === "adult" ? entry.facts.find(([k]) => k === "Role")?.[1] : undefined
   const only = kind === "circle" ? CIRCLE_ONLY_GENDER[entry.id] : undefined
-  const lead = excerpt(entry.body, 260) || entry.facts.filter(([k]) => k !== "Gender").map(([k, x]) => `${k}: ${x}`).join(" · ")
+  const fixed = (entry.fixed ?? []).filter(f => onCard(f) && !shared?.includes(f))
+  // Specializace mají krátký popis, který se vejde celý; čtečku nepotřebují.
+  const whole = kind === "specialization"
+  const lead = excerpt(entry.body, 220) || entry.facts.filter(([k]) => k !== "Gender").map(([k, x]) => `${k}: ${x}`).join(" · ")
+  const chips = (team || fixed.length > 0 || role || only) && (
+    <div className="pr-chips">
+      {team && <span className="pr-chip"><i className="pr-dot" style={{ background: team.color }} />{team.name}</span>}
+      {role && <span className="pr-chip">{role}</span>}
+      {only && <span className="pr-chip pr-chip-fixed">{ONLY[only]}</span>}
+      {fixed.map(f => <span key={f} className="pr-chip pr-chip-fixed" title="Pevně dané">◆ {f}</span>)}
+    </div>
+  )
+  const head = (
+    <span className="pr-card-head">
+      <span className="pr-name">{entry.name}</span>
+      {gender && <span className="pr-gender" title={genderWord} aria-label={genderWord}>{gender}</span>}
+    </span>
+  )
   return (
-    <article className={`pr-card${v === "yes" ? " pr-card-yes" : v === "no" ? " pr-card-no" : ""}`}>
-      <div className="pr-card-head">
-        <span className="pr-name">{entry.name}</span>
-        {gender && <span className="pr-gender">{gender}</span>}
-      </div>
-      {(team || entry.fixed?.length || entry.sensitive || role || only) && (
-        <div className="pr-chips">
-          {team && <span className="pr-chip"><i className="pr-dot" style={{ background: team.color }} />{team.name}</span>}
-          {role && <span className="pr-chip">{role}</span>}
-          {only && <span className="pr-chip pr-chip-fixed">{ONLY[only]}</span>}
-          {entry.fixed?.map(f => <span key={f} className="pr-chip pr-chip-fixed" title="Daný Pravidly">⚲ {f}</span>)}
-          <SensChip text={entry.sensitive} />
-        </div>
-      )}
-      {kind !== "character" && <Motto motto={entry.motto} />}
-      {lead ? <p className="pr-excerpt">{lead}</p> : <p className="pr-excerpt">Medailonek zatím chybí.</p>}
-      <button type="button" className="pr-read" onClick={() => openReader(kind, entry.id, list)}>Číst celý medailonek</button>
+    <article className={`pr-card${inactive ? " pr-card-off" : v === "yes" ? " pr-card-yes" : v === "no" ? " pr-card-no" : ""}`}>
+      {whole ? <>
+        {head}
+        {chips}
+        <Motto motto={entry.motto} />
+        {(entry.facts.length > 0 || entry.body)
+          ? <div className="pr-card-full">
+              {entry.facts.length > 0 && <dl>{entry.facts.map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x}</dd></div>)}</dl>}
+              {entry.body && <SpisText body={entry.body} />}
+            </div>
+          : <p className="pr-excerpt">Popis zatím chybí.</p>}
+      </> : <>
+        <button type="button" className="pr-card-open" onClick={() => openReader(kind, entry.id, list)} title="Číst celý medailonek" aria-label={`${entry.name}: číst celý medailonek`}>
+          {head}
+          {kind !== "character" && <Motto motto={entry.motto} inline />}
+          <span className="pr-excerpt">{lead || "Medailonek zatím chybí."}</span>
+        </button>
+        {chips}
+      </>}
       {children}
-      <Tri kind={kind} id={entry.id} name={entry.name} />
+      {inactive ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} adult={kind === "adult"} /> : <Tri kind={kind} id={entry.id} name={entry.name} />}
     </article>
   )
 }

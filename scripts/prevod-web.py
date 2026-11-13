@@ -37,7 +37,7 @@ def clean(s):
 def plain(s):
     return re.sub(r"[*#\s]+", " ", clean(s)).strip()
 
-ATTR = re.compile(r"^\s*(-|–|\\-)\s*(muž|žena|původ|jednotka|kruh|specializace)\b", re.I)
+ATTR = re.compile(r"^\s*(-|–|\\-)\s*(muž|žena|původ|jednotka|kruh|specializace|citliv[áa] t[ée]mata)\b", re.I)
 
 def paragraphs(block):
     """Odstavce z bloku řádků: bez prázdných řádků, odrážek s údaji a značek seznamů."""
@@ -83,8 +83,10 @@ def add_sensitive(entity_type, entity_id, plain_lines):
     for l in plain_lines:
         m = SENS.match(l.strip())
         if m:
-            v = m.group(1).strip().rstrip(".")
-            if v and v.lower() not in ("nic", "žádná"): add(entity_type, entity_id, "sensitive", v)
+            # „nic, sebevražda“ (Himavari) → „sebevražda“
+            items = [x.strip() for x in m.group(1).strip().rstrip(".").split(",")]
+            v = ", ".join(x for x in items if x and x.lower() not in ("nic", "žádná"))
+            if v: add(entity_type, entity_id, "sensitive", v[0].lower() + v[1:])
             return
 
 def add(entity_type, entity_id, field, body):
@@ -95,10 +97,10 @@ def add(entity_type, entity_id, field, body):
 # ── Postavy ────────────────────────────────────────────────────────────
 CHARACTERS = {
     "Mušaši": "S001", "Šigen": "S002", "Mimi": "S003", "Kaja": "S004", "Kaoru": "S005", "Hiko": "S006",
-    "Ikai": "S007", "Raidži": "S008", "Airi": "S009", "Eri": "S010", "Saja": "S011", "Ren": "S012",
-    "Tecuja": "S013", "Icuki": "S014", "Akari": "S015", "Ajumi": "S016", "Mizuki": "S017", "Jošika": "S018",
+    "Ikai": "S007", "Will": "S008", "Himavari": "S009", "Eri": "S010", "Saja": "S011", "Ren": "S012",
+    "Tarun": "S013", "Icuki": "S014", "Akari": "S015", "Ajumi": "S016", "Mizuki": "S017", "Jošika": "S018",
     "Šiho": "S019", "Jusuke": "S020", "Anna": "S021", "Kei": "S022", "Rjo": "S023", "Haruka": "S024",
-    "Tomoe": "S025", "Nozomi": "S026", "Secuko": "S027", "Kenzo": "S028", "Makoto": "S029", "Čiharu": "S030",
+    "Juna": "S025", "Čiu": "S026", "Minsu": "S027", "Kenzo": "S028", "Makoto": "S029", "Ingrid": "S030",
 }
 a, b = tab("medailonky týmů")
 # Jméno je nadpis „## **Jméno**“, nebo jen tučný řádek „**Jméno**“ (Šigen). Konec: další jméno nebo „# **Tým N**“.
