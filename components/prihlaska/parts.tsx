@@ -60,10 +60,10 @@ export function Motto({ motto, inline }: { motto?: CatalogEntry["motto"]; inline
 }
 
 /** Proč postavu nejde vybrat: hráč chce hrát jen druhý gender. */
-export const OffNote = ({ gender, adult }: { gender?: "m" | "f" | null; adult?: boolean }) =>
-  <p className="pr-off-note">{gender === "f" ? (adult ? "Ženská" : "Dívčí") : (adult ? "Mužská" : "Chlapecká")} postava · podle tvé volby jen ke čtení</p>
+export const OffNote = ({ gender }: { gender?: "m" | "f" | null }) =>
+  <p className="pr-off-note">{gender === "f" ? "Ženská" : "Mužská"} postava · podle tvé volby jen ke čtení</p>
 
-const ONLY: Record<string, string> = { f: "jen dívčí postavy", m: "jen chlapecké postavy" }
+const ONLY: Record<string, string> = { f: "jen ženské postavy", m: "jen mužské postavy" }
 
 /** Karta s výňatkem medailonku, štítky a volbou. Klik na jméno nebo výňatek otevře čtečku. */
 export function PrefCard({ kind, entry, list, inactive, shared, children }: {
@@ -124,7 +124,7 @@ export function PrefCard({ kind, entry, list, inactive, shared, children }: {
         {chips}
       </>}
       {children}
-      {inactive ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} adult={kind === "adult"} /> : <Tri kind={kind} id={entry.id} name={entry.name} />}
+      {inactive ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} /> : <Tri kind={kind} id={entry.id} name={entry.name} />}
     </article>
   )
 }

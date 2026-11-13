@@ -162,11 +162,11 @@ export function Paths({ draft: d, update }: StepProps) {
   }))
   const next = activeSteps(d).slice(3, -1).map(s => s.label)
   return <>
-    <Head kicker="Krok 2" title="Za co se hlásíš?" lead="Zaškrtni všechno, co tě láká. Podle toho ti ukážeme další kroky." />
+    <Head kicker="Krok 2" title="Za co se hlásíš?" lead="Zaškrtni všechno, co tě láká. Každá volba přidá do přihlášky vlastní krok." />
     <div className="pr-paths">
+      {path("student", "Studentská postava, sólo", "Hlásíš se sám za sebe. U každé postavy řekneš, jestli ji chceš hrát.", "30 postav")}
+      {path("team", "Studentská postava, jako tým", "Hlásíte se ve třech na celý tým. Každý vyplní vlastní přihlášku a vybere, koho z týmu by hrál.", "10 týmů")}
       {path("adult", "Dospělá postava", "Učitelé a vedení akademie. Část hry hraješ monstrum se skriptovanějším obsahem.", "6 postav")}
-      {path("team", "Tým se dvěma kamarády", "Hlásíte se jako celá trojice. Každý vyplní vlastní přihlášku a zvolí, koho z týmu bude hrát.", "10 týmů, nejvýš 5 se obsadí celých")}
-      {path("student", "Studentská postava", "Jádro postavy (jméno, gender, tým, původ) je pevné. Jednotku, kruh a specializaci složíme podle tvých preferencí.", "30 postav")}
     </div>
     <div className="pr-section"><h2>Jaké postavy chceš hrát?</h2></div>
     <p className="pr-hint" style={{ marginTop: -4, marginBottom: 10 }}>Gender postav je pevný, crossgender je možný. Vybírat pak půjde jen z postav podle téhle volby, ostatní si můžeš přečíst. Nakamura je nebinární a vybrat ji můžeš vždy.</p>
@@ -202,7 +202,7 @@ export function Adults({ draft: d, update, howTo }: StepProps & { howTo?: boolea
   </>
 }
 
-const GENDER_WORD = { f: "dívčí", m: "chlapecké" } as const
+const GENDER_WORD = { f: "ženské", m: "mužské" } as const
 
 export function Team({ draft: d, update }: StepProps) {
   const { catalog, openReader, readOnly } = usePr()
@@ -302,7 +302,7 @@ export function Characters({ howTo }: { howTo?: boolean }) {
   const visible = catalog.characters
   const list = visible.map(c => c.id)
   const bulk = (teamId: string, v: Pref) => shown.filter(c => c.teamId === teamId).forEach(c => setPref("character", c.id, v))
-  const which = genderPref === "f" ? "dívčí postavy" : genderPref === "m" ? "chlapecké postavy" : null
+  const which = genderPref === "f" ? "ženské postavy" : genderPref === "m" ? "mužské postavy" : null
   return <>
     <Head kicker="Studentstvo" title="Studentské postavy"
       lead={<>Postavy jsou po týmech{which && <>; vybírat můžeš jen {which}, ostatní členy týmů si můžeš přečíst</>}. ◆ označuje prvky, které má postava dané pevně.</>} />

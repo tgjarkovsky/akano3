@@ -74,7 +74,7 @@ export function Reader({ state, onMove, onClose }: {
   } else {
     entry.facts.forEach(([k, v]) => rows.push([k, v]))
     const only = kind === "circle" ? CIRCLE_ONLY_GENDER[id] : undefined
-    if (only) rows.push(["Omezení", only === "f" ? "jen dívčí postavy" : "jen chlapecké postavy"])
+    if (only) rows.push(["Omezení", only === "f" ? "jen ženské postavy" : "jen mužské postavy"])
   }
   if (entry.sensitive) rows.push(["Citlivá témata", entry.sensitive])
 
@@ -99,7 +99,7 @@ export function Reader({ state, onMove, onClose }: {
       {extra}
       <div className="pr-reader-tri">
         {(kind === "character" || kind === "adult") && !fitsGender(genderPref, kind === "adult" ? adultGender(entry) : entry.gender)
-          ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} adult={kind === "adult"} />
+          ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} />
           : <Tri kind={kind} id={id} name={entry.name} where="reader" />}
       </div>
     </section>

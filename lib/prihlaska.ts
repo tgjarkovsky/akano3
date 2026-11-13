@@ -26,8 +26,8 @@ export const NEWSLETTER_CHOICES = [
 ] as const
 /** Jaké postavy chce hráč hrát; ostatní mu formulář neukáže. */
 export const GENDER_CHOICES = [
-  { value: "f", label: "Dívčí postavy" },
-  { value: "m", label: "Chlapecké postavy" },
+  { value: "f", label: "Ženské postavy" },
+  { value: "m", label: "Mužské postavy" },
   { value: "any", label: "Kterékoli" },
 ] as const
 
