@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Oswald, Spectral, Space_Mono, Rock_Salt } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers"
 
@@ -44,6 +45,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <Script
+          src="https://bugfinder-khaki.vercel.app/widget.js"
+          data-project="akano3"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
