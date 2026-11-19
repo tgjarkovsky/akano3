@@ -1,3 +1,5 @@
+## [2026-11-19] - Přihláška: po odeslání jde na e-mail potvrzení s odkazem na úpravy (Resend, bez RESEND_API_KEY jen log)
+
 ## [2026-11-19] - Přihláška, Jednotky a kruhy: pevné tři sloupce (jednotky 3 + 2 širší karty, kruhy 3 + 3, specializace v jednom řádku), na telefonu pod sebou; karty specializací přepracované (větší název, popis v řádcích s drobnou linkou); kruh jen pro druhý rod se ukazuje neaktivní (jen ke čtení) místo skrytí; horní lišta kroků ukazuje u projitého kroku s chybějícím povinným polem žlutý vykřičník místo zeleného zatržítka (tooltip řekne, co chybí)
 
 ## [2026-11-19] - Přihláška, Citlivá témata: bez úvodního odstavce o pojmech témata a citlivá témata
