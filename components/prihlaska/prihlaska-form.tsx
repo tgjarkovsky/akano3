@@ -131,7 +131,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
 
   const ctx = useMemo<PrCtx>(() => ({ catalog, prefs: draft.prefs, genderPref: draft.genderPref, setPref, openReader, readOnly }), [catalog, draft.prefs, draft.genderPref, setPref, openReader, readOnly])
 
-  if (sent) return <Done token={sent} edited={!!token} name={draft.nickname || draft.firstName} />
+  if (sent) return <Done token={sent} edited={!!token} name={(draft.nickname || draft.firstName).trim()} />
 
   // Počty se neukazují; lišta promluví, jen když hráč vyřadil skoro všechno.
   const tally = (TALLY[step] ?? []).flatMap(k => {
@@ -219,7 +219,7 @@ function Done({ token, edited, name }: { token: string; edited: boolean; name: s
             <code>{link}</code>
             <button type="button" className="pr-btn" onClick={copy}>{copied ? "Zkopírováno" : "Kopírovat"}</button>
           </div>
-          <p className="pr-hint">Odkaz si ulož a nikomu ho neposílej, kdo ho má, může přihlášku měnit. Když ho ztratíš, napiš nám.</p>
+          <p className="pr-hint">Odkaz ti chodí i e-mailem. Nikomu ho neposílej, kdo ho má, může přihlášku měnit.</p>
           <p style={{ marginTop: 22 }}><a className="pr-btn" href={`/prihlaska/${token}`}>Otevřít přihlášku</a></p>
         </main>
       </div>
