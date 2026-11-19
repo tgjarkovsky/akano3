@@ -1,3 +1,5 @@
+## [2026-11-20] - Příprava: menu rozdělené na Larp (Texty, Pravidla, Knihovna, E-maily) a Běhy (Přihlášky, Obsazení, Spisy hráčů) s názvem aktivního běhu; „Běhy a obsazení“ přejmenováno na Obsazení
+
 ## [2026-11-20] - Příprava → E-maily: úprava předmětu a textu mailů aplikace s proměnnými ({{jmeno}} apod.), náhled HTML i prostého textu s ukázkovými daty, vrácení výchozího textu; potvrzení přihlášky chodí jako HTML + text z uložené šablony
 
 ## [2026-11-19] - Přihláška: po odeslání jde na e-mail potvrzení s odkazem na úpravy (Resend, bez RESEND_API_KEY jen log)

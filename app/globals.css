@@ -529,7 +529,13 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
   text-align: left;
 }
 .priprava-nav-item:hover { background-color: var(--c-bg-section); }
+.priprava-nav-group {
+  margin: 14px 0 2px; padding: 0 12px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 @media (max-width: 767px) {
+  .priprava-nav-group { margin: 0 0 0 8px; padding: 0 4px; align-self: center; flex-shrink: 0; }
   .priprava-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .priprava-nav {
     position: static;

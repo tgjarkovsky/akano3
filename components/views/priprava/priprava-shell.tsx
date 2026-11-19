@@ -21,16 +21,21 @@ import type { TablerIcon } from "@/lib/types"
 
 type Section = "overview" | "signups" | "mails" | "texts" | "runs" | "rules" | "docs" | "library"
 
-const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
-  { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
-  { value: "signups",  label: "Přihlášky",        hint: "Odpovědi z formuláře",       Icon: IconClipboardList },
-  { value: "mails",    label: "E-maily",          hint: "Texty a náhledy mailů",      Icon: IconMail },
-  { value: "texts",    label: "Texty",            hint: "Psaní a schvalování",        Icon: IconFileText },
-  { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
-  { value: "rules",    label: "Pravidla",         hint: "Co je napevno, co zakázané", Icon: IconAdjustments },
-  { value: "docs",     label: "Spisy hráčů",      hint: "Odkazy, zveřejnění, tisk",   Icon: IconPrinter },
-  { value: "library",  label: "Knihovna",         hint: "Články a vazby",             Icon: IconBook },
+// Larp = nastavení společné všem během, Běhy = příprava konkrétního běhu.
+type Group = "larp" | "runs"
+
+const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon; group?: Group }[] = [
+  { value: "overview", label: "Přehled",     hint: "Stav přípravy",              Icon: IconLayoutDashboard },
+  { value: "texts",    label: "Texty",       hint: "Psaní a schvalování",        Icon: IconFileText,      group: "larp" },
+  { value: "rules",    label: "Pravidla",    hint: "Co je napevno, co zakázané", Icon: IconAdjustments,   group: "larp" },
+  { value: "library",  label: "Knihovna",    hint: "Články a vazby",             Icon: IconBook,          group: "larp" },
+  { value: "mails",    label: "E-maily",     hint: "Texty a náhledy mailů",      Icon: IconMail,          group: "larp" },
+  { value: "signups",  label: "Přihlášky",   hint: "Odpovědi z formuláře",       Icon: IconClipboardList, group: "runs" },
+  { value: "runs",     label: "Obsazení",    hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat,        group: "runs" },
+  { value: "docs",     label: "Spisy hráčů", hint: "Odkazy, zveřejnění, tisk",   Icon: IconPrinter,       group: "runs" },
 ]
+
+const GROUP_COLOR: Record<Group, string> = { larp: "var(--c-accent)", runs: "var(--c-teal)" }
 
 const SECTION_KEY = "akano_priprava_section"
 
@@ -54,6 +59,8 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
     try { sessionStorage.setItem(SECTION_KEY, s) } catch { /* jen se nezapamatuje */ }
   }
   const current = SECTIONS.find(s => s.value === section)!
+  const { runs, activeRunId } = useGame()
+  const activeRun = runs.find(r => r.id === activeRunId)
   const [printJob, setPrintJob] = useState<PrintJob | null>(null)
 
   if (printJob) return <SpisPrintScreen job={printJob} onClose={() => setPrintJob(null)} />
@@ -88,21 +95,30 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
 
       <div className="priprava-layout">
         <nav aria-label="Sekce Přípravy" className="priprava-nav">
-          {SECTIONS.map(({ value, label, hint, Icon }) => {
+          {SECTIONS.map(({ value, label, hint, Icon, group }, i) => {
             const active = value === section
+            const color = group ? GROUP_COLOR[group] : "var(--c-accent)"
+            const heading = group && SECTIONS[i - 1]?.group !== group
             return (
-              <button key={value} onClick={() => go(value)} aria-current={active ? "page" : undefined}
+              <React.Fragment key={value}>
+              {heading && (
+                <p className="priprava-nav-group" style={{ color }}>
+                  {group === "larp" ? "Larp" : <>Běhy{activeRun && <span style={{ color: "var(--c-text-faint)" }}> · {activeRun.name}</span>}</>}
+                </p>
+              )}
+              <button onClick={() => go(value)} aria-current={active ? "page" : undefined}
                 className="priprava-nav-item" style={{
-                  backgroundColor: active ? "color-mix(in srgb, var(--c-accent) 14%, transparent)" : "transparent",
-                  borderColor: active ? "color-mix(in srgb, var(--c-accent) 45%, transparent)" : "transparent",
+                  backgroundColor: active ? `color-mix(in srgb, ${color} 14%, transparent)` : "transparent",
+                  borderColor: active ? `color-mix(in srgb, ${color} 45%, transparent)` : "transparent",
                   color: active ? "var(--c-text)" : "var(--c-text-muted)",
                 }}>
-                <Icon size={18} color={active ? "var(--c-accent)" : "currentColor"} />
+                <Icon size={18} color={active ? color : "currentColor"} />
                 <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
                   <span style={{ fontWeight: active ? 700 : 500, fontSize: "0.92rem" }}>{label}</span>
                   <span className="priprava-hide-narrow" style={{ fontSize: "0.75rem", color: "var(--c-text-faint)" }}>{hint}</span>
                 </span>
               </button>
+              </React.Fragment>
             )
           })}
         </nav>
@@ -164,7 +180,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
         <Jump title="Texty" text="Jádra postav, týmy, jednotky s rolemi, kruhy. Psaní, Hotovo a schvalování." onClick={() => onGo("texts")} />
-        <Jump title="Běhy a obsazení" text="Týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
+        <Jump title="Obsazení" text="Týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
         <Jump title="Pravidla" text="Které postavy mají specializaci, původ nebo kruh napevno a co je zakázané." onClick={() => onGo("rules")} />
         <Jump title="Knihovna" text="Články herní knihovny a vazby mezi nimi." onClick={() => onGo("library")} />
       </div>
