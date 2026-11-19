@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter, IconClipboardList,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter, IconClipboardList, IconMail,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -15,14 +15,16 @@ import { WikiAdminPanel } from "@/components/panels/wiki-admin"
 import { SpisyPanel, type PrintJob } from "@/components/panels/spisy/spisy-panel"
 import { SpisPrintScreen } from "@/components/panels/spisy/spis-print-screen"
 import { PrihlaskyPanel } from "@/components/panels/prihlasky/prihlasky-panel"
+import { EmailyPanel } from "@/components/panels/emaily/emaily-panel"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
 
-type Section = "overview" | "signups" | "texts" | "runs" | "rules" | "docs" | "library"
+type Section = "overview" | "signups" | "mails" | "texts" | "runs" | "rules" | "docs" | "library"
 
 const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon }[] = [
   { value: "overview", label: "Přehled",          hint: "Stav přípravy",              Icon: IconLayoutDashboard },
   { value: "signups",  label: "Přihlášky",        hint: "Odpovědi z formuláře",       Icon: IconClipboardList },
+  { value: "mails",    label: "E-maily",          hint: "Texty a náhledy mailů",      Icon: IconMail },
   { value: "texts",    label: "Texty",            hint: "Psaní a schvalování",        Icon: IconFileText },
   { value: "runs",     label: "Běhy a obsazení",  hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat },
   { value: "rules",    label: "Pravidla",         hint: "Co je napevno, co zakázané", Icon: IconAdjustments },
@@ -119,6 +121,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
           </RulesProvider>
           {section === "library"  && <WikiAdminPanel />}
           {section === "signups"  && <PrihlaskyPanel />}
+          {section === "mails"    && <EmailyPanel />}
         </main>
       </div>
       <ToastContainer />
