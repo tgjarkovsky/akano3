@@ -1197,8 +1197,8 @@ button.kn-tile { width: 100%; height: 100%; text-align: left; cursor: pointer; f
    Papír na stole jako Spis. Karty s trojstavovou volbou, čtečka medailonku
    vpravo (na telefonu list zespodu), spodní lišta s navigací. */
 .pr {
-  --p-desk: #e7e4df; --p-sheet: #fff; --p-ink: #141210; --p-ink2: #3b3630; --p-muted: #5a534b;
-  --p-rule: #b9b1a7; --p-rule-soft: #ddd7cf; --p-hover: #faf9f7; --p-accent: #701010; --p-accent-ink: #fff;
+  --p-desk: #ecebe8; --p-sheet: #fff; --p-ink: #141210; --p-ink2: #363532; --p-muted: #575550;
+  --p-rule: #b5b3ae; --p-rule-soft: #dcdbd7; --p-hover: #f8f8f7; --p-accent: #701010; --p-accent-ink: #fff;
   --p-warn: #8a5a00; --p-warn-soft: #fff3c4; --p-ok: #2f6b45;
   flex: 1; min-height: 100vh; background: var(--p-desk); color: var(--p-ink);
   font-family: var(--font-sans); font-size: 17px; line-height: 1.55;
@@ -1270,6 +1270,9 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 
 .pr-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
 .pr-grid-wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+/* tým má vždy tři postavy: tři sloupce přes celou šířku */
+.pr-team .pr-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .pr-team .pr-grid { grid-template-columns: 1fr; } }
 .pr-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--p-rule); border-radius: 4px; background: var(--p-sheet); transition: opacity .15s; }
 .pr-card:hover { border-color: var(--p-ink2); }
 .pr-card-yes { border: 2px solid var(--p-accent); padding: 11px 13px; }
@@ -1336,11 +1339,8 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 .pr-card-full .spis-text { font-size: 0.92rem; line-height: 1.5; color: var(--p-ink2); }
 .pr-card-full .spis-text p { margin: 0 0 0.45em; }
 .pr-card-full .spis-text strong { color: var(--p-ink); }
-.pr-team-text { max-width: 72ch; cursor: pointer; border-left: 2px solid var(--p-rule); padding: 2px 0 2px 12px; max-height: 3.2em; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent); mask-image: linear-gradient(to bottom, #000 40%, transparent); transition: border-color .15s; }
-.pr-team-text:hover { border-left-color: var(--p-ink); }
-.pr-team-text:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
-.pr-team-text-open { max-height: none; -webkit-mask-image: none; mask-image: none; border-left-color: var(--p-accent); }
-.pr-team-text .spis-text { font-size: 0.95rem; line-height: 1.6; color: var(--p-ink2); }
+.pr-team-text { margin: 4px 0 14px; }
+.pr-team-text .spis-text { max-width: none; font-size: 0.95rem; line-height: 1.6; color: var(--p-ink2); }
 .pr-team-text .spis-text p { margin: 0 0 0.6em; }
 .pr-card-off { background: var(--p-desk); border-style: dashed; }
 .pr-card-off .pr-name, .pr-card-off .pr-excerpt, .pr-card-off .pr-chips { opacity: 0.6; }

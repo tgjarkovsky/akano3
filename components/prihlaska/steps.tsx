@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { SpisText } from "@/components/spis/spis-text"
 import {
   RUN_CHOICES, SUBSTITUTE_CHOICES, NEWSLETTER_CHOICES, GENDER_CHOICES, KIND_LABELS, EDIT_UNTIL,
@@ -282,19 +282,6 @@ export function Team({ draft: d, update }: StepProps) {
 }
 
 
-/** Medailonek týmu: dva řádky, které se klikem rozbalí na celý text a zase sbalí. */
-function TeamText({ body }: { body: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className={`pr-team-text${open ? " pr-team-text-open" : ""}`} role="button" tabIndex={0} aria-expanded={open}
-      title={open ? "Sbalit medailonek týmu" : "Rozbalit medailonek týmu"}
-      onClick={e => { if (!(e.target as HTMLElement).closest("a")) setOpen(o => !o) }}
-      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(o => !o) } }}>
-      <SpisText body={body} />
-    </div>
-  )
-}
-
 export function Characters({ howTo }: { howTo?: boolean }) {
   const { catalog, prefs, setPref, readOnly, genderPref } = usePr()
   const shown = visibleEntries(catalog, "character", genderPref)
@@ -329,7 +316,7 @@ export function Characters({ howTo }: { howTo?: boolean }) {
             {shared.map(f => <span key={f} className="pr-chip pr-chip-fixed" title="Pevně dané celému týmu">◆ {f}</span>)}
             {team.themes.length > 0 && <span className="pr-themes">Témata: {team.themes.join(", ")}</span>}
           </div>
-          {team.body && <TeamText body={team.body} />}
+          {team.body && <div className="pr-team-text"><SpisText body={team.body} /></div>}
           <div className="pr-grid">{members.map(c => <PrefCard key={c.id} kind="character" entry={c} list={list} shared={shared} inactive={!fits.has(c.id)} />)}</div>
         </section>
       )

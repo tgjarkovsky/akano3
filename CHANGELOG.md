@@ -1,3 +1,5 @@
+## [2026-11-19] - Přihláška, Studentské postavy: medailonek týmu celý, přes celou šířku, bez rozbalování a bez svislé linky, tři postavy týmu ve třech sloupcích přes celou šířku; pozadí přihlášky neutrálnější (méně krémové), šedobílé
+
 ## [2026-11-19] - Přihláška podle aktuálního Webu: povinné volby v kroku „Za co se hlásíš“ (hvězdička, jasnější text), kontakt akano3@rolling.cz, přihlášky do 31. 12. mají stejnou váhu, rozdělení postav do února, losování u Nakamury; název Akano3 bez mezery; postavy Ikai → Elliona a Himavari → Himawari
 
 ## [2026-11-13] - Přihláška: volba postav „ženské / mužské“ místo dívčích a chlapeckých; krok „Za co se hlásíš“ má jasnější možnosti (Studentská postava, sólo / Studentská postava, jako tým / Dospělá postava), bez štítku o pěti celých týmech
