@@ -1222,6 +1222,7 @@ button.kn-tile { width: 100%; height: 100%; text-align: left; cursor: pointer; f
 .pr-step[aria-current="step"] { color: var(--p-ink); border-color: var(--p-ink); background: var(--p-sheet); }
 .pr-step[aria-current="step"] .pr-step-n { background: var(--p-ink); color: var(--p-sheet); border-color: var(--p-ink); }
 .pr-step-done .pr-step-n { border-color: var(--p-ok); color: var(--p-ok); }
+.pr-step-warn .pr-step-n { border-color: var(--p-warn); background: var(--p-warn-soft); color: var(--p-warn); font-weight: 700; }
 
 .pr-desk { max-width: 1240px; margin: 0 auto; padding: 18px 16px 120px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .pr-sheet { background: var(--p-sheet); box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.08); padding: clamp(20px, 4vw, 44px); min-width: 0; }
@@ -1272,6 +1273,15 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 .pr-grid-wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
 /* tým má vždy tři postavy: tři sloupce přes celou šířku */
 .pr-team .pr-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* jednotky, kruhy, specializace: pevné tři sloupce; pět jednotek jako 3 + 2 širší karty */
+.pr-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pr-grid-units { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pr-grid-units > * { grid-column: span 2; }
+.pr-grid-units > :nth-child(4):nth-last-child(2), .pr-grid-units > :nth-child(5):nth-last-child(1) { grid-column: span 3; }
+@media (max-width: 720px) {
+  .pr-grid-3, .pr-grid-units { grid-template-columns: 1fr; }
+  .pr-grid-units > * { grid-column: auto !important; }
+}
 @media (max-width: 720px) { .pr-team .pr-grid { grid-template-columns: 1fr; } }
 .pr-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--p-rule); border-radius: 4px; background: var(--p-sheet); transition: opacity .15s; }
 .pr-card:hover { border-color: var(--p-ink2); }
@@ -1339,6 +1349,16 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 .pr-card-full .spis-text { font-size: 0.92rem; line-height: 1.5; color: var(--p-ink2); }
 .pr-card-full .spis-text p { margin: 0 0 0.45em; }
 .pr-card-full .spis-text strong { color: var(--p-ink); }
+/* Specializace: velký název, popis v řádcích oddělených drobnou linkou */
+.pr-card-spec { gap: 12px; padding: 16px 18px 14px; }
+.pr-card-spec.pr-card-yes { padding: 15px 17px 13px; }
+.pr-card-spec .pr-name { font-size: 1.7rem; }
+.pr-card-spec .pr-motto { font-size: 0.95rem; }
+.pr-card-spec .pr-card-full { gap: 0; }
+.pr-card-spec .pr-card-full dl { gap: 0; }
+.pr-card-spec .pr-card-full dl > div { display: grid; grid-template-columns: 6.5em 1fr; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--p-rule-soft); }
+.pr-card-spec .pr-card-full dt { line-height: 1.35; }
+.pr-card-spec .pr-tri { margin-top: 6px; }
 .pr-team-text { margin: 4px 0 14px; }
 .pr-team-text .spis-text { max-width: none; font-size: 0.95rem; line-height: 1.6; color: var(--p-ink2); }
 .pr-team-text .spis-text p { margin: 0 0 0.6em; }

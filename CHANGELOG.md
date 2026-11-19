@@ -1,3 +1,7 @@
+## [2026-11-19] - Přihláška, Jednotky a kruhy: pevné tři sloupce (jednotky 3 + 2 širší karty, kruhy 3 + 3, specializace v jednom řádku), na telefonu pod sebou; karty specializací přepracované (větší název, popis v řádcích s drobnou linkou); kruh jen pro druhý rod se ukazuje neaktivní (jen ke čtení) místo skrytí; horní lišta kroků ukazuje u projitého kroku s chybějícím povinným polem žlutý vykřičník místo zeleného zatržítka (tooltip řekne, co chybí)
+
+## [2026-11-19] - Přihláška, Citlivá témata: bez úvodního odstavce o pojmech témata a citlivá témata
+
 ## [2026-11-19] - Přihláška, Studentské postavy: medailonek týmu celý, přes celou šířku, bez rozbalování a bez svislé linky, tři postavy týmu ve třech sloupcích přes celou šířku; pozadí přihlášky neutrálnější (méně krémové), šedobílé
 
 ## [2026-11-19] - Přihláška podle aktuálního Webu: povinné volby v kroku „Za co se hlásíš“ (hvězdička, jasnější text), kontakt akano3@rolling.cz, přihlášky do 31. 12. mají stejnou váhu, rozdělení postav do února, losování u Nakamury; název Akano3 bez mezery; postavy Ikai → Elliona a Himavari → Himawari

@@ -60,8 +60,8 @@ export function Motto({ motto, inline }: { motto?: CatalogEntry["motto"]; inline
 }
 
 /** Proč postavu nejde vybrat: hráč chce hrát jen druhý gender. */
-export const OffNote = ({ gender }: { gender?: "m" | "f" | null }) =>
-  <p className="pr-off-note">{gender === "f" ? "Ženská" : "Mužská"} postava · podle tvé volby jen ke čtení</p>
+export const OffNote = ({ gender, circle }: { gender?: "m" | "f" | null; circle?: boolean }) =>
+  <p className="pr-off-note">{circle ? `Kruh jen pro ${gender === "f" ? "ženské" : "mužské"} postavy` : `${gender === "f" ? "Ženská" : "Mužská"} postava`} · podle tvé volby jen ke čtení</p>
 
 const ONLY: Record<string, string> = { f: "jen ženské postavy", m: "jen mužské postavy" }
 
@@ -104,7 +104,7 @@ export function PrefCard({ kind, entry, list, inactive, shared, children }: {
     </span>
   )
   return (
-    <article className={`pr-card${inactive ? " pr-card-off" : v === "yes" ? " pr-card-yes" : v === "no" ? " pr-card-no" : ""}`}>
+    <article className={`pr-card${whole ? " pr-card-spec" : ""}${inactive ? " pr-card-off" : v === "yes" ? " pr-card-yes" : v === "no" ? " pr-card-no" : ""}`}>
       {whole ? <>
         {head}
         {chips}
@@ -124,7 +124,7 @@ export function PrefCard({ kind, entry, list, inactive, shared, children }: {
         {chips}
       </>}
       {children}
-      {inactive ? <OffNote gender={kind === "adult" ? adultGender(entry) : entry.gender} /> : <Tri kind={kind} id={entry.id} name={entry.name} />}
+      {inactive ? <OffNote gender={kind === "adult" ? adultGender(entry) : kind === "circle" ? only : entry.gender} circle={kind === "circle"} /> : <Tri kind={kind} id={entry.id} name={entry.name} />}
     </article>
   )
 }

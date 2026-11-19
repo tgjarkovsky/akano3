@@ -150,12 +150,18 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
               <span className="pr-saved" aria-live="polite">{readOnly ? "Přihlašování skončilo, jen pro čtení" : saved}</span>
             </div>
             <nav className="pr-steps" aria-label="Kroky přihlášky">
-              {steps.map((s, i) => (
-                <button key={s.id} type="button" className={`pr-step${i < index ? " pr-step-done" : ""}`}
-                  aria-current={s.id === step ? "step" : undefined} onClick={() => goTo(s.id)}>
-                  <span className="pr-step-n">{i < index ? "✓" : i + 1}</span>{s.label}
-                </button>
-              ))}
+              {steps.map((s, i) => {
+                // Projitý krok je hotový jen s vyplněnými povinnými poli; jinak ukáže vykřičník.
+                const missing = i < index ? stepError(s.id, draft) : null
+                const cls = i < index ? (missing ? " pr-step-warn" : " pr-step-done") : ""
+                return (
+                  <button key={s.id} type="button" className={`pr-step${cls}`}
+                    aria-current={s.id === step ? "step" : undefined} onClick={() => goTo(s.id)}
+                    title={missing ?? undefined} aria-label={missing ? `${s.label}: ${missing}` : undefined}>
+                    <span className="pr-step-n">{i < index ? (missing ? "!" : "✓") : i + 1}</span>{s.label}
+                  </button>
+                )
+              })}
             </nav>
           </div>
         </header>

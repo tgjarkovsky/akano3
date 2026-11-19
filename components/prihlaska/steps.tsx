@@ -359,13 +359,15 @@ export function Elements({ howTo }: { howTo?: boolean }) {
     {howTo && <HowToChoose />}
     <Conflicts />
     {GROUPS.map(g => {
-      const entries = visibleEntries(catalog, g.kind, genderPref)
+      // Kruhy jen pro druhý rod zůstávají vidět, jen ke čtení (bez volby).
+      const fits = new Set(visibleEntries(catalog, g.kind, genderPref).map(e => e.id))
+      const entries = entriesOf(catalog, g.kind)
       return (
         <section key={g.kind}>
           <div className="pr-section"><h2>{g.title}</h2></div>
           <p className="pr-hint" style={{ marginTop: -4 }}>{g.hint}</p>
-          <div className="pr-grid" style={{ marginTop: 10 }}>
-            {entries.map(e => <PrefCard key={e.id} kind={g.kind} entry={e} list={entries.map(x => x.id)} />)}
+          <div className={`pr-grid ${g.kind === "unit" ? "pr-grid-units" : "pr-grid-3"}`} style={{ marginTop: 10 }}>
+            {entries.map(e => <PrefCard key={e.id} kind={g.kind} entry={e} list={entries.map(x => x.id)} inactive={!fits.has(e.id)} />)}
           </div>
         </section>
       )
@@ -384,7 +386,6 @@ export function shownKinds(d: Draft): PrefKind[] {
 
 /** Texty z Webu (oddíl „Témata a citlivá témata“). */
 const SENSITIVE_INTRO = [
-  "V medailoncích se setkáš se dvěma pojmy: témata a citlivá témata. Oboje ti řekne něco o tom, čemu se bude příběh věnovat a čemu se nedá vyhnout. Pokud se s hraním těchto témat cítíš nekomfortně, zvol prosím jinou postavu, jednotku nebo kruh.",
   "Na hře se nevyskytuje sexuální násilí ani jakýkoliv sexuální obsah. Také se zde neřeší téma potratu nebo těhotenství.",
   "Co se naopak na hře vyskytuje a v podstatě nebude možné se tomu vyhnout, je téma smrti – smrt v rodině, smrt blízkého. I pokud by se netýkala přímo tvé postavy, rozhodně to bude téma někoho blízko tebe a nedá se mu vyhnout. Naše hra se odehrává ve světě po apokalypse, který je velmi nebezpečný, smrt je součástí života a lidský život nemá nutně takovou hodnotu, na jakou jsme zvyklí. Toto téma není v citlivých tématech explicitně zmíněno a počítej prosím s tím, že může být všude. Totéž platí pro toxické vztahy mezi postavami, násilí a krev. Je proto dobré se zamyslet, jestli ti tato témata nevadí, a jestli je naše hra tudíž pro tebe.",
 ]
