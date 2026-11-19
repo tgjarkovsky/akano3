@@ -146,7 +146,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
         <header className="pr-top">
           <div className="pr-top-in">
             <div className="pr-top-row">
-              <span className="pr-brand"><b>Akano 3</b> · {token ? "Úprava přihlášky" : "Přihláška na hru 2027"}</span>
+              <span className="pr-brand"><b>Akano3</b> · {token ? "Úprava přihlášky" : "Přihláška na hru 2027"}</span>
               <span className="pr-saved" aria-live="polite">{readOnly ? "Přihlašování skončilo, jen pro čtení" : saved}</span>
             </div>
             <nav className="pr-steps" aria-label="Kroky přihlášky">

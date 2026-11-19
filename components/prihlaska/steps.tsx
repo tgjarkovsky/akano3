@@ -26,15 +26,16 @@ const until = new Date(EDIT_UNTIL).toLocaleDateString("cs-CZ", { day: "numeric",
 
 export function Intro() {
   return <>
-    <Head kicker="22.–25. 7. a 29. 7.–1. 8. 2027" title="Přihláška na Akano 3"
+    <Head kicker="22.–25. 7. a 29. 7.–1. 8. 2027" title="Přihláška na Akano3"
       lead="Přihláška slouží k registraci i k výběru postavy. Medailonky postav, týmů, jednotek a kruhů čteš přímo tady." />
     <details className="pr-note"><summary>Jak přidělujeme postavy</summary>
-      Losujeme 6 lidí na dospělé role a 30 na studentské. Z vylosovaných nejdřív sestavíme kompletní trojice, které se hlásily jako tým (nejvýš 5 týmů). Dvojicím doplníme jejich třetího. Zbytek obsadíme podle preferencí. Nakamuru přednostně dostane člověk se zrakovým postižením.
+      Losujeme 6 lidí na dospělé role a 30 na studentské. Z vylosovaných nejdřív sestavíme kompletní trojice, které se hlásily jako tým (nejvýš 5 týmů). Dvojicím doplníme jejich třetího. Zbytek obsadíme podle preferencí. Nakamuru přednostně dostane člověk se zrakovým postižením, když se jich přihlásí víc, losujeme mezi nimi.
     </details>
     <details className="pr-note"><summary>Kdo uvidí odpovědi</summary>
-      Odpovědi čtou za tým Kla a Guth, za admin Pikaču. Osobní údaje zpracovává Rolling, spolek pro rozvoj zážitkových vzdělávacích her (IČ 02296802), podrobnosti jsou v dokumentu Informace o zpracování osobních údajů na webu spolku. Když nám chceš něco říct mimo přihlášku, napiš Guthovi nebo Kle přes FB stránku Akano3.
+      Odpovědi čtou za tým Kla a Guth, za admin Pikaču. Osobní údaje zpracovává Rolling, spolek pro rozvoj zážitkových vzdělávacích her (IČ 02296802), podrobnosti jsou v dokumentu Informace o zpracování osobních údajů na webu spolku. Když nám chceš něco říct mimo přihlášku, napiš na akano3@rolling.cz nebo Guthovi či Kle přes FB stránku Akano3.
     </details>
     <p className="pr-hint">Účast je možná jen pro plnoleté. Vyplnění zabere zhruba 20 minut, rozpracovaná přihláška se ukládá v tomhle prohlížeči. Po odeslání ji můžeš upravovat do {until}.</p>
+    <p className="pr-hint">Všechny přihlášky odeslané do {until} mají stejnou váhu, nezáleží na tom, kdo přijde dřív. Postavy rozdělíme do konce února, platí se do 30. 4.</p>
   </>
 }
 
@@ -134,7 +135,7 @@ export function Person({ draft: d, update }: StepProps) {
           V době hry mi bude aspoň 18 let.
         </Check>
         <Check checked={d.consent} disabled={readOnly} onChange={v => update(x => ({ ...x, consent: v }))}>
-          Souhlasím se zpracováním osobních údajů z přihlášky spolkem Rolling (IČ 02296802) pro přípravu a organizaci hry Akano 3. Podrobnosti jsou v dokumentu Informace o zpracování osobních údajů na webu spolku.
+          Souhlasím se zpracováním osobních údajů z přihlášky spolkem Rolling (IČ 02296802) pro přípravu a organizaci hry Akano3. Podrobnosti jsou v dokumentu Informace o zpracování osobních údajů na webu spolku.
         </Check>
       </div>
     </Question>
@@ -162,13 +163,13 @@ export function Paths({ draft: d, update }: StepProps) {
   }))
   const next = activeSteps(d).slice(3, -1).map(s => s.label)
   return <>
-    <Head kicker="Krok 2" title="Za co se hlásíš?" lead="Zaškrtni všechno, co tě láká. Každá volba přidá do přihlášky vlastní krok." />
+    <Head kicker="Krok 2" title="Za co se hlásíš?" lead={<>Zaškrtni aspoň jednu možnost, klidně všechny, které tě lákají. Každá volba přidá do přihlášky vlastní krok.<span className="pr-req"> *</span></>} />
     <div className="pr-paths">
       {path("student", "Studentská postava, sólo", "Hlásíš se sám za sebe. U každé postavy řekneš, jestli ji chceš hrát.", "30 postav")}
       {path("team", "Studentská postava, jako tým", "Hlásíte se ve třech na celý tým. Každý vyplní vlastní přihlášku a vybere, koho z týmu by hrál.", "10 týmů")}
       {path("adult", "Dospělá postava", "Učitelé a vedení akademie. Část hry hraješ monstrum se skriptovanějším obsahem.", "6 postav")}
     </div>
-    <div className="pr-section"><h2>Jaké postavy chceš hrát?</h2></div>
+    <div className="pr-section"><h2>Jaké postavy chceš hrát?<span className="pr-req"> *</span></h2></div>
     <p className="pr-hint" style={{ marginTop: -4, marginBottom: 10 }}>Gender postav je pevný, crossgender je možný. Vybírat pak půjde jen z postav podle téhle volby, ostatní si můžeš přečíst. Nakamura je nebinární a vybrat ji můžeš vždy.</p>
     <Choices name="genderPref" value={d.genderPref} disabled={readOnly} onChange={setGender}
       options={GENDER_CHOICES.map(o => ({ value: o.value, label: o.label }))} />

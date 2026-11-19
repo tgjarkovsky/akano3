@@ -7,8 +7,8 @@ import { PrihlaskaForm } from "@/components/prihlaska/prihlaska-form"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Přihláška · Akano 3",
-  description: "Přihláška na larp Akano 3 a výběr postavy.",
+  title: "Přihláška · Akano3",
+  description: "Přihláška na larp Akano3 a výběr postavy.",
 }
 
 export default async function PrihlaskaPage() {

@@ -83,7 +83,7 @@ def add_sensitive(entity_type, entity_id, plain_lines):
     for l in plain_lines:
         m = SENS.match(l.strip())
         if m:
-            # „nic, sebevražda“ (Himavari) → „sebevražda“
+            # „nic, sebevražda“ (Himawari) → „sebevražda“
             items = [x.strip() for x in m.group(1).strip().rstrip(".").split(",")]
             v = ", ".join(x for x in items if x and x.lower() not in ("nic", "žádná"))
             if v: add(entity_type, entity_id, "sensitive", v[0].lower() + v[1:])
@@ -97,7 +97,7 @@ def add(entity_type, entity_id, field, body):
 # ── Postavy ────────────────────────────────────────────────────────────
 CHARACTERS = {
     "Mušaši": "S001", "Šigen": "S002", "Mimi": "S003", "Kaja": "S004", "Kaoru": "S005", "Hiko": "S006",
-    "Ikai": "S007", "Will": "S008", "Himavari": "S009", "Eri": "S010", "Saja": "S011", "Ren": "S012",
+    "Elliona": "S007", "Will": "S008", "Himawari": "S009", "Eri": "S010", "Saja": "S011", "Ren": "S012",
     "Tarun": "S013", "Icuki": "S014", "Akari": "S015", "Ajumi": "S016", "Mizuki": "S017", "Jošika": "S018",
     "Šiho": "S019", "Jusuke": "S020", "Anna": "S021", "Kei": "S022", "Rjo": "S023", "Haruka": "S024",
     "Juna": "S025", "Čiu": "S026", "Minsu": "S027", "Kenzo": "S028", "Makoto": "S029", "Ingrid": "S030",

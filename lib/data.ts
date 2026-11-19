@@ -93,13 +93,13 @@ export const CHARACTERS: Character[] = [
     teamId:"T02", unitId:"U1", circleIds:["C2"], specialization:"tactical",
     kaichiLevel:2, points:44, peerPointPool:20, lessonClaimedThisWindow:false },
   // ── Tým 3 ──
-  { id:"S007", code:"STU-007", name:"Ikai",             role:"student",
+  { id:"S007", code:"STU-007", name:"Elliona",          role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C6"], specialization:"tactical",
     kaichiLevel:4, points:56, peerPointPool:12, lessonClaimedThisWindow:false },
   { id:"S008", code:"STU-008", name:"Will", role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C3"], specialization:"combat",
     kaichiLevel:4, points:54, peerPointPool:15, lessonClaimedThisWindow:false },
-  { id:"S009", code:"STU-009", name:"Himavari",            role:"student",
+  { id:"S009", code:"STU-009", name:"Himawari",            role:"student",
     teamId:"T03", unitId:"U2", circleIds:["C1"], specialization:"support",
     kaichiLevel:4, points:50, peerPointPool:20, lessonClaimedThisWindow:false },
   // ── Tým 4 ──

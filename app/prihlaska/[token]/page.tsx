@@ -8,7 +8,7 @@ import { PrihlaskaForm } from "@/components/prihlaska/prihlaska-form"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Moje přihláška · Akano 3",
+  title: "Moje přihláška · Akano3",
   robots: { index: false, follow: false },
   // tajný odkaz nesmí odejít v hlavičce Referer
   referrer: "no-referrer",
