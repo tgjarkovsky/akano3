@@ -5,6 +5,7 @@ import { openCount, KIND_LABELS, type Catalog, type Pref, type PrefKind } from "
 import { activeSteps, draftOf, emptyDraft, isStepId, restoreDraft, stepError, visibleEntries, visiblePrefs, type Draft, type StepId } from "./draft"
 import { PrContext, type PrCtx } from "./parts"
 import { Reader, type ReaderState } from "./reader"
+import { Backdrop } from "./backdrop"
 import { Head, Intro, Person, Paths, Adults, Team, Characters, Elements, Sensitive, Summary } from "./steps"
 import type { Prihlaska } from "@/lib/prihlaska"
 
@@ -143,6 +144,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
   return (
     <PrContext.Provider value={ctx}>
       <div className="pr">
+        <Backdrop />
         <header className="pr-top">
           <div className="pr-top-in">
             <div className="pr-top-row">
