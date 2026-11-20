@@ -1502,17 +1502,6 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 .pr-linkbox code { flex: 1 1 260px; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 11px 12px; border: 1px dashed var(--p-ink); border-radius: 4px; font-family: var(--font-mono); font-size: 0.82rem; user-select: all; }
 @media (prefers-reduced-motion: reduce) { .pr-card { transition: none; } }
 
-/* ── Obsazení hráčů: dospělé postavy ─────────────────────────────────── */
-.adult-row {
-  display: grid; grid-template-columns: minmax(120px, 220px) minmax(0, 1fr);
-  gap: 16px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--c-border);
-}
-.adult-row:first-child { border-top: none; }
-.adult-row .circle-select { margin-top: 0; }
-@media (max-width: 599px) {
-  .adult-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-}
-
 /* ── Hráči běhu ──────────────────────────────────────────────────────── */
 .hraci-table td { vertical-align: middle; }
 .hraci-table tr[data-muted] td { color: var(--c-text-muted); }
@@ -1540,3 +1529,48 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 }
 .dogtag-photo { width: 72px; height: 96px; object-fit: cover; border-radius: 3px; margin-bottom: 6px; }
 @media print { .dogtag-photo { display: none; } }
+
+/* ── Příprava: obsazení, záložky a hráči na postavách ─────────────── */
+.obsazeni-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--c-border-mid); margin-bottom: 20px; }
+.obsazeni-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 16px; margin-bottom: -1px;
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  color: var(--c-text-muted); font-size: 0.9rem; font-weight: 600; cursor: pointer;
+}
+.obsazeni-tab:hover { color: var(--c-text); }
+.obsazeni-tab[data-on] { color: var(--c-text); border-bottom-color: var(--c-accent); }
+.obsazeni-tab-count { font-size: 0.75rem; color: var(--c-text-faint); font-weight: 400; }
+.obsazeni-tab-badge {
+  font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+  background-color: color-mix(in srgb, var(--c-accent) 22%, transparent); color: var(--c-accent);
+}
+.cast-summary, .cast-proposal {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 10px; border: 1px solid var(--c-border-mid); background-color: var(--c-bg-card);
+}
+.cast-proposal {
+  margin-top: 10px;
+  border-color: color-mix(in srgb, var(--c-accent) 55%, transparent);
+  background-color: color-mix(in srgb, var(--c-accent) 8%, var(--c-bg-card));
+}
+.cast-row {
+  display: grid; grid-template-columns: minmax(140px, 1fr) minmax(220px, 340px);
+  gap: 16px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--c-border);
+}
+.cast-row[data-proposed] { background-color: color-mix(in srgb, var(--c-accent) 6%, transparent); }
+.cast-meta { display: block; font-size: 0.76rem; color: var(--c-text-faint); }
+.cast-proposed {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 34px; padding: 4px 6px 4px 10px; border: 1px dashed var(--c-accent); border-radius: 6px;
+  color: var(--c-text); font-size: 0.84rem;
+}
+.cast-drop {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; height: 32px; border: none; border-radius: 6px; background: transparent;
+  color: var(--c-text-muted); cursor: pointer;
+}
+.cast-drop:hover { background-color: var(--c-bg-section); color: var(--c-text); }
+@media (max-width: 599px) {
+  .cast-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 14px; }
+}

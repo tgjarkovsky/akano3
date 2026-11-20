@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/admin-password"
 import { sql } from "@/lib/db"
 import { getActiveRunId } from "@/lib/runs"
 import { ensureDocTables } from "@/lib/docs-store"
-import { assignCast, getCastBoard, isCastable, setCastPublished } from "@/lib/cast-store"
+import { assignCast, assignCastMany, getCastBoard, isCastable, setCastPublished } from "@/lib/cast-store"
 
 export const dynamic = "force-dynamic"
 
@@ -32,6 +32,7 @@ export async function GET(req: Request) {
 // POST /api/priprava/cast
 //   { characterId, prihlaskaId: number | null, by? }   hráč na postavu (null = postava bez hráče)
 //   { publish: boolean, by? }                           zveřejní / skryje obsazení hráčům
+//   { assign: [{ characterId, prihlaskaId }], by? }     schválený návrh obsazení najednou
 export async function POST(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
@@ -43,6 +44,15 @@ export async function POST(req: Request) {
 
     if (typeof b.publish === "boolean") {
       await setCastPublished(runId, b.publish, by)
+      return Response.json(await board(runId))
+    }
+    if (Array.isArray(b.assign)) {
+      const pairs = b.assign as { characterId?: unknown; prihlaskaId?: unknown }[]
+      if (pairs.length > 200 || !pairs.every(p => p && isCastable(p.characterId) && typeof p.prihlaskaId === "number" && Number.isInteger(p.prihlaskaId))) {
+        return new Response("Neplatný návrh", { status: 400 })
+      }
+      const error = await assignCastMany(runId, pairs as { characterId: string; prihlaskaId: number }[], by)
+      if (error) return new Response(error, { status: 409 })
       return Response.json(await board(runId))
     }
     if (!isCastable(b.characterId)) return new Response("Neznámá postava", { status: 400 })

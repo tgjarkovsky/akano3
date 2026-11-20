@@ -1,3 +1,5 @@
+## [2026-11-21] - Obsazení: rozdělené na záložky Postavy (jednotky, specializace, původ, kruhy, role) a Hráči (kdo hraje kterou postavu včetně dospělých, zveřejnění obsazení), kontroly vpravo patří k otevřené záložce; v Hráčích tlačítko „Navrhnout obsazení“ doplní volné postavy volnými přijatými hráči podle přihlášek (nejvyšší celková shoda, výběr v trojici a ★ mají přednost, odmítnuté postavy, jiný rod a postavy mimo hráčovu cestu nikdy), návrh jde po jednom vyškrtnout a schválit najednou
+
 ## [2026-11-21] - Přihlášky: výběr stavu a běhu se v tabulce už nemačká na šipku, šířka podle textu
 
 ## [2026-11-21] - Běhy: zakládání nového běhu padalo na duplicitě, protože stav postav, jednotky týmů, kruhy, body týmů a nastavení hry měly klíč bez běhu; klíče teď obsahují běh (migrace se provede sama), běhy bez nastavení hry ho dostanou

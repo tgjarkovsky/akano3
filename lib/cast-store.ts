@@ -157,6 +157,29 @@ export async function assignCast(runId: number, characterId: string, prihlaskaId
   return null
 }
 
+/**
+ * Schválený návrh: víc dvojic postava → hráč najednou (v jedné transakci).
+ * Stejná pravidla jako assignCast; dvojice se nesmí opakovat.
+ */
+export async function assignCastMany(runId: number, pairs: { characterId: string; prihlaskaId: number }[], by: string | null): Promise<string | null> {
+  await ensureCastTables()
+  if (pairs.length === 0) return null
+  const ids = pairs.map(p => p.prihlaskaId)
+  if (new Set(ids).size !== ids.length || new Set(pairs.map(p => p.characterId)).size !== pairs.length) return "Návrh obsazuje někoho dvakrát"
+  const rows = await sql`SELECT id, status, run_id FROM prihlasky WHERE id = ANY(${ids})`
+  if (rows.length !== ids.length) return "Přihláška neexistuje"
+  if (!rows.every(r => canBeCast({ status: r.status as CastStatus, runId: r.run_id as number | null }, runId))) return "Návrh obsahuje hráče, který není přijatý na tenhle běh"
+  const chars = pairs.map(p => p.characterId)
+  await sql.transaction([
+    sql`DELETE FROM run_cast WHERE run_id = ${runId} AND (character_id = ANY(${chars}) OR prihlaska_id = ANY(${ids}))`,
+    sql`
+      INSERT INTO run_cast (run_id, character_id, prihlaska_id, updated_by)
+      SELECT ${runId}, c, p, ${by} FROM unnest(${chars}::text[], ${ids}::int[]) AS t(c, p)
+    `,
+  ])
+  return null
+}
+
 export async function setCastPublished(runId: number, published: boolean, by: string | null): Promise<boolean> {
   await ensureCastTables()
   const rows = await sql`

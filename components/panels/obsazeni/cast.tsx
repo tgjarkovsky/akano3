@@ -5,7 +5,7 @@ import { useGame } from "@/lib/game-context"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { UNITS, CIRCLES } from "@/lib/data"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
-import { castFit, fitMark, playerName, type CastCharacter, type CastFit, type CastStatus } from "@/lib/cast"
+import { castFit, fitMark, playerName, suggestCast, type CastCharacter, type CastFit, type CastStatus } from "@/lib/cast"
 import type { Prihlaska } from "@/lib/prihlaska"
 import type { Character } from "@/lib/types"
 
@@ -54,6 +54,8 @@ export function useCast() {
 
   const assign = useCallback((characterId: string, prihlaskaId: number | null) =>
     post(`cast:${characterId}`, { characterId, prihlaskaId }, "Hráče se nepodařilo obsadit"), [post])
+  const assignMany = useCallback((pairs: { characterId: string; prihlaskaId: number }[]) =>
+    post("suggest", { assign: pairs }, "Návrh se nepodařilo uložit"), [post])
   const publish = useCallback((published: boolean) =>
     post("publish", { publish: published }, "Zveřejnění se nepodařilo uložit"), [post])
 
@@ -62,7 +64,7 @@ export function useCast() {
     (board?.candidates ?? []).filter(c => c.characterId).map(c => [c.characterId!, c]),
   ), [board])
 
-  return { board, assign, publish, pending, playerOf }
+  return { board, assign, assignMany, publish, pending, playerOf }
 }
 
 const nameOf = (kind: "unit" | "circle" | "specialization" | "origin", id: string) => {
@@ -88,6 +90,10 @@ export function castCharacter(c: Character, gender: Record<string, "m" | "f">, u
 
 export const fitOf = (p: CastCandidate, c: CastCharacter): CastFit => castFit(p.data, c, nameOf)
 
+/** Návrh obsazení volných postav přijatými hráči bez postavy (lib/cast.ts). */
+export const suggestFor = (board: CastBoard, characters: CastCharacter[]) =>
+  suggestCast(characters, board.candidates.filter(p => p.status === "accepted"), nameOf)
+
 /** Výběr hráče u postavy. Přijatí seřazení podle shody, náhradníci jen pro přehled. */
 export function PlayerSelect({ character, board, characterName, busy, onAssign }: {
   character: CastCharacter
@@ -106,7 +112,7 @@ export function PlayerSelect({ character, board, characterName, busy, onAssign }
   const currentFit = current && fitOf(current, character)
 
   return (
-    <span style={{ display: "block", marginTop: 4 }}>
+    <span style={{ display: "block" }}>
       <select className="circle-select" value={current?.id ?? ""} disabled={busy} aria-label={`Hráč postavy ${characterName(character.id)}`}
         style={{ width: "100%", maxWidth: 300 }}
         onChange={e => onAssign(e.target.value ? Number(e.target.value) : null)}>
@@ -128,29 +134,5 @@ export function PlayerSelect({ character, board, characterName, busy, onAssign }
         </span>
       )}
     </span>
-  )
-}
-
-/** Dospělé postavy (učitelé): jen výběr hráče, prvky běhu nemají. */
-export function AdultCast({ adults, board, pending, toCast, characterName, onAssign }: {
-  adults: Character[]
-  board: CastBoard
-  pending: string | null
-  toCast: (c: Character) => CastCharacter
-  characterName: (id: string) => string
-  onAssign: (characterId: string, prihlaskaId: number | null) => void
-}) {
-  return (
-    <div className="char-table" role="table" aria-label="Obsazení dospělých postav">
-      {adults.map(c => (
-        <div key={c.id} id={`postava-${c.id}`} className="adult-row" role="row">
-          <span role="cell" style={{ fontWeight: 700, color: "var(--c-text)" }}>{c.name}</span>
-          <span role="cell">
-            <PlayerSelect character={toCast(c)} board={board} characterName={characterName}
-              busy={pending === `cast:${c.id}`} onAssign={id => onAssign(c.id, id)} />
-          </span>
-        </div>
-      ))}
-    </div>
   )
 }

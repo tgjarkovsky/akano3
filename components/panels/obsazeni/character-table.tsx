@@ -12,8 +12,6 @@ import { allowedValues } from "@/lib/assignment-rules"
 import { fixedRole, roleLabel, type RuleRole } from "@/lib/role-rules"
 import { IconLock, IconWand } from "@tabler/icons-react"
 import { SectionTitle, Segmented } from "./shared"
-import { PlayerSelect, type CastBoard } from "./cast"
-import type { CastCharacter } from "@/lib/cast"
 
 type Filter = { kind: "all" } | { kind: "issues" } | { kind: "circle"; id: string }
 
@@ -34,19 +32,9 @@ type Props = {
   fixedPending: number
   applyingFixed: boolean
   onApplyFixed: () => void
-  /** obsazení hráčů; bez něj se výběr hráče neukáže */
-  cast?: CastProps
 }
 
-export type CastProps = {
-  board: CastBoard
-  pending: string | null
-  toCast: (c: Character) => CastCharacter
-  characterName: (id: string) => string
-  onAssign: (characterId: string, prihlaskaId: number | null) => void
-}
-
-export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, roles, held, fixedPending, applyingFixed, onApplyFixed, cast }: Props) {
+export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pending, onSpec, onOrigin, onCircle, rules, roles, held, fixedPending, applyingFixed, onApplyFixed }: Props) {
   const [filter, setFilter] = useState<Filter>({ kind: "all" })
   const [query, setQuery] = useState("")
 
@@ -67,13 +55,9 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
     return m
   }, [players])
 
-  const playerOfName = (id: string) => {
-    const p = cast?.board.candidates.find(x => x.characterId === id)
-    return p ? `${p.data.firstName} ${p.data.lastName} ${p.data.nickname}` : ""
-  }
   const q = query.trim().toLowerCase()
   const visible = (c: Character) => {
-    if (q && !c.name.toLowerCase().includes(q) && !playerOfName(c.id).toLowerCase().includes(q)) return false
+    if (q && !c.name.toLowerCase().includes(q)) return false
     if (filter.kind === "issues") return withIssues.has(c.id)
     if (filter.kind === "circle") return c.circleIds.includes(filter.id)
     return true
@@ -88,13 +72,13 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
 
   return (
     <section>
-      <SectionTitle note="Hráč, specializace, původ a kruh pro každou postavu">Postavy</SectionTitle>
+      <SectionTitle note="Specializace, původ a kruh pro každou postavu">Postavy</SectionTitle>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
         <label style={{ position: "relative", flex: "1 1 200px", maxWidth: 260 }}>
           <span className="sr-only">Hledat postavu</span>
           <IconSearch size={14} color="var(--c-text-faint)" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={cast ? "Hledat postavu nebo hráče" : "Hledat postavu"}
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Hledat postavu"
             style={{
               width: "100%", boxSizing: "border-box", minHeight: 34, padding: "0 10px 0 30px",
               backgroundColor: "var(--c-input)", border: "1px solid var(--c-input-border)", borderRadius: 6,
@@ -166,10 +150,6 @@ export function CharacterTable({ slots, unplacedTeamIds, players, withIssues, pe
                           </span>
                         )
                       })()}
-                      {cast && (
-                        <PlayerSelect character={cast.toCast(c)} board={cast.board} characterName={cast.characterName}
-                          busy={cast.pending === `cast:${c.id}`} onAssign={id => cast.onAssign(c.id, id)} />
-                      )}
                     </span>
                     <span role="cell">
                       <span className="cell-label">Specializace{lock(specAllowed)}</span>

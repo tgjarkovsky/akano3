@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { IconPlayerPlay, IconPlus, IconDownload, IconChevronDown, IconCalendar, IconCheck, IconX, IconEye, IconEyeOff } from "@tabler/icons-react"
+import { IconPlayerPlay, IconPlus, IconDownload, IconChevronDown, IconCalendar, IconCheck, IconX } from "@tabler/icons-react"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -14,19 +14,9 @@ import { formatRunDate } from "@/lib/character-doc"
 import type { RunSummary } from "@/lib/types"
 
 // Hlavička obsazení: který běh se upravuje, přepnutí, nový běh, export,
-// stav obsazení hráčů a jeho zveřejnění.
+// termíny běhů.
 
-export type CastSummary = {
-  cast: number
-  total: number
-  accepted: number
-  uncastMessage: string | null
-  publishedAt: string | null
-  publishing: boolean
-  onPublish: (published: boolean) => Promise<boolean>
-}
-
-export function RunBar({ cast }: { cast?: CastSummary | null }) {
+export function RunBar() {
   const { runs, activeRunId, setActiveRun, createRun, setRunDates, characters, teams } = useGame()
   const [open, setOpen] = useState(false)
   const [newName, setNewName] = useState("")
@@ -35,7 +25,6 @@ export function RunBar({ cast }: { cast?: CastSummary | null }) {
   const [editing, setEditing] = useState<{ id: number; start: string; end: string } | null>(null)
   const [creating, setCreating] = useState(false)
   const [confirmRun, setConfirmRun] = useState<RunSummary | null>(null)
-  const [confirmPublish, setConfirmPublish] = useState(false)
   const active = runs.find(r => r.id === activeRunId)
 
   const validRange = (start: string, end: string) => !!start && !!end && end > start
@@ -91,22 +80,6 @@ export function RunBar({ cast }: { cast?: CastSummary | null }) {
           </button>
         </div>
       </div>
-
-      {cast && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--c-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, fontSize: "0.85rem", color: "var(--c-text-muted)", lineHeight: 1.45 }}>
-            <span style={{ color: "var(--c-text)", fontWeight: 700 }}>Hráči: {cast.cast} z {cast.total} postav</span>
-            {" · "}{cast.accepted} přijatých
-            {" · "}{cast.publishedAt
-              ? <span style={{ color: "var(--c-success)", fontWeight: 700 }}>zveřejněno {new Date(cast.publishedAt).toLocaleDateString("cs-CZ")}</span>
-              : "hráči obsazení zatím nevidí"}
-            {cast.uncastMessage && <span style={{ display: "block", color: "var(--c-accent)" }}>{cast.uncastMessage}</span>}
-          </div>
-          {cast.publishedAt
-            ? <button style={btn} disabled={cast.publishing} onClick={() => cast.onPublish(false)}><IconEyeOff size={14} /> Skrýt obsazení</button>
-            : <button style={btn} disabled={cast.publishing || cast.cast === 0} onClick={() => setConfirmPublish(true)}><IconEye size={14} /> Zveřejnit obsazení</button>}
-        </div>
-      )}
 
       {open && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--c-border)" }}>
@@ -165,22 +138,6 @@ export function RunBar({ cast }: { cast?: CastSummary | null }) {
           </p>
         </div>
       )}
-
-      <AlertDialog open={confirmPublish} onOpenChange={setConfirmPublish}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Zveřejnit obsazení {active?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Obsazení hráči uvidí na odkazu své přihlášky svou postavu a stav platby a budou moct nahrát fotku.
-              Fotky se objeví ve spisech spoluhráčů. Mail se tím neposílá, to jde v modulu Hráči.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Zrušit</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { setConfirmPublish(false); void cast?.onPublish(true) }}>Zveřejnit</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={confirmRun !== null} onOpenChange={o => { if (!o) setConfirmRun(null) }}>
         <AlertDialogContent>

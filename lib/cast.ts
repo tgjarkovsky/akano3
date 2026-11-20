@@ -91,6 +91,82 @@ export function fitMark(f: CastFit): string {
   return [f.wanted ? "★" : "", f.refused ? "✗" : "", f.warnings.length ? "⚠" : ""].join("")
 }
 
+// ── Návrh obsazení ─────────────────────────────────────────────────────
+
+export type SuggestPlayer = { id: number; data: Prihlaska; characterId: string | null }
+
+/**
+ * Skóre dvojice hráč–postava pro návrh, nebo null, když ji navrhnout nejde
+ * (postavu odmítl, nesedí rod, nehlásí se na tenhle typ postavy).
+ * Každá povolená dvojice má kladné skóre, takže návrh obsadí co nejvíc postav.
+ */
+export function suggestScore(p: Prihlaska, c: CastCharacter, nameOf: NameOf): number | null {
+  const fit = castFit(p, c, nameOf)
+  if (fit.refused || !fitsGender(p.genderPref, c.gender)) return null
+  const picked = c.kind === "player" && p.paths.team && !!c.teamId && p.team.picks[c.teamId] === c.id
+  if (c.kind === "adult" ? !p.paths.adult : !(p.paths.student || picked)) return null
+  // Zbylá varování jsou jen odmítnuté prvky postavy (jednotka, kruh, specializace, původ).
+  return 100 + (picked ? 30 : fit.wanted ? 20 : 0) - 10 * fit.warnings.length
+}
+
+/**
+ * Návrh obsazení volných postav volnými přijatými hráči tak, aby byl součet
+ * skóre co největší (maďarská metoda). Stávající obsazení nemění.
+ * Vrací id postavy → id přihlášky.
+ */
+export function suggestCast(characters: readonly CastCharacter[], players: readonly SuggestPlayer[], nameOf: NameOf): Map<string, number> {
+  const taken = new Set(players.map(p => p.characterId).filter(Boolean))
+  const chars = characters.filter(c => !taken.has(c.id))
+  const free = players.filter(p => !p.characterId)
+  const n = Math.max(chars.length, free.length)
+  if (chars.length === 0 || free.length === 0) return new Map()
+  const FORBIDDEN = 1e6
+  // cost[i][j]: řádek = postava, sloupec = hráč; doplněno na čtverec nulami (nikdo / nic).
+  const score: (number | null)[][] = chars.map(c => free.map(p => suggestScore(p.data, c, nameOf)))
+  const cost = (i: number, j: number) => {
+    if (i >= chars.length || j >= free.length) return 0
+    const s = score[i][j]
+    return s === null ? FORBIDDEN : -s
+  }
+  const colOf = hungarian(n, cost)
+  const out = new Map<string, number>()
+  for (let i = 0; i < chars.length; i++) {
+    const j = colOf[i]
+    if (j < free.length && score[i][j] !== null) out.set(chars[i].id, free[j].id)
+  }
+  return out
+}
+
+/** Minimální přiřazení řádků sloupcům ve čtvercové matici n×n (O(n³)). Vrací sloupec pro každý řádek. */
+function hungarian(n: number, cost: (i: number, j: number) => number): number[] {
+  const u = new Array(n + 1).fill(0), v = new Array(n + 1).fill(0)
+  const p = new Array(n + 1).fill(0), way = new Array(n + 1).fill(0)
+  for (let i = 1; i <= n; i++) {
+    p[0] = i
+    let j0 = 0
+    const minv = new Array(n + 1).fill(Infinity), used = new Array(n + 1).fill(false)
+    do {
+      used[j0] = true
+      const i0 = p[j0]
+      let delta = Infinity, j1 = 0
+      for (let j = 1; j <= n; j++) {
+        if (used[j]) continue
+        const cur = cost(i0 - 1, j - 1) - u[i0] - v[j]
+        if (cur < minv[j]) { minv[j] = cur; way[j] = j0 }
+        if (minv[j] < delta) { delta = minv[j]; j1 = j }
+      }
+      for (let j = 0; j <= n; j++) {
+        if (used[j]) { u[p[j]] += delta; v[j] -= delta } else minv[j] -= delta
+      }
+      j0 = j1
+    } while (p[j0] !== 0)
+    do { const j1 = way[j0]; p[j0] = p[j1]; j0 = j1 } while (j0)
+  }
+  const colOf = new Array(n).fill(-1)
+  for (let j = 1; j <= n; j++) if (p[j]) colOf[p[j] - 1] = j - 1
+  return colOf
+}
+
 // ── Kontroly v Obsazení ────────────────────────────────────────────────
 
 export type CastIssue = {
@@ -125,7 +201,9 @@ export function checkCast(input: {
     issues.push({ level: "warning", message: `Bez hráče: ${list}`, target: { type: "character", id: empty[0].id } })
   }
   const n = input.uncast.length
-  const uncastMessage = n === 0 ? null : `Bez postavy ${n === 1 ? "zůstává" : "zůstávají"}: ${input.uncast.join(", ")}`
+  const uncastMessage = n === 0 ? null
+    : n > 6 ? `Bez postavy zůstává ${n} přijatých hráčů`
+    : `Bez postavy ${n === 1 ? "zůstává" : "zůstávají"}: ${input.uncast.join(", ")}`
   return { issues, uncastMessage }
 }
 
