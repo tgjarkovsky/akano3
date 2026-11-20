@@ -348,7 +348,7 @@ export function Conflicts() {
 const GROUPS: { kind: PrefKind; title: string; hint: string }[] = [
   { kind: "unit", title: "Jednotky", hint: "Každá jednotka má dva týmy a vlastní velký příběh." },
   { kind: "circle", title: "Kruhy", hint: "Volnočasové skupiny, každý kruh řeší svůj příběh." },
-  { kind: "specialization", title: "Specializace", hint: "Role v týmu při lovu." },
+  { kind: "specialization", title: "Specializace", hint: "Role v týmu při lovu. Taktická a bojová specializace budou přímo bojovat ve střetech s monstry, bojová typicky nablízko, taktická variabilně nablízko a střelnými zbraněmi." },
 ]
 
 export function Elements({ howTo }: { howTo?: boolean }) {

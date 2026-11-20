@@ -1319,6 +1319,7 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 .pr-motto { position: relative; isolation: isolate; }
 /* Na kartě leží znaky vlevo nahoře přes jméno i překlad; v hlavičce týmu začínají s překladem. */
 .pr-card-open { position: relative; isolation: isolate; }
+.pr .pr-card { position: relative; isolation: isolate; }
 .pr-card .pr-motto { position: static; isolation: auto; }
 .pr-card .pr-motto-jp { top: 12px; left: -0.05em; transform: none; }
 .pr-team-head .pr-motto-jp { top: 62%; left: -0.05em; transform: translateY(-50%); }
