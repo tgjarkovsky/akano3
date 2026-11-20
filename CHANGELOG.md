@@ -1,3 +1,5 @@
+## [2026-11-21] - Přihlášky: výběr stavu a běhu se v tabulce už nemačká na šipku, šířka podle textu
+
 ## [2026-11-21] - Běhy: zakládání nového běhu padalo na duplicitě, protože stav postav, jednotky týmů, kruhy, body týmů a nastavení hry měly klíč bez běhu; klíče teď obsahují běh (migrace se provede sama), běhy bez nastavení hry ho dostanou
 
 ## [2026-11-20] - Mail o nepřijetí na hru: v Přihláškách tlačítko „Poslat mail o nepřijetí“ pro náhradníky a stav Nejede, kteří ho ještě nedostali; mail neoslovuje jménem a podle přihlášky řekne, jestli a do kdy hráče držíme na náhradnickém seznamu; text se upravuje v E-mailech, u přihlášky je vidět datum odeslání

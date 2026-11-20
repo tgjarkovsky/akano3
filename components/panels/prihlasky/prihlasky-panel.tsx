@@ -160,13 +160,13 @@ export function PrihlaskyPanel() {
                         {isOpen ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}</button></td>
                       <td><span style={{ fontWeight: 700 }}>{d.firstName} {d.lastName}</span>{d.nickname && <span style={{ color: "var(--c-text-muted)" }}> · {d.nickname}</span>}</td>
                       <td>
-                        <span style={{ display: "inline-flex", gap: 6 }}>
-                          <select className="circle-select" value={r.status} disabled={busy === r.id} aria-label={`Stav ${d.firstName} ${d.lastName}`}
+                        <span style={{ display: "inline-flex", gap: 6, whiteSpace: "nowrap" }}>
+                          <select className="circle-select" style={{ width: "auto" }} value={r.status} disabled={busy === r.id} aria-label={`Stav ${d.firstName} ${d.lastName}`}
                             onChange={e => setStatus(r, e.target.value as CastStatus, r.runId)}>
                             {CAST_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </select>
                           {statusNeedsRun(r.status) && (
-                            <select className="circle-select" value={r.runId ?? ""} disabled={busy === r.id} aria-label={`Běh ${d.firstName} ${d.lastName}`}
+                            <select className="circle-select" style={{ width: "auto" }} value={r.runId ?? ""} disabled={busy === r.id} aria-label={`Běh ${d.firstName} ${d.lastName}`}
                               onChange={e => setStatus(r, r.status, Number(e.target.value))}>
                               {r.runId === null && <option value="" disabled>Vybrat běh…</option>}
                               {runs.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
