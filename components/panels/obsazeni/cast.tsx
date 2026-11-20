@@ -25,6 +25,12 @@ export function useCast() {
   const [board, setBoard] = useState<CastBoard | null>(null)
   const [pending, setPending] = useState<string | null>(null)
 
+  const reload = useCallback(async () => {
+    try {
+      const r = await adminFetch("/api/priprava/cast")
+      if (r.ok) setBoard(await r.json())
+    } catch { /* bez sítě zůstane poslední stav */ }
+  }, [])
   useEffect(() => {
     let cancelled = false
     adminFetch("/api/priprava/cast")
@@ -64,7 +70,7 @@ export function useCast() {
     (board?.candidates ?? []).filter(c => c.characterId).map(c => [c.characterId!, c]),
   ), [board])
 
-  return { board, assign, assignMany, publish, pending, playerOf }
+  return { board, assign, assignMany, publish, pending, playerOf, reload }
 }
 
 const nameOf = (kind: "unit" | "circle" | "specialization" | "origin", id: string) => {

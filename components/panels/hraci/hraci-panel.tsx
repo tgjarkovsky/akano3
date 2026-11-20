@@ -197,7 +197,7 @@ export function HraciPanel() {
                         <td><input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Vybrat ${playerName(r.data)}`} /></td>
                         <td>
                           <span style={{ fontWeight: 700 }}>{playerName(r.data)}</span>
-                          {r.status !== "accepted" && <span className="hraci-badge">{statusLabel(r.status)}</span>}
+                          {r.status !== "accepted" && <span className="hraci-badge">{statusLabel(r.status)}{r.status === "substitute" && r.substituteRank !== null ? ` č. ${r.substituteRank}` : ""}</span>}
                           <span style={{ display: "block", fontSize: "0.78rem", color: "var(--c-text-muted)" }}>{r.data.email}</span>
                         </td>
                         <td>{r.characterId ? characterName(r.characterId) : <span style={{ color: "var(--c-text-faint)" }}>—</span>}</td>

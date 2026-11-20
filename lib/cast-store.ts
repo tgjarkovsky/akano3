@@ -9,6 +9,9 @@ import type { Prihlaska } from "@/lib/prihlaska"
 //
 //   prihlasky.status/run_id   stav přihlášky a běh, na který je přijatá (jeden člověk = nejvýš jeden běh)
 //   prihlasky.paid_at/payment_note  platba hry
+//   prihlasky.team_group      trojice, se kterou se hráč hlásil (číslo skupiny ze sekvence team_group_seq)
+//   prihlasky.substitute_rank pořadí náhradníka z losování (1 = první na řadě)
+//   run_lotteries             losování obsazení běhu: seed, výsledek a protokol
 //   run_cast                  kdo v běhu hraje kterou postavu
 //   player_photos             fotka hráče (v databázi, ven jen přes ověřené endpointy)
 //   runs.cast_published_at    obsazení běhu je zveřejněné, hráč vidí postavu a nahrává fotku
@@ -23,6 +26,9 @@ export function ensureCastTables(): Promise<void> {
     await sql`ALTER TABLE prihlasky ADD COLUMN IF NOT EXISTS run_id INT`
     await sql`ALTER TABLE prihlasky ADD COLUMN IF NOT EXISTS paid_at DATE`
     await sql`ALTER TABLE prihlasky ADD COLUMN IF NOT EXISTS payment_note TEXT`
+    await sql`ALTER TABLE prihlasky ADD COLUMN IF NOT EXISTS team_group INT`
+    await sql`CREATE SEQUENCE IF NOT EXISTS team_group_seq`
+    await sql`ALTER TABLE prihlasky ADD COLUMN IF NOT EXISTS substitute_rank INT`
     await sql`ALTER TABLE runs ADD COLUMN IF NOT EXISTS cast_published_at TIMESTAMPTZ`
     await sql`ALTER TABLE runs ADD COLUMN IF NOT EXISTS cast_published_by TEXT`
     await sql`
@@ -66,13 +72,16 @@ const iso = (v: unknown) => v ? new Date(v as string).toISOString() : null
 
 // ── Stav přihlášky a platba ────────────────────────────────────────────
 
-export type AdminState = { id: number; status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null; rejectionSentAt: string | null }
+export type AdminState = {
+  id: number; status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null
+  rejectionSentAt: string | null; teamGroup: number | null; substituteRank: number | null
+}
 
 /** Stav, běh a platba všech přihlášek (k řádkům z listPrihlasky). */
 export async function listAdminStates(): Promise<AdminState[]> {
   await ensureCastTables()
   const rows = await sql`
-    SELECT id, status, run_id, to_char(paid_at, 'YYYY-MM-DD') AS paid_at, payment_note,
+    SELECT id, status, run_id, to_char(paid_at, 'YYYY-MM-DD') AS paid_at, payment_note, team_group, substitute_rank,
       (SELECT max(sent_at) FROM mail_log m WHERE m.prihlaska_id = p.id AND m.template_id = 'neprijeti') AS rejection_sent_at
     FROM prihlasky p
   `
@@ -83,13 +92,56 @@ export async function listAdminStates(): Promise<AdminState[]> {
     paidAt: (r.paid_at as string | null) ?? null,
     paymentNote: (r.payment_note as string | null) ?? null,
     rejectionSentAt: r.rejection_sent_at ? new Date(r.rejection_sent_at as string).toISOString() : null,
+    teamGroup: (r.team_group as number | null) ?? null,
+    substituteRank: (r.substitute_rank as number | null) ?? null,
   }))
 }
+
+// ── Trojice ────────────────────────────────────────────────────────────
+
+/** Týmové údaje všech přihlášek pro kontrolu skupin (lib/team-groups.ts). */
+export async function teamEntries(): Promise<{ id: number; teamGroup: number | null; data: Prihlaska }[]> {
+  await ensureCastTables()
+  const rows = await sql`SELECT id, team_group, data FROM prihlasky`
+  return rows.map(r => ({ id: r.id as number, teamGroup: (r.team_group as number | null) ?? null, data: r.data as Prihlaska }))
+}
+
+/**
+ * Propojí přihlášky do trojic. Každá skupina dostane nové číslo, takže se nesmíchá
+ * se zbytkem staré skupiny; skupina, ve které zbyl jeden člověk, zanikne.
+ */
+export async function linkTeamGroups(groups: number[][]): Promise<void> {
+  await ensureCastTables()
+  const ids = groups.flat()
+  if (ids.length === 0) return
+  await sql.transaction([
+    sql`UPDATE prihlasky SET team_group = NULL WHERE id = ANY(${ids})`,
+    ...groups.map(g => sql`UPDATE prihlasky SET team_group = (SELECT nextval('team_group_seq')) WHERE id = ANY(${g})`),
+    dissolveSingles(),
+  ])
+}
+
+/** Odpojí přihlášku od trojice. */
+export async function unlinkTeam(id: number): Promise<void> {
+  await ensureCastTables()
+  await sql.transaction([sql`UPDATE prihlasky SET team_group = NULL WHERE id = ${id}`, dissolveSingles()])
+}
+
+const dissolveSingles = () => sql`
+  UPDATE prihlasky SET team_group = NULL WHERE team_group IN (
+    SELECT team_group FROM prihlasky WHERE team_group IS NOT NULL GROUP BY team_group HAVING count(*) < 2
+  )
+`
 
 /** Změní stav a běh přihlášky. Kdo přestane být přijatý na běh, přijde o postavu v něm. */
 export async function setStatus(id: number, status: CastStatus, runId: number | null): Promise<boolean> {
   await ensureCastTables()
-  const rows = await sql`UPDATE prihlasky SET status = ${status}, run_id = ${runId} WHERE id = ${id} RETURNING id`
+  // Pořadí z losování platí jen pro náhradníka v tom běhu.
+  const rows = await sql`
+    UPDATE prihlasky SET status = ${status}, run_id = ${runId},
+      substitute_rank = CASE WHEN ${status}::text = 'substitute' AND run_id IS NOT DISTINCT FROM ${runId}::int THEN substitute_rank END
+    WHERE id = ${id} RETURNING id
+  `
   if (rows.length === 0) return false
   await sql`
     DELETE FROM run_cast WHERE prihlaska_id = ${id}
@@ -200,6 +252,8 @@ export type RosterRow = {
   paymentNote: string | null
   /** čas nahrání fotky (pro obnovení náhledu), null = bez fotky */
   photoAt: string | null
+  /** pořadí náhradníka z losování */
+  substituteRank: number | null
   mails: { templateId: string; sentAt: string }[]
 }
 
@@ -212,12 +266,12 @@ export async function getRoster(runId: number): Promise<Roster | null> {
   const [rows, mails] = await Promise.all([
     sql`
       SELECT p.id, p.status, p.data, to_char(p.paid_at, 'YYYY-MM-DD') AS paid_at, p.payment_note,
-             c.character_id, f.uploaded_at
+             p.substitute_rank, c.character_id, f.uploaded_at
       FROM prihlasky p
       LEFT JOIN run_cast c ON c.prihlaska_id = p.id AND c.run_id = ${runId}
       LEFT JOIN player_photos f ON f.prihlaska_id = p.id
       WHERE p.run_id = ${runId} AND p.status IN ('accepted', 'substitute')
-      ORDER BY p.status, p.data->>'lastName', p.data->>'firstName'
+      ORDER BY p.status, p.substitute_rank NULLS LAST, p.data->>'lastName', p.data->>'firstName'
     `,
     sql`
       SELECT l.prihlaska_id, l.template_id, l.sent_at FROM mail_log l
@@ -243,6 +297,7 @@ export async function getRoster(runId: number): Promise<Roster | null> {
       paidAt: (r.paid_at as string | null) ?? null,
       paymentNote: (r.payment_note as string | null) ?? null,
       photoAt: iso(r.uploaded_at),
+      substituteRank: (r.substitute_rank as number | null) ?? null,
       mails: mailsOf.get(r.id as number) ?? [],
     })),
   }

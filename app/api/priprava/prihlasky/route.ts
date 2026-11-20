@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const stateOf = new Map(states.map(s => [s.id, s]))
     const out = rows.map(r => {
       const s = stateOf.get(r.id)
-      return { ...r, status: s?.status ?? "new", runId: s?.runId ?? null, paidAt: s?.paidAt ?? null, paymentNote: s?.paymentNote ?? null, rejectionSentAt: s?.rejectionSentAt ?? null }
+      return { ...r, status: s?.status ?? "new", runId: s?.runId ?? null, paidAt: s?.paidAt ?? null, paymentNote: s?.paymentNote ?? null, rejectionSentAt: s?.rejectionSentAt ?? null, teamGroup: s?.teamGroup ?? null, substituteRank: s?.substituteRank ?? null }
     })
     return Response.json(out, { headers: { "Cache-Control": "no-store" } })
   } catch (err) {

@@ -71,7 +71,7 @@ export function castFit(p: Prihlaska, c: CastCharacter, nameOf: NameOf): CastFit
     wanted = pref === "yes" || picked
     refused = pref === "no"
     if (!p.paths.team && !p.paths.student) warnings.push("hlásí se jen za dospělého")
-    else if (!p.paths.student && !picked) warnings.push("hlásí se jen s trojicí do jiných postav")
+    else if (!p.paths.student && !p.team.solo && !picked) warnings.push("hlásí se jen s trojicí do jiných postav")
     const elements = [
       ["unit", c.unitId, "jednotku"],
       ["circle", c.circleId, "kruh"],
@@ -104,7 +104,7 @@ export function suggestScore(p: Prihlaska, c: CastCharacter, nameOf: NameOf): nu
   const fit = castFit(p, c, nameOf)
   if (fit.refused || !fitsGender(p.genderPref, c.gender)) return null
   const picked = c.kind === "player" && p.paths.team && !!c.teamId && p.team.picks[c.teamId] === c.id
-  if (c.kind === "adult" ? !p.paths.adult : !(p.paths.student || picked)) return null
+  if (c.kind === "adult" ? !p.paths.adult : !(p.paths.student || (p.paths.team && p.team.solo) || picked)) return null
   // Zbylá varování jsou jen odmítnuté prvky postavy (jednotka, kruh, specializace, původ).
   return 100 + (picked ? 30 : fit.wanted ? 20 : 0) - 10 * fit.warnings.length
 }
@@ -120,13 +120,14 @@ export function suggestCast(characters: readonly CastCharacter[], players: reado
   const free = players.filter(p => !p.characterId)
   const n = Math.max(chars.length, free.length)
   if (chars.length === 0 || free.length === 0) return new Map()
-  const FORBIDDEN = 1e6
+  // Základ 10 000 za každou dvojici: víc obsazených postav vždy vyhraje nad vyšším skóre méně dvojic.
+  const BASE = 10_000, FORBIDDEN = 1e9
   // cost[i][j]: řádek = postava, sloupec = hráč; doplněno na čtverec nulami (nikdo / nic).
   const score: (number | null)[][] = chars.map(c => free.map(p => suggestScore(p.data, c, nameOf)))
   const cost = (i: number, j: number) => {
     if (i >= chars.length || j >= free.length) return 0
     const s = score[i][j]
-    return s === null ? FORBIDDEN : -s
+    return s === null ? FORBIDDEN : -(BASE + s)
   }
   const colOf = hungarian(n, cost)
   const out = new Map<string, number>()

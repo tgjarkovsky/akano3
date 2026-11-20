@@ -17,6 +17,8 @@ import { CharacterTable } from "./character-table"
 import { ChecksPanel } from "./checks-panel"
 import { useCast, castCharacter, fitOf } from "./cast"
 import { CastTable } from "./cast-table"
+import { LotteryBox, useLottery, VIA_LABEL } from "./lottery-box"
+import type { RunChoice } from "@/lib/prihlaska"
 import { checkCast, playerName } from "@/lib/cast"
 import type { Character } from "@/lib/types"
 
@@ -42,6 +44,7 @@ export function ObsazeniPanel() {
   const { index: rules, roles, pending: rulesPending, applyFixed } = useRules()
   const holders = useRoleHolders()
   const cast = useCast()
+  const lottery = useLottery()
 
   const players = useMemo(
     () => characters.filter(c => (c.role === "student" || c.role === "ruze") && c.teamId),
@@ -129,6 +132,24 @@ export function ObsazeniPanel() {
     return out
   }, [slots, unplacedTeamIds, players, adults])
 
+  // Postavy pro losování, jak je vidí shoda s hráčem (stejné jako výběr hráče).
+  const drawLottery = (choice: RunChoice) => lottery.draw(
+    choice,
+    adults.map(c => ({ ...toCast(c), name: c.name })),
+    players.map(c => ({ ...toCast(c), name: c.name })),
+  )
+  const applyLottery = async (id: number) => {
+    const ok = await lottery.apply(id)
+    if (ok) await cast.reload()
+    return ok
+  }
+  const drawn = useMemo(() => {
+    const l = lottery.lottery
+    if (!l || l.appliedAt) return null
+    return new Map(l.result.cast.map(c => [c.characterId, { name: l.people[c.prihlaskaId]?.name ?? `#${c.prihlaskaId}`, via: VIA_LABEL[c.via] }]))
+  }, [lottery.lottery])
+  const runName = runs.find(r => r.id === activeRunId)?.name ?? ""
+
   const structureIssues = issues.length
   const castIssues = castCheck?.issues ?? []
   const tabBtn = (t: Tab, label: React.ReactNode) => (
@@ -169,8 +190,10 @@ export function ObsazeniPanel() {
             <div style={{ minWidth: 0 }}>
               <CastTable groups={castGroups} board={cast.board} pending={cast.pending} toCast={toCast}
                 characterName={characterName} uncastMessage={castCheck?.uncastMessage ?? null}
-                onAssign={cast.assign} onAssignMany={cast.assignMany} onPublish={cast.publish}
-                runName={runs.find(r => r.id === activeRunId)?.name ?? ""} />
+                onAssign={cast.assign} onAssignMany={cast.assignMany} onPublish={cast.publish} runName={runName}
+                drawn={cast.playerOf.size === 0 ? drawn : null}
+                lotteryBox={<LotteryBox lottery={lottery.lottery} busy={lottery.busy} runName={runName}
+                  castCount={cast.playerOf.size} onDraw={drawLottery} onApply={applyLottery} />} />
             </div>
             <aside className="obsazeni-aside"><ChecksPanel issues={castIssues} /></aside>
           </div>

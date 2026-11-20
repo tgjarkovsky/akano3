@@ -1574,3 +1574,9 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 @media (max-width: 599px) {
   .cast-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 14px; }
 }
+.lottery-box { margin-top: 10px; align-items: flex-start; }
+.lottery-done {
+  margin-top: 10px; padding: 10px 14px; border: 1px solid var(--c-border); border-radius: 10px;
+  font-size: 0.82rem; color: var(--c-text-muted);
+}
+.lottery-done summary { cursor: pointer; }
