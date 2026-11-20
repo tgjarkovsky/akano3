@@ -1,3 +1,5 @@
+## [2026-11-21] - Běhy: zakládání nového běhu padalo na duplicitě, protože stav postav, jednotky týmů, kruhy, body týmů a nastavení hry měly klíč bez běhu; klíče teď obsahují běh (migrace se provede sama), běhy bez nastavení hry ho dostanou
+
 ## [2026-11-20] - Mail o nepřijetí na hru: v Přihláškách tlačítko „Poslat mail o nepřijetí“ pro náhradníky a stav Nejede, kteří ho ještě nedostali; mail neoslovuje jménem a podle přihlášky řekne, jestli a do kdy hráče držíme na náhradnickém seznamu; text se upravuje v E-mailech, u přihlášky je vidět datum odeslání
 
 ## [2026-11-20] - Obsazení hráčů, dokončení: po zveřejnění obsazení vidí hráč na odkazu přihlášky blok „Tvůj běh“ (postava, stav platby) a nahraje fotku (zmenší se v prohlížeči na JPEG); fotky hráčů se ukazují v dogtagu postav ve spisech spoluhráčů; nové maily „Oznámení o přijetí“ a „Upomínka“ (upravitelné v E-mailech) se rozesílají vybraným hráčům z Hráčů, odeslané maily se evidují
