@@ -354,7 +354,7 @@ const GROUPS: { kind: PrefKind; title: string; hint: string }[] = [
 export function Elements({ howTo }: { howTo?: boolean }) {
   const { catalog, prefs, genderPref } = usePr()
   return <>
-    <Head kicker="Volitelné prvky" title="Jednotky, kruhy a specializace"
+    <Head kicker="Povinně volitelné prvky" title="Jednotky, kruhy a specializace"
       lead="Tyhle prvky se mění běh od běhu. Když volba vyloučí postavu, kterou chceš, upozorníme tě. Při křížení s předchozími kroky přidělujeme hlavně podle týmů a postav." />
     {howTo && <HowToChoose />}
     <Conflicts />
