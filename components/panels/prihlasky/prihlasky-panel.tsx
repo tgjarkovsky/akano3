@@ -11,9 +11,15 @@ import {
   type PrefKind,
 } from "@/lib/prihlaska"
 import type { StoredPrihlaska } from "@/lib/prihlaska-store"
+import { useGame } from "@/lib/game-context"
+import { CAST_STATUSES, statusNeedsRun, type CastStatus } from "@/lib/cast"
+
+/** Přihláška se stavem a během z Přípravy (GET /api/priprava/prihlasky). */
+type Row = StoredPrihlaska & { status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null }
 
 // Přihlášky z veřejného formuláře /prihlaska: přehled, detail a export do CSV.
-// Obsahují osobní údaje, čte je jen Příprava.
+// Obsahují osobní údaje, čte je jen Příprava. Tady se přihlášce nastavuje stav
+// (Přijat / Náhradník / Nejede) a běh; obsazení na postavy je v Obsazení.
 
 const NAMES: Record<PrefKind | "team", Map<string, string>> = {
   adult: new Map(CHARACTERS.filter(c => c.role === "teacher").map(c => [c.id, c.name])),
@@ -29,9 +35,29 @@ const label = (list: readonly { value: string; label: string }[], v: string) => 
 const date = (iso: string) => new Date(iso).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })
 
 export function PrihlaskyPanel() {
-  const [rows, setRows] = useState<StoredPrihlaska[] | null>(null)
+  const { runs, activeRunId, addToast } = useGame()
+  const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState("")
   const [open, setOpen] = useState<number | null>(null)
+  const [filter, setFilter] = useState<CastStatus | "all">("all")
+  const [busy, setBusy] = useState<number | null>(null)
+
+  const setStatus = async (r: Row, status: CastStatus, runId: number | null) => {
+    const next = { status, runId: statusNeedsRun(status) ? runId ?? activeRunId : null }
+    if (statusNeedsRun(status) && next.runId === null) { addToast("Nejdřív založ běh.", "error"); return }
+    setBusy(r.id)
+    try {
+      const res = await adminFetch(`/api/priprava/prihlasky/${r.id}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      setRows(rs => rs && rs.map(x => x.id === r.id ? { ...x, ...next } : x))
+    } catch (e) {
+      addToast((e as Error).message || "Stav se neuložil.", "error")
+    } finally {
+      setBusy(null)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -41,6 +67,13 @@ export function PrihlaskyPanel() {
       .catch(e => { if (!cancelled) setError(e?.message || "Přihlášky se nenačetly.") })
     return () => { cancelled = true }
   }, [])
+
+  const statusCounts = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const r of rows ?? []) m[r.status] = (m[r.status] ?? 0) + 1
+    return m
+  }, [rows])
+  const shown = rows?.filter(r => filter === "all" || r.status === filter) ?? []
 
   const counts = useMemo(() => rows && {
     adult: rows.filter(r => r.data.paths.adult).length,
@@ -69,14 +102,24 @@ export function PrihlaskyPanel() {
           </span>
         )}
       </div>
+      {rows && rows.length > 0 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Filtr podle stavu">
+          {([{ value: "all", label: "Všechny" }, ...CAST_STATUSES] as const).map(o => (
+            <button key={o.value} className={filter === o.value ? "filter-chip filter-chip-on" : "filter-chip"} aria-pressed={filter === o.value} onClick={() => setFilter(o.value)}>
+              {o.label} <span style={{ opacity: 0.7 }}>{o.value === "all" ? rows.length : statusCounts[o.value] ?? 0}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {error && <p role="alert" className="conflict" style={{ margin: 0 }}>{error}</p>}
       {rows && rows.length === 0 && <p style={{ color: "var(--c-text-muted)" }}>Zatím žádná přihláška.</p>}
+      {rows && rows.length > 0 && shown.length === 0 && <p style={{ color: "var(--c-text-muted)" }}>V tomhle stavu žádná přihláška není.</p>}
       {rows && rows.length > 0 && (
         <div className="spisy-table-wrap">
           <table className="spisy-table">
-            <thead><tr><th aria-label="Detail" /><th>Hráč</th><th>Běh</th><th>Hlásí se za</th><th>★ Chci moc</th><th>Odesláno</th></tr></thead>
+            <thead><tr><th aria-label="Detail" /><th>Hráč</th><th>Stav</th><th>Chce běh</th><th>Hlásí se za</th><th>★ Chci moc</th><th>Odesláno</th></tr></thead>
             <tbody>
-              {rows.map(r => {
+              {shown.map(r => {
                 const d = r.data
                 const wants = (["adult", "character"] as const).flatMap(k => Object.entries(d.prefs[k]).filter(([, v]) => v === "yes").map(([id]) => nameOf(k, id)))
                 const isOpen = open === r.id
@@ -86,12 +129,27 @@ export function PrihlaskyPanel() {
                       <td><button className="icon-btn" aria-expanded={isOpen} aria-label={`Detail ${d.firstName} ${d.lastName}`} onClick={() => setOpen(isOpen ? null : r.id)}>
                         {isOpen ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}</button></td>
                       <td><span style={{ fontWeight: 700 }}>{d.firstName} {d.lastName}</span>{d.nickname && <span style={{ color: "var(--c-text-muted)" }}> · {d.nickname}</span>}</td>
+                      <td>
+                        <span style={{ display: "inline-flex", gap: 6 }}>
+                          <select className="circle-select" value={r.status} disabled={busy === r.id} aria-label={`Stav ${d.firstName} ${d.lastName}`}
+                            onChange={e => setStatus(r, e.target.value as CastStatus, r.runId)}>
+                            {CAST_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                          {statusNeedsRun(r.status) && (
+                            <select className="circle-select" value={r.runId ?? ""} disabled={busy === r.id} aria-label={`Běh ${d.firstName} ${d.lastName}`}
+                              onChange={e => setStatus(r, r.status, Number(e.target.value))}>
+                              {r.runId === null && <option value="" disabled>Vybrat běh…</option>}
+                              {runs.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                            </select>
+                          )}
+                        </span>
+                      </td>
                       <td style={{ color: "var(--c-text-muted)" }}>{label(RUN_CHOICES, d.run).split(",")[0]}</td>
                       <td>{[d.paths.adult && "dospělý", d.paths.team && `tým (${Object.keys(d.team.picks).map(t => nameOf("team", t).replace("Tým ", "")).join(", ")})`, d.paths.student && "student"].filter(Boolean).join(", ")}</td>
                       <td>{wants.join(", ") || <span style={{ color: "var(--c-text-faint)" }}>—</span>}</td>
                       <td style={{ color: "var(--c-text-muted)", whiteSpace: "nowrap" }}>{date(r.createdAt)}{r.edits > 0 && ` · upr. ${r.edits}×`}</td>
                     </tr>
-                    {isOpen && <tr><td /><td colSpan={5}><Detail p={r} /></td></tr>}
+                    {isOpen && <tr><td /><td colSpan={6}><Detail p={r} /></td></tr>}
                   </React.Fragment>
                 )
               })}
