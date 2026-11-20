@@ -1512,3 +1512,17 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 @media (max-width: 599px) {
   .adult-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
+
+/* ── Hráči běhu ──────────────────────────────────────────────────────── */
+.hraci-table td { vertical-align: middle; }
+.hraci-table tr[data-muted] td { color: var(--c-text-muted); }
+.hraci-badge {
+  display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
+  border: 1px solid var(--c-border-mid); color: var(--c-text-muted);
+}
+.hraci-input {
+  min-height: 30px; padding: 0 8px; box-sizing: border-box;
+  background-color: var(--c-input); border: 1px solid var(--c-input-border); border-radius: 6px;
+  color: var(--c-text); font-size: 0.82rem; color-scheme: light dark;
+}
+.hraci-photo { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; display: block; border: 1px solid var(--c-border); }

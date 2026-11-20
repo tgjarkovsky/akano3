@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import {
-  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter, IconClipboardList, IconMail,
+  IconLayoutDashboard, IconRepeat, IconBook, IconLogout, IconUser, IconInfoCircle, IconBroadcast, IconAdjustments, IconFileText, IconPrinter, IconClipboardList, IconMail, IconUsers,
 } from "@tabler/icons-react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, setAdminToken } from "@/lib/admin-client"
@@ -16,10 +16,11 @@ import { SpisyPanel, type PrintJob } from "@/components/panels/spisy/spisy-panel
 import { SpisPrintScreen } from "@/components/panels/spisy/spis-print-screen"
 import { PrihlaskyPanel } from "@/components/panels/prihlasky/prihlasky-panel"
 import { EmailyPanel } from "@/components/panels/emaily/emaily-panel"
+import { HraciPanel } from "@/components/panels/hraci/hraci-panel"
 import { ToastContainer } from "@/components/shared/toast"
 import type { TablerIcon } from "@/lib/types"
 
-type Section = "overview" | "signups" | "mails" | "texts" | "runs" | "rules" | "docs" | "library"
+type Section = "overview" | "signups" | "mails" | "texts" | "runs" | "players" | "rules" | "docs" | "library"
 
 // Larp = nastavení společné všem během, Běhy = příprava konkrétního běhu.
 type Group = "larp" | "runs"
@@ -31,7 +32,8 @@ const SECTIONS: { value: Section; label: string; hint: string; Icon: TablerIcon;
   { value: "library",  label: "Knihovna",    hint: "Články a vazby",             Icon: IconBook,          group: "larp" },
   { value: "mails",    label: "E-maily",     hint: "Texty a náhledy mailů",      Icon: IconMail,          group: "larp" },
   { value: "signups",  label: "Přihlášky",   hint: "Odpovědi z formuláře",       Icon: IconClipboardList, group: "runs" },
-  { value: "runs",     label: "Obsazení",    hint: "Jednotky, postavy, kruhy",   Icon: IconRepeat,        group: "runs" },
+  { value: "runs",     label: "Obsazení",    hint: "Hráči, jednotky, kruhy",     Icon: IconRepeat,        group: "runs" },
+  { value: "players",  label: "Hráči",       hint: "Platby, fotky, maily",       Icon: IconUsers,         group: "runs" },
   { value: "docs",     label: "Spisy hráčů", hint: "Odkazy, zveřejnění, tisk",   Icon: IconPrinter,       group: "runs" },
 ]
 
@@ -137,6 +139,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
           </RulesProvider>
           {section === "library"  && <WikiAdminPanel />}
           {section === "signups"  && <PrihlaskyPanel />}
+          {section === "players"  && <HraciPanel />}
           {section === "mails"    && <EmailyPanel />}
         </main>
       </div>
@@ -180,7 +183,8 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
         <Jump title="Texty" text="Jádra postav, týmy, jednotky s rolemi, kruhy. Psaní, Hotovo a schvalování." onClick={() => onGo("texts")} />
-        <Jump title="Obsazení" text="Týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
+        <Jump title="Obsazení" text="Hráči na postavy, týmy do jednotek, postavám specializace, původ a kruhy. Kontroly ukážou, co chybí." onClick={() => onGo("runs")} />
+        <Jump title="Hráči" text="Soupiska běhu: kdo zaplatil, kdo poslal fotku, oznámení o přijetí a upomínky." onClick={() => onGo("players")} />
         <Jump title="Pravidla" text="Které postavy mají specializaci, původ nebo kruh napevno a co je zakázané." onClick={() => onGo("rules")} />
         <Jump title="Knihovna" text="Články herní knihovny a vazby mezi nimi." onClick={() => onGo("library")} />
       </div>

@@ -1,3 +1,5 @@
+## [2026-11-20] - Příprava → Hráči: soupiska běhu (přijatí a náhradníci), postava, fotka, platba (zaplaceno, datum, poznámka), filtry nezaplaceno / bez fotky / bez postavy, CSV; API pro nahrání fotky hráčem přes odkaz přihlášky (fotka v databázi, jen po zveřejnění obsazení)
+
 ## [2026-11-20] - Obsazení hráčů: přihláška má v Přihláškách stav (Nová / Přijat / Náhradník / Nejede) a běh, filtr podle stavu; v Obsazení se u každé postavy vybírá přijatý hráč aktivního běhu (★ chce, ✗ odmítl, ⚠ rod nebo odmítnutá jednotka, kruh, specializace či původ, „hraje X“), nová sekce Dospělí, kontroly hlásí odmítnuté postavy a postavy bez hráče, lišta běhu ukazuje počet obsazených a zveřejnění obsazení; nový běh hráče nepřebírá
 
 ## [2026-11-20] - Přihláška, potvrzení po odeslání: text o odkazu odpovídá tomu, že chodí i e-mailem; bez mezery za jménem před tečkou
