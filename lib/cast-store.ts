@@ -221,18 +221,18 @@ export async function getRoster(runId: number): Promise<Roster | null> {
 }
 
 /** Kontakty a token přihlášek pro rozeslání mailů. */
-export async function getMailTargets(ids: number[]): Promise<{ id: number; token: string; runId: number | null; data: Prihlaska; characterId: string | null; paidAt: string | null; hasPhoto: boolean }[]> {
+export async function getMailTargets(ids: number[]): Promise<{ id: number; token: string; status: CastStatus; runId: number | null; data: Prihlaska; characterId: string | null; paidAt: string | null; hasPhoto: boolean }[]> {
   await ensureCastTables()
   if (ids.length === 0) return []
   const rows = await sql`
-    SELECT p.id, p.token, p.run_id, p.data, to_char(p.paid_at, 'YYYY-MM-DD') AS paid_at, c.character_id, f.prihlaska_id IS NOT NULL AS has_photo
+    SELECT p.id, p.token, p.status, p.run_id, p.data, to_char(p.paid_at, 'YYYY-MM-DD') AS paid_at, c.character_id, f.prihlaska_id IS NOT NULL AS has_photo
     FROM prihlasky p
     LEFT JOIN run_cast c ON c.prihlaska_id = p.id AND c.run_id = p.run_id
     LEFT JOIN player_photos f ON f.prihlaska_id = p.id
     WHERE p.id = ANY(${ids}::int[])
   `
   return rows.map(r => ({
-    id: r.id as number, token: r.token as string, runId: (r.run_id as number | null) ?? null, data: r.data as Prihlaska,
+    id: r.id as number, token: r.token as string, status: r.status as CastStatus, runId: (r.run_id as number | null) ?? null, data: r.data as Prihlaska,
     characterId: (r.character_id as string | null) ?? null, paidAt: (r.paid_at as string | null) ?? null, hasPhoto: r.has_photo as boolean,
   }))
 }

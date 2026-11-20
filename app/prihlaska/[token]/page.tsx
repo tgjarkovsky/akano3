@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import { canEdit } from "@/lib/prihlaska"
 import { getCatalog, getPrihlaskaByToken, isPrihlaskaToken } from "@/lib/prihlaska-store"
 import { PrihlaskaForm } from "@/components/prihlaska/prihlaska-form"
+import { PlayerRun } from "@/components/prihlaska/player-run"
+import { getPlayerRun } from "@/lib/cast-store"
+import { formatRunDate } from "@/lib/character-doc"
+import { CHARACTERS } from "@/lib/data"
 
 // Úprava odeslané přihlášky přes tajný odkaz. Po konci přihlašování jen ke čtení.
 
@@ -28,6 +32,19 @@ export default async function PrihlaskaEditPage({ params }: { params: Promise<{ 
       </main>
     )
   }
-  const catalog = await getCatalog()
-  return <PrihlaskaForm catalog={catalog} initial={found.data} token={token} editable={canEdit()} />
+  const [catalog, run] = await Promise.all([getCatalog(), getPlayerRun(token)])
+  // Po zveřejnění obsazení běhu: postava, platba a fotka nad přihláškou.
+  const entry = run && [...catalog.characters, ...catalog.adults].find(e => e.id === run.characterId)
+  const above = run && (
+    <PlayerRun token={token} info={{
+      runName: run.runName,
+      runDate: formatRunDate(run.startsOn, run.endsOn),
+      characterName: entry?.name ?? CHARACTERS.find(c => c.id === run.characterId)?.name ?? run.characterId,
+      motto: entry?.motto?.text,
+      facts: entry?.facts ?? [],
+      paidAt: run.paidAt,
+      photoAt: run.photoAt,
+    }} />
+  )
+  return <PrihlaskaForm catalog={catalog} initial={found.data} token={token} editable={canEdit()} above={above} />
 }

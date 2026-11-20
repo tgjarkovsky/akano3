@@ -17,12 +17,14 @@ const DRAFT_KEY = "akano-prihlaska"
 const LOW: Partial<Record<PrefKind, number>> = { adult: 2, character: 8, unit: 2, circle: 2, specialization: 2, origin: 2 }
 const TALLY: Partial<Record<StepId, PrefKind[]>> = { dospeli: ["adult"], postavy: ["character"], prvky: ["unit", "circle", "specialization"] }
 
-export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
+export function PrihlaskaForm({ catalog, initial, token, editable = true, above }: {
   catalog: Catalog
   initial?: Prihlaska
   /** odkaz na úpravy; bez něj jde o novou přihlášku */
   token?: string
   editable?: boolean
+  /** blok nad formulářem (Tvůj běh po zveřejnění obsazení) */
+  above?: React.ReactNode
 }) {
   const [draft, setDraft] = useState<Draft>(() => (initial ? draftOf(initial) : emptyDraft()))
   const [wanted, setStep] = useState<StepId>("uvod")
@@ -169,6 +171,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true }: {
         </header>
 
         <div className="pr-desk">
+          {above}
           <main className="pr-sheet">
             {step === "uvod" && <Intro />}
             {step === "udaje" && <Person draft={draft} update={update} />}

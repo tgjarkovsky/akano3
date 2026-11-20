@@ -40,6 +40,53 @@ Odkaz si schovej a nikomu ho neposílej. Kdo ho má, může přihlášku měnit.
 
 Akano3`,
   },
+  {
+    id: "obsazeni-prijeti",
+    label: "Oznámení o přijetí",
+    when: "Ručně z Přípravy → Hráči, přijatým hráčům s postavou.",
+    vars: [
+      { key: "jmeno", label: "Přezdívka, jinak křestní jméno", sample: "Terka" },
+      { key: "postava", label: "Jméno postavy", sample: "Aiko Takeda" },
+      { key: "beh", label: "Běh a jeho termín", sample: "1. běh, 22.–25. července 2027" },
+      { key: "odkaz", label: "Tajný odkaz přihlášky (postava, platba, fotka)", sample: "https://akano3.cz/prihlaska/ukazkovy-odkaz-123456" },
+      { key: "kontakt", label: "Kontaktní e-mail", sample: MAIL_CONTACT },
+    ],
+    subject: "Akano3: jedeš! Tvoje postava je {{postava}}",
+    body: `Ahoj {{jmeno}},
+
+máme radost: na Akano3 jedeš, a to na **{{beh}}**. Tvoje postava je **{{postava}}**.
+
+Na odkazu své přihlášky teď uvidíš svou postavu a stav platby a nahraješ tam svou fotku, ať tě spoluhráči poznají:
+
+{{odkaz}}
+
+Dotazy posílej na {{kontakt}}.
+
+Akano3`,
+  },
+  {
+    id: "upominka",
+    label: "Upomínka",
+    when: "Ručně z Přípravy → Hráči, přijatým hráčům, kterým něco chybí.",
+    vars: [
+      { key: "jmeno", label: "Přezdívka, jinak křestní jméno", sample: "Terka" },
+      { key: "chybi", label: "Co chybí („zaplatit hru a nahrát fotku“)", sample: "zaplatit hru a nahrát fotku" },
+      { key: "odkaz", label: "Tajný odkaz přihlášky", sample: "https://akano3.cz/prihlaska/ukazkovy-odkaz-123456" },
+      { key: "kontakt", label: "Kontaktní e-mail", sample: MAIL_CONTACT },
+    ],
+    subject: "Akano3: ještě ti chybí {{chybi}}",
+    body: `Ahoj {{jmeno}},
+
+připomínáme, že před hrou ti ještě zbývá **{{chybi}}**.
+
+Stav platby a nahrání fotky najdeš na odkazu své přihlášky:
+
+{{odkaz}}
+
+Jestli už je hotovo, nebo něco nejde, napiš na {{kontakt}}.
+
+Akano3`,
+  },
 ]
 
 export const findTemplate = (id: string) => MAIL_TEMPLATES.find(t => t.id === id)

@@ -47,6 +47,8 @@ export function Dogtag({ tag, children }: { tag: DogTag; children: React.ReactNo
     <span className="dogtag" tabIndex={0}>
       {children}
       <span className="dogtag-card" role="tooltip">
+        {/* eslint-disable-next-line @next/next/no-img-element -- soukromá fotka přes tajný odkaz spisu */}
+        {tag.photo && <img className="dogtag-photo" src={tag.photo} alt="" loading="lazy" />}
         <span className="dogtag-name">{tag.name}</span>
         {rows.map(([k, label]) => (
           <span key={k} className="dogtag-row"><span className="dogtag-key">{label}</span><span>{tag[k]}</span></span>

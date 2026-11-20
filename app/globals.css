@@ -1526,3 +1526,17 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
   color: var(--c-text); font-size: 0.82rem; color-scheme: light dark;
 }
 .hraci-photo { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; display: block; border: 1px solid var(--c-border); }
+
+/* ── Přihláška: Tvůj běh (po zveřejnění obsazení) ────────────────────── */
+.pr-run-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; align-items: start; }
+.pr-run-facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 12px 0 0; font-size: 0.95rem; }
+.pr-run-facts dt { color: var(--p-muted); }
+.pr-run-facts dd { margin: 0; }
+.pr-run-photo img, .pr-run-empty { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border: 1px solid var(--p-rule); border-radius: 4px; margin-top: 6px; display: block; }
+.pr-run-empty { display: grid; place-items: center; color: var(--p-muted); font-size: 0.9rem; background: var(--p-hover); }
+@media (max-width: 699px) {
+  .pr-run-grid { grid-template-columns: minmax(0, 1fr); }
+  .pr-run-photo { max-width: 260px; }
+}
+.dogtag-photo { width: 72px; height: 96px; object-fit: cover; border-radius: 3px; margin-bottom: 6px; }
+@media print { .dogtag-photo { display: none; } }

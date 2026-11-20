@@ -1,3 +1,5 @@
+## [2026-11-20] - Obsazení hráčů, dokončení: po zveřejnění obsazení vidí hráč na odkazu přihlášky blok „Tvůj běh“ (postava, stav platby) a nahraje fotku (zmenší se v prohlížeči na JPEG); fotky hráčů se ukazují v dogtagu postav ve spisech spoluhráčů; nové maily „Oznámení o přijetí“ a „Upomínka“ (upravitelné v E-mailech) se rozesílají vybraným hráčům z Hráčů, odeslané maily se evidují
+
 ## [2026-11-20] - Příprava → Hráči: soupiska běhu (přijatí a náhradníci), postava, fotka, platba (zaplaceno, datum, poznámka), filtry nezaplaceno / bez fotky / bez postavy, CSV; API pro nahrání fotky hráčem přes odkaz přihlášky (fotka v databázi, jen po zveřejnění obsazení)
 
 ## [2026-11-20] - Obsazení hráčů: přihláška má v Přihláškách stav (Nová / Přijat / Náhradník / Nejede) a běh, filtr podle stavu; v Obsazení se u každé postavy vybírá přijatý hráč aktivního běhu (★ chce, ✗ odmítl, ⚠ rod nebo odmítnutá jednotka, kruh, specializace či původ, „hraje X“), nová sekce Dospělí, kontroly hlásí odmítnuté postavy a postavy bez hráče, lišta běhu ukazuje počet obsazených a zveřejnění obsazení; nový běh hráče nepřebírá

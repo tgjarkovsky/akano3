@@ -4,6 +4,7 @@ import { TEAMS, UNITS, CIRCLES } from "@/lib/data"
 import { DOC_PLAYERS } from "@/lib/doc-ids"
 import { ensureDocTables } from "@/lib/docs-store"
 import { ensureSetupColumns } from "@/lib/setup-schema"
+import { castPhotos } from "@/lib/cast-store"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { computeUnitSlots, slotOfTeam } from "@/lib/unit-slots"
 import { resolveGender, resolveRoleNames, type Gender } from "@/lib/gender-markup"
@@ -274,7 +275,13 @@ export async function getSpisByToken(token: string): Promise<SpisLookup> {
   if (!link.published_at) return { state: "unpublished", name: DOC_PLAYERS.find(c => c.id === characterId)?.name ?? "" }
   const ctx = await loadRunContext(link.run_id as number)
   const doc = ctx && buildDoc(ctx, characterId)
-  return ctx && doc ? { state: "ok", doc, academy: buildAcademy(ctx, characterId) } : { state: "missing" }
+  if (!ctx || !doc) return { state: "missing" }
+  // Fotky hráčů spoluhráčů, když je obsazení běhu zveřejněné.
+  const photos = await castPhotos(link.run_id as number)
+  if (photos.size && doc.roster) {
+    doc.roster = doc.roster.map(t => photos.has(t.id) ? { ...t, photo: `/api/spis/${token}/foto/${t.id}?v=${encodeURIComponent(photos.get(t.id)!)}` } : t)
+  }
+  return { state: "ok", doc, academy: buildAcademy(ctx, characterId) }
 }
 
 // ── Příprava ──────────────────────────────────────────────────────────
@@ -319,6 +326,16 @@ export async function getRunDocs(runId: number, characterId: string | null): Pro
   if (!ctx) return null
   const ids = characterId ? [characterId] : DOC_PLAYERS.map(c => c.id)
   return ids.map(id => buildDoc(ctx, id)).filter((d): d is CharacterDoc => d !== null)
+}
+
+/** Běh spisu, když je spis zveřejněný; jinak null (pro fotky spoluhráčů). */
+export async function publishedRunOfSpis(token: string): Promise<number | null> {
+  await ensureSpisTables()
+  const [r] = await sql`
+    SELECT l.run_id FROM doc_links l JOIN run_docs d ON d.run_id = l.run_id AND d.published_at IS NOT NULL
+    WHERE l.token = ${token}
+  `
+  return r ? r.run_id as number : null
 }
 
 export async function runExists(runId: number): Promise<boolean> {

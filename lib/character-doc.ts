@@ -49,6 +49,8 @@ export type DogTag = {
   circle?: string
   specialization?: string
   origin?: string
+  /** fotka hráče postavy (po zveřejnění obsazení), URL přes tajný odkaz spisu */
+  photo?: string
 }
 
 export type CharacterDoc = {
