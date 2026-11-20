@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from "react"
-import { IconDownload, IconExternalLink, IconChevronDown, IconChevronRight } from "@tabler/icons-react"
-import { adminFetch } from "@/lib/admin-client"
+import { IconDownload, IconExternalLink, IconChevronDown, IconChevronRight, IconMail } from "@tabler/icons-react"
+import { adminFetch, getOrganizer } from "@/lib/admin-client"
 import { downloadText } from "@/lib/download"
 import { CHARACTERS, TEAMS, UNITS, CIRCLES } from "@/lib/data"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
@@ -12,10 +12,10 @@ import {
 } from "@/lib/prihlaska"
 import type { StoredPrihlaska } from "@/lib/prihlaska-store"
 import { useGame } from "@/lib/game-context"
-import { CAST_STATUSES, statusNeedsRun, type CastStatus } from "@/lib/cast"
+import { CAST_STATUSES, statusNeedsRun, getsRejection, type CastStatus } from "@/lib/cast"
 
 /** Přihláška se stavem a během z Přípravy (GET /api/priprava/prihlasky). */
-type Row = StoredPrihlaska & { status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null }
+type Row = StoredPrihlaska & { status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null; rejectionSentAt: string | null }
 
 // Přihlášky z veřejného formuláře /prihlaska: přehled, detail a export do CSV.
 // Obsahují osobní údaje, čte je jen Příprava. Tady se přihlášce nastavuje stav
@@ -41,6 +41,7 @@ export function PrihlaskyPanel() {
   const [open, setOpen] = useState<number | null>(null)
   const [filter, setFilter] = useState<CastStatus | "all">("all")
   const [busy, setBusy] = useState<number | null>(null)
+  const [sending, setSending] = useState(false)
 
   const setStatus = async (r: Row, status: CastStatus, runId: number | null) => {
     const next = { status, runId: statusNeedsRun(status) ? runId ?? activeRunId : null }
@@ -56,6 +57,31 @@ export function PrihlaskyPanel() {
       addToast((e as Error).message || "Stav se neuložil.", "error")
     } finally {
       setBusy(null)
+    }
+  }
+
+  // Mail o nepřijetí jde náhradníkům a odmítnutým, kteří ho ještě nedostali.
+  const toReject = rows?.filter(r => getsRejection(r.status) && !r.rejectionSentAt) ?? []
+  const sendRejections = async () => {
+    const subs = toReject.filter(r => r.status === "substitute").length
+    const msg = `Poslat mail o nepřijetí ${toReject.length} ${toReject.length === 1 ? "přihlášce" : "přihláškám"}`
+      + ` (náhradníci ${subs}, nejede ${toReject.length - subs})?\nKaždý se dozví, jestli a do kdy ho držíme na náhradnickém seznamu podle své přihlášky.`
+    if (!window.confirm(msg)) return
+    setSending(true)
+    try {
+      const res = await adminFetch("/api/priprava/hraci/mail", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: "neprijeti", prihlaskaIds: toReject.map(r => r.id), by: getOrganizer() }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const out = await res.json() as { sent: number; skipped: number; failed: number }
+      addToast(`Odesláno ${out.sent}${out.skipped ? `, vynecháno ${out.skipped}` : ""}${out.failed ? `, selhalo ${out.failed}` : ""}`, out.failed ? "error" : "success")
+      const fresh = await adminFetch("/api/priprava/prihlasky")
+      if (fresh.ok) setRows(await fresh.json())
+    } catch (e) {
+      addToast((e as Error).message || "Maily se nepodařilo odeslat", "error")
+    } finally {
+      setSending(false)
     }
   }
 
@@ -96,6 +122,10 @@ export function PrihlaskyPanel() {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <a className="tool-btn" href="/prihlaska" target="_blank" rel="noreferrer"><IconExternalLink size={15} /> Otevřít formulář</a>
         <button className="tool-btn tool-btn-primary" disabled={!rows?.length} onClick={exportCsv}><IconDownload size={15} /> Stáhnout CSV</button>
+        <button className="tool-btn" disabled={sending || toReject.length === 0} onClick={sendRejections}
+          title="Náhradníkům a přihláškám ve stavu Nejede, které mail ještě nedostaly. Text se upravuje v E-mailech.">
+          <IconMail size={15} /> {sending ? "Posílám…" : `Poslat mail o nepřijetí (${toReject.length})`}
+        </button>
         {rows && counts && (
           <span style={{ fontSize: "0.82rem", color: "var(--c-text-muted)" }}>
             {rows.length} přihlášek · dospělí {counts.adult} · týmy {counts.team} · studenti {counts.student}
@@ -143,6 +173,11 @@ export function PrihlaskyPanel() {
                             </select>
                           )}
                         </span>
+                        {r.rejectionSentAt && getsRejection(r.status) && (
+                          <span style={{ display: "block", fontSize: "0.76rem", color: "var(--c-text-muted)", marginTop: 2 }}>
+                            mail o nepřijetí {new Date(r.rejectionSentAt).toLocaleDateString("cs-CZ")}
+                          </span>
+                        )}
                       </td>
                       <td style={{ color: "var(--c-text-muted)" }}>{label(RUN_CHOICES, d.run).split(",")[0]}</td>
                       <td>{[d.paths.adult && "dospělý", d.paths.team && `tým (${Object.keys(d.team.picks).map(t => nameOf("team", t).replace("Tým ", "")).join(", ")})`, d.paths.student && "student"].filter(Boolean).join(", ")}</td>

@@ -87,6 +87,25 @@ Jestli už je hotovo, nebo něco nejde, napiš na {{kontakt}}.
 
 Akano3`,
   },
+  {
+    id: "neprijeti",
+    label: "Nepřijetí na hru",
+    when: "Ručně z Přípravy → Přihlášky, přihláškám ve stavu Náhradník nebo Nejede.",
+    vars: [
+      { key: "nahradnik", label: "Věta o náhradnickém seznamu podle přihlášky", sample: "Podle tvé přihlášky tě necháváme na náhradnickém seznamu **až do konání hry**. Když se uvolní role, která ti sedí, ozveme se." },
+      { key: "kontakt", label: "Kontaktní e-mail", sample: MAIL_CONTACT },
+    ],
+    subject: "Akano3: tentokrát bez role",
+    body: `Ahoj,
+
+díky za přihlášku na Akano3. Zájemců je víc než postav, a tak na tebe tentokrát role bohužel nevyšla.
+
+{{nahradnik}}
+
+Dotazy posílej na {{kontakt}}.
+
+Akano3`,
+  },
 ]
 
 export const findTemplate = (id: string) => MAIL_TEMPLATES.find(t => t.id === id)

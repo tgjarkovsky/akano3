@@ -206,7 +206,7 @@ export function HraciPanel() {
                         <td style={{ fontSize: "0.78rem", color: "var(--c-text-muted)" }}>
                           {r.mails.length === 0 ? "—" : r.mails.map((m, i) => (
                             <span key={i} style={{ display: "block" }} title={MAIL_TEMPLATES.find(t => t.id === m.templateId)?.label}>
-                              {MAILS.find(x => x.id === m.templateId)?.short ?? m.templateId} {day(m.sentAt)}
+                              {MAILS.find(x => x.id === m.templateId)?.short ?? (m.templateId === "neprijeti" ? "nepřijetí" : m.templateId)} {day(m.sentAt)}
                             </span>
                           ))}
                         </td>

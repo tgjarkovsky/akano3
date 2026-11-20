@@ -66,18 +66,23 @@ const iso = (v: unknown) => v ? new Date(v as string).toISOString() : null
 
 // ── Stav přihlášky a platba ────────────────────────────────────────────
 
-export type AdminState = { id: number; status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null }
+export type AdminState = { id: number; status: CastStatus; runId: number | null; paidAt: string | null; paymentNote: string | null; rejectionSentAt: string | null }
 
 /** Stav, běh a platba všech přihlášek (k řádkům z listPrihlasky). */
 export async function listAdminStates(): Promise<AdminState[]> {
   await ensureCastTables()
-  const rows = await sql`SELECT id, status, run_id, to_char(paid_at, 'YYYY-MM-DD') AS paid_at, payment_note FROM prihlasky`
+  const rows = await sql`
+    SELECT id, status, run_id, to_char(paid_at, 'YYYY-MM-DD') AS paid_at, payment_note,
+      (SELECT max(sent_at) FROM mail_log m WHERE m.prihlaska_id = p.id AND m.template_id = 'neprijeti') AS rejection_sent_at
+    FROM prihlasky p
+  `
   return rows.map(r => ({
     id: r.id as number,
     status: isCastStatus(r.status) ? r.status : "new",
     runId: (r.run_id as number | null) ?? null,
     paidAt: (r.paid_at as string | null) ?? null,
     paymentNote: (r.payment_note as string | null) ?? null,
+    rejectionSentAt: r.rejection_sent_at ? new Date(r.rejection_sent_at as string).toISOString() : null,
   }))
 }
 

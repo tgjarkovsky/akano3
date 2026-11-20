@@ -1,17 +1,18 @@
 import { requireAdmin } from "@/lib/admin-password"
 import { getMailTargets, getRunInfo, logMail } from "@/lib/cast-store"
-import { greetingName, missingText } from "@/lib/cast"
+import { greetingName, missingText, getsRejection, substituteText } from "@/lib/cast"
 import { sendMail } from "@/lib/prihlaska-mail"
 import { formatRunDate } from "@/lib/character-doc"
 import { CHARACTERS } from "@/lib/data"
 
 export const dynamic = "force-dynamic"
 
-const TEMPLATES = ["obsazeni-prijeti", "upominka"]
+const TEMPLATES = ["obsazeni-prijeti", "upominka", "neprijeti"]
 const MAX = 200
 
 // POST /api/priprava/hraci/mail { templateId, prihlaskaIds[], by? }
-// Oznámení o přijetí jde jen přijatým s postavou, upomínka jen přijatým, kterým něco chybí.
+// Oznámení o přijetí jde jen přijatým s postavou, upomínka jen přijatým, kterým něco chybí,
+// nepřijetí jen náhradníkům a odmítnutým (bez oslovení jménem).
 export async function POST(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
@@ -28,8 +29,11 @@ export async function POST(req: Request) {
     for (const t of await getMailTargets(ids)) {
       const runId = t.runId
       const vars: Record<string, string> = { jmeno: greetingName(t.data), odkaz: `${origin}/prihlaska/${t.token}` }
-      if (runId === null || t.status !== "accepted") { skipped++; continue }
-      if (b.templateId === "obsazeni-prijeti") {
+      if (b.templateId === "neprijeti") {
+        if (!getsRejection(t.status)) { skipped++; continue }
+        vars.nahradnik = substituteText(t.data.substitute)
+      } else if (runId === null || t.status !== "accepted") { skipped++; continue }
+      else if (b.templateId === "obsazeni-prijeti") {
         if (!t.characterId) { skipped++; continue }
         if (!runs.has(runId)) runs.set(runId, await getRunInfo(runId))
         const run = runs.get(runId)

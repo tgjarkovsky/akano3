@@ -1,4 +1,4 @@
-import { prefOf, fitsGender, type Prihlaska } from "./prihlaska.ts"
+import { prefOf, fitsGender, type Prihlaska, type SubstituteChoice } from "./prihlaska.ts"
 
 // Obsazení hráčů na postavy: stav přihlášky vůči běhu, shoda hráče s postavou
 // podle jeho voleb v přihlášce, co hráči ještě chybí (platba, fotka) a kontrola
@@ -137,6 +137,23 @@ export type PlayerTodo = { paid: boolean; photo: boolean }
 export function missingText(t: PlayerTodo): string {
   const parts = [t.paid ? "" : "zaplatit hru", t.photo ? "" : "nahrát fotku"].filter(Boolean)
   return parts.join(" a ")
+}
+
+// ── Nepřijetí ──────────────────────────────────────────────────────────
+
+/** Mail o nepřijetí jde náhradníkům a odmítnutým, nové přihlášky se teprve posuzují. */
+export const getsRejection = (s: CastStatus) => s === "substitute" || s === "declined"
+
+const SUBSTITUTE_UNTIL: Record<Exclude<SubstituteChoice, "no">, string> = {
+  "until-event": "až do konání hry",
+  "until-june": "do konce června",
+  "until-april": "do konce dubna",
+}
+
+/** Věta do mailu o nepřijetí podle toho, co hráč vyplnil u náhradnického seznamu. */
+export function substituteText(choice: SubstituteChoice): string {
+  if (choice === "no") return "Podle tvé přihlášky tě na náhradnický seznam nezapisujeme. Pokud o něj přece jen stojíš, napiš nám."
+  return `Podle tvé přihlášky tě necháváme na náhradnickém seznamu **${SUBSTITUTE_UNTIL[choice]}**. Když se uvolní role, která ti sedí, ozveme se.`
 }
 
 // ── Fotka ──────────────────────────────────────────────────────────────
