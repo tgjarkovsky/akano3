@@ -1,19 +1,21 @@
 import { sql } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-password"
-import { getActiveRunId } from "@/lib/runs"
+import { requestedRunId, unknownRun } from "@/lib/run-param"
 import { CHARACTERS } from "@/lib/data"
 import { indexRules, pendingFixedValues } from "@/lib/assignment-rules"
 import { getRules } from "@/lib/rules-store"
 
 export const dynamic = "force-dynamic"
 
-// POST /api/priprava/rules/apply-fixed — v aktivním běhu doplní všem postavám
+// POST /api/priprava/rules/apply-fixed { runId? } — v běhu (bez runId aktivním) doplní všem postavám
 // hodnoty, které pravidla určují napevno (specializace, původ, kruh).
 export async function POST(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
   try {
-    const runId = await getActiveRunId()
+    const body = await req.json().catch(() => null) as { runId?: unknown } | null
+    const runId = await requestedRunId(body?.runId)
+    if (runId === null) return unknownRun()
     const index = indexRules(await getRules())
     const [state, circles] = await Promise.all([
       sql`SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${runId}`,

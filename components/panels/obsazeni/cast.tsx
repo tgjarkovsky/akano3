@@ -3,10 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
-import { UNITS, CIRCLES } from "@/lib/data"
+import { UNITS, CIRCLES, TEAMS } from "@/lib/data"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { castFit, fitMark, playerName, suggestCast, type CastCharacter, type CastFit, type CastStatus } from "@/lib/cast"
 import type { Prihlaska } from "@/lib/prihlaska"
+import { castFromLottery, NAKAMURA_ID, type LotteryResult } from "@/lib/lottery"
 import type { Character } from "@/lib/types"
 
 // Obsazení hráčů na postavy v aktivním běhu: načtení, přiřazení, zveřejnění
@@ -20,32 +21,34 @@ export type CastBoard = {
   gender: Record<string, "m" | "f">
 }
 
-export function useCast() {
-  const { addToast, activeRunId } = useGame()
+export function useCast(runId: number | null) {
+  const { addToast } = useGame()
   const [board, setBoard] = useState<CastBoard | null>(null)
   const [pending, setPending] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
+    if (runId === null) return
     try {
-      const r = await adminFetch("/api/priprava/cast")
+      const r = await adminFetch(`/api/priprava/cast?run=${runId}`)
       if (r.ok) setBoard(await r.json())
     } catch { /* bez sítě zůstane poslední stav */ }
-  }, [])
+  }, [runId])
   useEffect(() => {
+    if (runId === null) return
     let cancelled = false
-    adminFetch("/api/priprava/cast")
+    adminFetch(`/api/priprava/cast?run=${runId}`)
       .then(r => r.ok ? r.json() : null)
       .then(b => { if (!cancelled && b) setBoard(b) })
       .catch(() => { /* bez sítě zůstane poslední stav */ })
     return () => { cancelled = true }
-  }, [activeRunId])
+  }, [runId])
 
   const post = useCallback(async (key: string, body: Record<string, unknown>, failText: string) => {
     setPending(key)
     try {
       const res = await adminFetch("/api/priprava/cast", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...body, by: getOrganizer() }),
+        body: JSON.stringify({ ...body, runId, by: getOrganizer() }),
       })
       if (!res.ok) { addToast(res.status === 409 || res.status === 400 ? await res.text() : failText, "error"); return false }
       setBoard(await res.json())
@@ -56,7 +59,7 @@ export function useCast() {
     } finally {
       setPending(null)
     }
-  }, [addToast])
+  }, [addToast, runId])
 
   const assign = useCallback((characterId: string, prihlaskaId: number | null) =>
     post(`cast:${characterId}`, { characterId, prihlaskaId }, "Hráče se nepodařilo obsadit"), [post])
@@ -65,12 +68,14 @@ export function useCast() {
   const publish = useCallback((published: boolean) =>
     post("publish", { publish: published }, "Zveřejnění se nepodařilo uložit"), [post])
 
+  // Dokud se nový běh nenačte, neukazuj starý.
+  const current = board && board.runId === runId ? board : null
   /** id postavy → přihláška hráče, který ji hraje */
   const playerOf = useMemo(() => new Map(
-    (board?.candidates ?? []).filter(c => c.characterId).map(c => [c.characterId!, c]),
-  ), [board])
+    (current?.candidates ?? []).filter(c => c.characterId).map(c => [c.characterId!, c]),
+  ), [current])
 
-  return { board, assign, assignMany, publish, pending, playerOf, reload }
+  return { board: current, assign, assignMany, publish, pending, playerOf, reload }
 }
 
 const nameOf = (kind: "unit" | "circle" | "specialization" | "origin", id: string) => {
@@ -96,9 +101,20 @@ export function castCharacter(c: Character, gender: Record<string, "m" | "f">, u
 
 export const fitOf = (p: CastCandidate, c: CastCharacter): CastFit => castFit(p.data, c, nameOf)
 
-/** Návrh obsazení volných postav přijatými hráči bez postavy (lib/cast.ts). */
-export const suggestFor = (board: CastBoard, characters: CastCharacter[]) =>
-  suggestCast(characters, board.candidates.filter(p => p.status === "accepted"), nameOf)
+/**
+ * Návrh obsazení volných postav přijatými hráči bez postavy. S použitým losem
+ * podle jeho skupin (Nakamura, trojice do týmů, dospělí, jednotlivci), bez něj
+ * jen podle preferencí (lib/cast.ts).
+ */
+export function suggestFor(board: CastBoard, characters: CastCharacter[], groups: LotteryResult["selected"] | null): { assign: Map<string, number>; notes: string[] } {
+  const players = board.candidates.filter(p => p.status === "accepted")
+  if (!groups) return { assign: suggestCast(characters, players, nameOf), notes: [] }
+  return castFromLottery({
+    selected: groups, players,
+    adults: characters.filter(c => c.kind === "adult"), students: characters.filter(c => c.kind === "player"),
+    teams: TEAMS, nakamuraId: NAKAMURA_ID, nameOf,
+  })
+}
 
 /** Výběr hráče u postavy. Přijatí seřazení podle shody, náhradníci jen pro přehled. */
 export function PlayerSelect({ character, board, characterName, busy, onAssign }: {

@@ -13,10 +13,10 @@ import { downloadText } from "@/lib/download"
 import { formatRunDate } from "@/lib/character-doc"
 import type { RunSummary } from "@/lib/types"
 
-// Hlavička obsazení: který běh se upravuje, přepnutí, nový běh, export,
-// termíny běhů.
+// Hlavička obsazení: který běh se upravuje (výběr nezávislý na aktivním běhu,
+// obsazuje se dávno před hraním), nový běh, export, termíny a aktivace běhů.
 
-export function RunBar() {
+export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChange: (id: number) => void }) {
   const { runs, activeRunId, setActiveRun, createRun, setRunDates, characters, teams } = useGame()
   const [open, setOpen] = useState(false)
   const [newName, setNewName] = useState("")
@@ -26,6 +26,7 @@ export function RunBar() {
   const [creating, setCreating] = useState(false)
   const [confirmRun, setConfirmRun] = useState<RunSummary | null>(null)
   const active = runs.find(r => r.id === activeRunId)
+  const shown = runs.find(r => r.id === runId)
 
   const validRange = (start: string, end: string) => !!start && !!end && end > start
   const canCreate = !!newName.trim() && validRange(newStart, newEnd)
@@ -58,22 +59,25 @@ export function RunBar() {
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: "0.75rem", color: "var(--c-text-muted)", margin: "0 0 2px" }}>Upravuješ obsazení aktivního běhu</p>
+          <label htmlFor="obsazeni-run" style={{ display: "block", fontSize: "0.75rem", color: "var(--c-text-muted)", margin: "0 0 4px" }}>Upravuješ obsazení běhu</label>
           <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--c-text)" }}>{active?.name ?? "Žádný aktivní běh"}</span>
-            {active && <span style={{
+            <select id="obsazeni-run" className="circle-select run-select" value={runId ?? ""} onChange={e => onRunChange(Number(e.target.value))}>
+              {runId === null && <option value="">Žádný běh</option>}
+              {runs.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            {shown?.isActive && <span style={{
               fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: 10,
               color: "var(--c-success)", border: "1px solid color-mix(in srgb, var(--c-success) 45%, transparent)",
             }}>AKTIVNÍ · hraje se ve Velínu</span>}
           </p>
-          {active && (
-            <p style={{ margin: "2px 0 0", fontSize: "0.82rem", color: active.startsOn ? "var(--c-text-muted)" : "var(--c-accent)" }}>
-              {formatRunDate(active.startsOn, active.endsOn) ?? "Běh nemá termín, doplň ho ve „Všechny běhy“"}
+          {shown && (
+            <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: shown.startsOn ? "var(--c-text-muted)" : "var(--c-accent)" }}>
+              {formatRunDate(shown.startsOn, shown.endsOn) ?? "Běh nemá termín, doplň ho ve „Všechny běhy“"}
             </p>
           )}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button style={btn} onClick={exportCsv}><IconDownload size={14} /> Export výsledků</button>
+          {shown?.isActive && <button style={btn} onClick={exportCsv}><IconDownload size={14} /> Export výsledků</button>}
           <button style={btn} onClick={() => setOpen(o => !o)} aria-expanded={open}>
             Všechny běhy ({runs.length})
             <IconChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : undefined, transition: "transform 0.15s" }} />

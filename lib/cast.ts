@@ -15,13 +15,17 @@ export type CastStatus = typeof CAST_STATUSES[number]["value"]
 export const isCastStatus = (v: unknown): v is CastStatus => CAST_STATUSES.some(s => s.value === v)
 export const statusLabel = (s: CastStatus) => CAST_STATUSES.find(x => x.value === s)!.label
 
-/** Přijatý hráč a náhradník patří k běhu, nová a odmítnutá přihláška k žádnému. */
+/**
+ * Přijatý hráč a náhradník patří k běhu, nová a odmítnutá přihláška k žádnému.
+ * Náhradník bez běhu je náhradník pro oba běhy (ze společného losu).
+ */
 export const statusNeedsRun = (s: CastStatus) => s === "accepted" || s === "substitute"
 
 /** Stav a běh přihlášky z požadavku Přípravy. */
 export function parseStatusChange(status: unknown, runId: unknown): { status: CastStatus; runId: number | null } | { error: string } {
   if (!isCastStatus(status)) return { error: "Neznámý stav přihlášky" }
   if (!statusNeedsRun(status)) return { status, runId: null }
+  if (status === "substitute" && runId === null) return { status, runId: null }
   if (typeof runId !== "number" || !Number.isInteger(runId) || runId <= 0) return { error: "Vyber běh" }
   return { status, runId }
 }

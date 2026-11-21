@@ -173,7 +173,8 @@ export async function getCastBoard(runId: number): Promise<{ candidates: CastCan
     sql`
       SELECT p.id, p.status, p.data, c.character_id
       FROM prihlasky p LEFT JOIN run_cast c ON c.prihlaska_id = p.id AND c.run_id = ${runId}
-      WHERE p.run_id = ${runId} AND p.status IN ('accepted', 'substitute')
+      WHERE (p.run_id = ${runId} AND p.status IN ('accepted', 'substitute'))
+         OR (p.run_id IS NULL AND p.status = 'substitute')
       ORDER BY p.data->>'lastName', p.data->>'firstName'
     `,
     sql`SELECT cast_published_at FROM runs WHERE id = ${runId}`,
@@ -270,7 +271,8 @@ export async function getRoster(runId: number): Promise<Roster | null> {
       FROM prihlasky p
       LEFT JOIN run_cast c ON c.prihlaska_id = p.id AND c.run_id = ${runId}
       LEFT JOIN player_photos f ON f.prihlaska_id = p.id
-      WHERE p.run_id = ${runId} AND p.status IN ('accepted', 'substitute')
+      WHERE (p.run_id = ${runId} AND p.status IN ('accepted', 'substitute'))
+         OR (p.run_id IS NULL AND p.status = 'substitute')
       ORDER BY p.status, p.substitute_rank NULLS LAST, p.data->>'lastName', p.data->>'firstName'
     `,
     sql`

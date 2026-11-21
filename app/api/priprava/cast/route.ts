@@ -1,12 +1,13 @@
 import { requireAdmin } from "@/lib/admin-password"
 import { sql } from "@/lib/db"
-import { getActiveRunId } from "@/lib/runs"
+import { requestedRunId, runParam, unknownRun } from "@/lib/run-param"
 import { ensureDocTables } from "@/lib/docs-store"
 import { assignCast, assignCastMany, getCastBoard, isCastable, setCastPublished } from "@/lib/cast-store"
 
 export const dynamic = "force-dynamic"
 
-// Obsazení hráčů na postavy v aktivním běhu (lib/cast-store.ts).
+// Obsazení hráčů na postavy v běhu (lib/cast-store.ts). Běh je ?run= u GET a runId
+// v těle u POST; bez něj aktivní běh.
 
 async function board(runId: number) {
   await ensureDocTables()
@@ -17,12 +18,14 @@ async function board(runId: number) {
   return { runId, ...b, gender: Object.fromEntries(meta.map(r => [r.character_id as string, r.gender as "m" | "f"])) }
 }
 
-// GET /api/priprava/cast — přijatí hráči a náhradníci aktivního běhu, kdo hraje kterou postavu, rody postav
+// GET /api/priprava/cast?run=ID — přijatí hráči a náhradníci běhu, kdo hraje kterou postavu, rody postav
 export async function GET(req: Request) {
   const denied = await requireAdmin(req)
   if (denied) return denied
   try {
-    return Response.json(await board(await getActiveRunId()), { headers: { "Cache-Control": "no-store" } })
+    const runId = await requestedRunId(runParam(req))
+    if (runId === null) return unknownRun()
+    return Response.json(await board(runId), { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
     console.error("[priprava/cast GET]", err)
     return new Response("Server error", { status: 500 })
@@ -39,7 +42,8 @@ export async function POST(req: Request) {
   try {
     const b = await req.json().catch(() => null) as Record<string, unknown> | null
     if (!b) return new Response("Bad request", { status: 400 })
-    const runId = await getActiveRunId()
+    const runId = await requestedRunId(b.runId)
+    if (runId === null) return unknownRun()
     const by = typeof b.by === "string" ? b.by.slice(0, 80) : null
 
     if (typeof b.publish === "boolean") {

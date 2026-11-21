@@ -1,26 +1,42 @@
 import { randomInt } from "node:crypto"
 import { sql } from "@/lib/db"
-import { TEAMS } from "@/lib/data"
 import { ensureCastTables } from "@/lib/cast-store"
-import { runLottery, type LotteryResult, type LotteryEntry } from "@/lib/lottery"
+import { runLottery, acceptsTerms, NAKAMURA_ID, TERMS, type LotteryResult, type LotteryEntry, type Term } from "@/lib/lottery"
 import { playerName, type CastCharacter } from "@/lib/cast"
 import type { Prihlaska, RunChoice } from "@/lib/prihlaska"
 
-// Losování obsazení běhu (lib/lottery.ts): osudí z databáze, náhled se uloží
-// do run_lotteries, použití zapíše stavy přihlášek, pořadí náhradníků a obsazení.
+// Společný los obou běhů (lib/lottery.ts): osudí z databáze, náhled se uloží
+// do lotteries, použití zapíše stavy přihlášek a společné pořadí náhradníků.
+// Náhradník s „je mi to jedno“ nemá běh (run_id NULL = oba běhy). Postavy los
+// nepřiděluje, skupiny z losu využije návrh obsazení (castFromLottery).
+//
+//   lotteries.runs   {"first": id běhu | null, "second": id běhu | null}:
+//                    na který běh v aplikaci se losuje který termín z přihlášky
 
 export type LotteryCharacter = CastCharacter & { name: string }
+export type LotteryRuns = Record<Term, number | null>
+
+export type LotteryPerson = {
+  name: string
+  /** termín z přihlášky */
+  run: RunChoice
+  substitute: string
+  vision: boolean
+  paths: { adult: boolean; team: boolean; student: boolean }
+  /** jede i bez týmu */
+  solo: boolean
+  teamGroup: number | null
+}
 
 export type StoredLottery = {
   id: number
-  runId: number
-  choice: RunChoice
+  runs: LotteryRuns
   createdAt: string
   createdBy: string | null
   appliedAt: string | null
   result: LotteryResult
-  /** jména a stav lidí z osudí pro náhled */
-  people: Record<number, { name: string; substitute: string; fromRun: number | null }>
+  /** lidé z osudí pro náhled */
+  people: Record<number, LotteryPerson>
 }
 
 let ready: Promise<void> | null = null
@@ -28,10 +44,9 @@ function ensureLotteryTable(): Promise<void> {
   ready ??= (async () => {
     await ensureCastTables()
     await sql`
-      CREATE TABLE IF NOT EXISTS run_lotteries (
+      CREATE TABLE IF NOT EXISTS lotteries (
         id          SERIAL PRIMARY KEY,
-        run_id      INT  NOT NULL,
-        choice      TEXT NOT NULL,
+        runs        JSONB NOT NULL,
         seed        BIGINT NOT NULL,
         fingerprint TEXT NOT NULL,
         result      JSONB NOT NULL,
@@ -45,96 +60,128 @@ function ensureLotteryTable(): Promise<void> {
   return ready
 }
 
-type PoolRow = LotteryEntry & { status: string; runId: number | null; updatedAt: string }
+type PoolRow = LotteryEntry & { updatedAt: string }
 
-/**
- * Osudí běhu: nové přihlášky, které chtějí tenhle běh nebo „je mi to jedno“,
- * a náhradníci jiných běhů s „je mi to jedno“ (nikde nejsou přijatí).
- */
-async function loadPool(runId: number, choice: RunChoice): Promise<PoolRow[]> {
+const termsOf = (runs: LotteryRuns): Term[] => TERMS.filter(t => runs[t] != null)
+
+/** Osudí: nové přihlášky na losované termíny nebo s „je mi to jedno“. */
+async function loadPool(terms: Term[]): Promise<PoolRow[]> {
   const rows = await sql`
-    SELECT id, data, team_group, status, run_id, updated_at FROM prihlasky
-    WHERE (status = 'new' AND data->>'run' IN (${choice}, 'any'))
-       OR (status = 'substitute' AND run_id IS DISTINCT FROM ${runId} AND data->>'run' = 'any')
+    SELECT id, data, team_group, updated_at FROM prihlasky
+    WHERE status = 'new' AND data->>'run' = ANY(${[...terms, "any"]})
     ORDER BY id
   `
   return rows.map(r => ({
     id: r.id as number, data: r.data as Prihlaska, teamGroup: (r.team_group as number | null) ?? null,
-    status: r.status as string, runId: (r.run_id as number | null) ?? null, updatedAt: new Date(r.updated_at as string).toISOString(),
+    updatedAt: new Date(r.updated_at as string).toISOString(),
   }))
 }
 
-/** Otisk osudí: když se mezi náhledem a použitím změní přihláška, stav nebo trojice, los neplatí. */
-const fingerprint = (pool: PoolRow[]) => pool.map(p => `${p.id}:${p.updatedAt}:${p.teamGroup ?? ""}:${p.status}:${p.runId ?? ""}`).join("|")
+/** Otisk osudí: když se mezi náhledem a použitím změní přihláška nebo trojice, los neplatí. */
+const fingerprint = (pool: PoolRow[]) => pool.map(p => `${p.id}:${p.updatedAt}:${p.teamGroup ?? ""}`).join("|")
 
 const toStored = (r: Record<string, unknown>): StoredLottery => ({
-  id: r.id as number, runId: r.run_id as number, choice: r.choice as RunChoice,
+  id: r.id as number, runs: r.runs as LotteryRuns,
   createdAt: new Date(r.created_at as string).toISOString(), createdBy: (r.created_by as string | null) ?? null,
   appliedAt: r.applied_at ? new Date(r.applied_at as string).toISOString() : null,
   result: r.result as LotteryResult, people: r.people as StoredLottery["people"],
 })
 
-/** Poslední los běhu (náhled nebo použitý), nebo null. */
-export async function latestLottery(runId: number): Promise<StoredLottery | null> {
+/** Poslední los (náhled nebo použitý), nebo null. */
+export async function latestLottery(): Promise<StoredLottery | null> {
   await ensureLotteryTable()
-  const [r] = await sql`SELECT * FROM run_lotteries WHERE run_id = ${runId} ORDER BY id DESC LIMIT 1`
+  const [r] = await sql`SELECT * FROM lotteries WHERE result->>'version' = '3' ORDER BY id DESC LIMIT 1`
   return r ? toStored(r) : null
 }
 
-/** Nový los (náhled). Nic kromě záznamu losu nemění. */
-export async function drawLottery(runId: number, choice: RunChoice, characters: { adults: LotteryCharacter[]; students: LotteryCharacter[] }, by: string | null): Promise<StoredLottery> {
+/** Nový los (náhled). Nic kromě záznamu losu nemění. Vrací chybu jako text. */
+export async function drawLottery(runs: LotteryRuns, characters: { adults: LotteryCharacter[]; students: LotteryCharacter[] }, by: string | null): Promise<StoredLottery | string> {
   await ensureLotteryTable()
-  const pool = await loadPool(runId, choice)
+  const terms = termsOf(runs)
+  if (terms.length === 0) return "Vyber aspoň jeden běh"
+  if (runs.first != null && runs.first === runs.second) return "Každý termín musí mít jiný běh"
+  const ids = terms.map(t => runs[t]!)
+  const [{ n }] = await sql`SELECT count(*)::int AS n FROM runs WHERE id = ANY(${ids})`
+  if (n !== ids.length) return "Běh neexistuje"
+  const pool = await loadPool(terms)
   const seed = randomInt(1, 2 ** 31)
   const result = runLottery({
-    entries: pool, adults: characters.adults, students: characters.students,
-    teams: TEAMS.map(t => ({ id: t.id, name: t.name, memberIds: t.memberIds })),
-    // Jména prvků slouží jen do textu varování, skóre je nepotřebuje.
-    nakamuraId: "TCH2", seed, nameOf: (_kind, id) => id,
+    entries: pool, terms, adultSlots: characters.adults.length, studentSlots: characters.students.length,
+    nakamura: characters.adults.find(c => c.id === NAKAMURA_ID) ?? null, seed,
   })
-  const people = Object.fromEntries(pool.map(p => [p.id, { name: playerName(p.data), substitute: p.data.substitute, fromRun: p.status === "substitute" ? p.runId : null }]))
+  const people: Record<number, LotteryPerson> = Object.fromEntries(pool.map(p => [p.id, {
+    name: playerName(p.data), run: p.data.run, substitute: p.data.substitute,
+    vision: !!p.data.visionImpaired, paths: p.data.paths, solo: !!p.data.team?.solo, teamGroup: p.teamGroup,
+  }]))
   const [r] = await sql`
-    INSERT INTO run_lotteries (run_id, choice, seed, fingerprint, result, people, created_by)
-    VALUES (${runId}, ${choice}, ${seed}, ${fingerprint(pool)}, ${JSON.stringify(result)}::jsonb, ${JSON.stringify(people)}::jsonb, ${by})
+    INSERT INTO lotteries (runs, seed, fingerprint, result, people, created_by)
+    VALUES (${JSON.stringify(runs)}::jsonb, ${seed}, ${fingerprint(pool)}, ${JSON.stringify(result)}::jsonb, ${JSON.stringify(people)}::jsonb, ${by})
     RETURNING *
   `
   return toStored(r)
 }
 
 /**
- * Použije los: vylosovaní jsou přijatí na běh s postavou, ostatní z osudí
- * náhradníci v pořadí (náhradníci jiných běhů zůstávají, kde byli), kdo
- * náhradníkem být nechce, nejede. Vrací chybu, nebo null.
+ * Použije los: vylosovaní jsou přijatí na svůj běh, ostatní z osudí náhradníci
+ * ve společném pořadí (s „je mi to jedno“ pro oba běhy), kdo náhradníkem být
+ * nechce, nejede. Postavy se nemění. Vrací chybu, nebo null.
  */
-export async function applyLottery(runId: number, lotteryId: number): Promise<string | null> {
+export async function applyLottery(lotteryId: number): Promise<string | null> {
   await ensureLotteryTable()
-  const [row] = await sql`SELECT * FROM run_lotteries WHERE id = ${lotteryId} AND run_id = ${runId}`
+  const [row] = await sql`SELECT * FROM lotteries WHERE id = ${lotteryId}`
   if (!row) return "Los neexistuje"
   const lot = toStored(row)
   if (lot.appliedAt) return "Tenhle los už je použitý"
-  const [{ n }] = await sql`SELECT count(*)::int AS n FROM run_cast WHERE run_id = ${runId}`
-  if (n > 0) return "Běh už má obsazení. Los jde použít jen na prázdný běh."
-  const pool = await loadPool(runId, lot.choice)
+  const terms = termsOf(lot.runs)
+  const runIds = terms.map(t => lot.runs[t]!)
+  const applied = (await sql`SELECT runs FROM lotteries WHERE applied_at IS NOT NULL`).map(r => r.runs as LotteryRuns)
+  if (applied.some(r => TERMS.some(t => r[t] != null && runIds.includes(r[t]!)))) return "Na tyhle běhy už je použitý los. Nejdřív ho vrať."
+  const pool = await loadPool(terms)
   if (fingerprint(pool) !== row.fingerprint) return "Od losu se změnily přihlášky nebo trojice. Losuj znovu."
 
-  const fromOther = new Set(pool.filter(p => p.status === "substitute").map(p => p.id))
-  const subs = lot.result.substitutes.filter(id => !fromOther.has(id))
-  const declined = lot.result.declined.filter(id => !fromOther.has(id))
-  const castIds = lot.result.cast.map(c => c.prihlaskaId)
-  const chars = lot.result.cast.map(c => c.characterId)
+  const byId = new Map(pool.map(p => [p.id, p]))
+  const chosenIds = lot.result.selected.map(s => s.id)
+  const chosenRuns = lot.result.selected.map(s => lot.runs[s.term]!)
+  const subs = lot.result.substitutes
+  // Náhradník s jedním možným během patří k němu, s oběma k žádnému (NULL = oba běhy).
+  const subRuns = subs.map(id => { const a = acceptsTerms(byId.get(id)!.data, terms); return a.length === 1 ? lot.runs[a[0]] : null })
   await sql.transaction([
-    sql`UPDATE prihlasky SET status = 'accepted', run_id = ${runId}, substitute_rank = NULL WHERE id = ANY(${castIds})`,
     sql`
-      UPDATE prihlasky p SET status = 'substitute', run_id = ${runId}, substitute_rank = t.rank
-      FROM unnest(${subs}::int[]) WITH ORDINALITY AS t(id, rank) WHERE p.id = t.id
+      UPDATE prihlasky p SET status = 'accepted', run_id = t.run, substitute_rank = NULL
+      FROM unnest(${chosenIds}::int[], ${chosenRuns}::int[]) AS t(id, run) WHERE p.id = t.id
     `,
-    sql`UPDATE prihlasky SET status = 'declined', run_id = NULL, substitute_rank = NULL WHERE id = ANY(${declined})`,
-    sql`DELETE FROM run_cast WHERE prihlaska_id = ANY(${castIds})`,
     sql`
-      INSERT INTO run_cast (run_id, character_id, prihlaska_id, updated_by)
-      SELECT ${runId}, c, p, 'losování' FROM unnest(${chars}::text[], ${castIds}::int[]) AS t(c, p)
+      UPDATE prihlasky p SET status = 'substitute', run_id = t.run, substitute_rank = t.rank
+      FROM unnest(${subs}::int[], ${subRuns}::int[]) WITH ORDINALITY AS t(id, run, rank) WHERE p.id = t.id
     `,
-    sql`UPDATE run_lotteries SET applied_at = NOW() WHERE id = ${lotteryId}`,
+    sql`UPDATE prihlasky SET status = 'declined', run_id = NULL, substitute_rank = NULL WHERE id = ANY(${lot.result.declined})`,
+    sql`UPDATE lotteries SET applied_at = NOW() WHERE id = ${lotteryId}`,
+  ])
+  return null
+}
+
+/**
+ * Vrátí použitý los: lidi, kterým los nastavil stav a ten se od té doby
+ * nezměnil, vrátí mezi nové, smaže jim postavy v losovaných bězích a smaže
+ * los i nepoužité náhledy. Vrací chybu, nebo null.
+ */
+export async function revertLottery(lotteryId: number): Promise<string | null> {
+  await ensureLotteryTable()
+  const [row] = await sql`SELECT * FROM lotteries WHERE id = ${lotteryId}`
+  if (!row) return "Los neexistuje"
+  const lot = toStored(row)
+  if (!lot.appliedAt) return "Los ještě není použitý"
+  const runIds = termsOf(lot.runs).map(t => lot.runs[t]!)
+  const chosen = lot.result.selected.map(s => s.id)
+  await sql.transaction([
+    sql`DELETE FROM run_cast WHERE run_id = ANY(${runIds}) AND prihlaska_id = ANY(${chosen})`,
+    sql`
+      UPDATE prihlasky SET status = 'new', run_id = NULL, substitute_rank = NULL
+      WHERE (id = ANY(${chosen}) AND status = 'accepted' AND run_id = ANY(${runIds}))
+         OR (id = ANY(${lot.result.substitutes}) AND status = 'substitute')
+         OR (id = ANY(${lot.result.declined}) AND status = 'declined')
+    `,
+    sql`DELETE FROM lotteries WHERE id = ${lotteryId} OR applied_at IS NULL`,
   ])
   return null
 }

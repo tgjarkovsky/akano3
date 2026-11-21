@@ -1531,6 +1531,7 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 @media print { .dogtag-photo { display: none; } }
 
 /* ── Příprava: obsazení, záložky a hráči na postavách ─────────────── */
+.run-select { width: auto; min-height: 40px; font-size: 1.1rem; font-weight: 800; color: var(--c-text); }
 .obsazeni-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--c-border-mid); margin-bottom: 20px; }
 .obsazeni-tab {
   display: inline-flex; align-items: center; gap: 8px;
@@ -1574,9 +1575,90 @@ textarea.pr-input { min-height: 110px; resize: vertical; line-height: 1.5; }
 @media (max-width: 599px) {
   .cast-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 14px; }
 }
-.lottery-box { margin-top: 10px; align-items: flex-start; }
-.lottery-done {
-  margin-top: 10px; padding: 10px 14px; border: 1px solid var(--c-border); border-radius: 10px;
-  font-size: 0.82rem; color: var(--c-text-muted);
+/* Los běhu: fáze s tlačítkem Další */
+.lot-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; padding: 0; list-style: none; }
+.lot-step {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px 0 6px;
+  border: 1px solid var(--c-border-mid); border-radius: 17px; background: transparent;
+  color: var(--c-text-faint); font-size: 0.8rem; cursor: pointer;
 }
-.lottery-done summary { cursor: pointer; }
+.lot-step:disabled { cursor: default; }
+.lot-step-n {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background-color: var(--c-bg-section); font-size: 0.72rem; font-weight: 700;
+}
+.lot-step[data-state="done"] { color: var(--c-text-muted); }
+.lot-step[data-state="done"] .lot-step-n { background-color: color-mix(in srgb, var(--c-success) 25%, transparent); color: var(--c-text); }
+.lot-step[data-state="current"] { color: var(--c-text); border-color: var(--c-accent); font-weight: 700; }
+.lot-step[data-state="current"] .lot-step-n { background-color: var(--c-accent); color: var(--ink-900); }
+.lot-phase {
+  padding: 16px; border: 1px solid var(--c-border-mid); border-radius: 10px; background-color: var(--c-bg-card);
+}
+.lot-phase h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--c-text); }
+.lot-rule { margin: 0 0 14px; font-size: 0.85rem; line-height: 1.5; color: var(--c-text-muted); max-width: 70ch; }
+.lot-nav { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.lot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.lot-row {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  min-height: 34px; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; color: var(--c-text-muted);
+  border: 1px solid transparent;
+}
+.lot-row-n { font-variant-numeric: tabular-nums; color: var(--c-text-faint); font-size: 0.78rem; text-align: right; }
+.lot-row-name { min-width: 0; color: var(--c-text); }
+.lot-row-out { font-size: 0.76rem; text-align: right; }
+.lot-row[data-state="in"] {
+  background-color: color-mix(in srgb, var(--c-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--c-success) 35%, transparent);
+}
+.lot-row[data-state="in"] .lot-row-out { color: var(--c-success); font-weight: 700; }
+.lot-row[data-state="skip"] { background-color: color-mix(in srgb, var(--c-accent) 8%, transparent); }
+.lot-row[data-state="skip"] .lot-row-out { color: var(--c-accent); }
+.lot-row[data-state="out"] .lot-row-name { color: var(--c-text-muted); }
+.lot-cut {
+  display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-accent);
+}
+.lot-cut::before, .lot-cut::after { content: ""; flex: 1; border-top: 2px dashed color-mix(in srgb, var(--c-accent) 60%, transparent); }
+.lot-tag {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 8px; vertical-align: 1px;
+  font-size: 0.68rem; font-weight: 700; border: 1px solid var(--c-border-mid); color: var(--c-text-muted);
+}
+.lot-trio-tag { border-color: color-mix(in srgb, var(--c-accent) 50%, transparent); color: var(--c-accent); }
+.lot-trios { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.lot-trio { padding: 10px 12px; border: 1px solid var(--c-border-mid); border-radius: 8px; font-size: 0.84rem; }
+.lot-trio[data-state="in"] {
+  border-color: color-mix(in srgb, var(--c-success) 50%, transparent);
+  background-color: color-mix(in srgb, var(--c-success) 10%, transparent);
+}
+.lot-trio-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-weight: 700; color: var(--c-text); }
+.lot-trio ul { list-style: none; margin: 0 0 6px; padding: 0; }
+.lot-trio li { display: flex; gap: 6px; align-items: baseline; color: var(--c-text); }
+.lot-mark { width: 14px; flex-shrink: 0; text-align: center; font-weight: 700; }
+.lot-trio-out { font-size: 0.78rem; color: var(--c-text-muted); }
+.lot-trio[data-state="in"] .lot-trio-out { color: var(--c-success); font-weight: 700; }
+.lot-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.lot-chip {
+  padding: 8px 14px; border: 1px solid var(--c-border-mid); border-radius: 8px; font-size: 0.88rem; color: var(--c-text-muted);
+}
+.lot-chip[data-state="in"] {
+  border-color: var(--c-success); color: var(--c-text); font-weight: 700;
+  background-color: color-mix(in srgb, var(--c-success) 14%, transparent);
+}
+.lot-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.lot-tile { padding: 10px 12px; border: 1px solid var(--c-border-mid); border-radius: 8px; }
+.lot-tile b { display: block; font-size: 1.5rem; line-height: 1.1; color: var(--c-text); font-variant-numeric: tabular-nums; }
+.lot-tile span { font-size: 0.78rem; color: var(--c-text-muted); }
+.lot-result { overflow-x: auto; }
+.lot-result table { border-collapse: collapse; font-size: 0.88rem; min-width: 320px; }
+.lot-result th, .lot-result td { padding: 6px 14px 6px 0; text-align: left; border-bottom: 1px solid var(--c-border); }
+.lot-result thead th { color: var(--c-text); font-weight: 700; }
+.lot-result tbody th { color: var(--c-text-muted); font-weight: 400; }
+.lot-result td { color: var(--c-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.lot-result td span { color: var(--c-text-faint); font-weight: 400; font-size: 0.78rem; }
+.lot-result-total th, .lot-result-total td { border-bottom: none; color: var(--c-success); }
+.lot-warn { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; font-size: 0.84rem; color: var(--c-text);
+  background-color: color-mix(in srgb, var(--c-accent) 12%, transparent); }
+@media (max-width: 599px) {
+  .lot-row { grid-template-columns: 28px minmax(0, 1fr); }
+  .lot-row-out { grid-column: 2; text-align: left; }
+}

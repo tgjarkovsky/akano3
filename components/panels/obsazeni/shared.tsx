@@ -3,11 +3,33 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useGame } from "@/lib/game-context"
 import { adminFetch, getOrganizer } from "@/lib/admin-client"
+import { buildCharacters, buildTeams, type CharStateRow, type CircleMemberRow, type TeamUnitRow } from "@/lib/run-state"
+import type { Character, Team } from "@/lib/types"
 
-// Společné kousky obsazení běhu: ukládání, segmentový přepínač, nadpis sekce.
+// Společné kousky obsazení běhu: stav vybraného běhu, ukládání, role, segmentový
+// přepínač, nadpis sekce. Obsazení pracuje s během vybraným nahoře (ne nutně aktivním).
 
-/** Uloží akci obsazení a hned načte stav hry. `pending` drží klíč právě ukládané změny. */
-export function useSetupSave() {
+/** Rozvržení vybraného běhu: postavy (specializace, původ, kruhy, jednotka) a týmy. */
+export function useRunState(runId: number | null) {
+  const [state, setState] = useState<{ runId: number; characters: Character[]; teams: Team[] } | null>(null)
+  const reload = useCallback(async () => {
+    if (runId === null) return
+    try {
+      const res = await adminFetch(`/api/priprava/run-state?run=${runId}`)
+      if (!res.ok) return
+      const d = await res.json() as { runId: number; charState: CharStateRow[]; circleMembers: CircleMemberRow[]; teamUnits: TeamUnitRow[] }
+      const characters = buildCharacters(d.charState, [], d.circleMembers, d.teamUnits)
+      setState({ runId: d.runId, characters, teams: buildTeams(characters, d.teamUnits) })
+    } catch { /* bez sítě zůstane poslední stav */ }
+  }, [runId])
+  useEffect(() => { void reload() }, [reload])
+  // Dokud se nový běh nenačte, neukazuj starý.
+  const current = state && state.runId === runId ? state : null
+  return { characters: current?.characters ?? null, teams: current?.teams ?? null, reload }
+}
+
+/** Uloží akci obsazení v běhu a pak zavolá onSaved (načtení stavu). `pending` drží klíč právě ukládané změny. */
+export function useSetupSave(runId: number | null, onSaved: () => Promise<void>) {
   const { addToast, refreshGameState } = useGame()
   const [pending, setPending] = useState<string | null>(null)
 
@@ -17,7 +39,7 @@ export function useSetupSave() {
       const res = await adminFetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, runId }),
       })
       if (!res.ok) {
         addToast(
@@ -28,7 +50,7 @@ export function useSetupSave() {
         )
         return false
       }
-      await refreshGameState()
+      await Promise.all([onSaved(), refreshGameState()])
       return true
     } catch {
       addToast("Chyba sítě, změna se neuložila", "error")
@@ -36,7 +58,7 @@ export function useSetupSave() {
     } finally {
       setPending(null)
     }
-  }, [addToast, refreshGameState])
+  }, [addToast, refreshGameState, runId, onSaved])
 
   return { save, pending }
 }
@@ -44,22 +66,23 @@ export function useSetupSave() {
 type HolderRow = { characterId: string; roleId: string; fixed: boolean }
 
 /**
- * Role jednotek v aktivním běhu (lib/role-holders.ts): kdo drží kterou roli.
+ * Role jednotek v běhu (lib/role-holders.ts): kdo drží kterou roli.
  * `held` je id postavy → id role, `fixed` postavy s pevnou rolí z Pravidel.
  * Po přesunu týmu nebo změně běhu zavolej reload.
  */
-export function useRoleHolders() {
-  const { addToast, activeRunId } = useGame()
+export function useRoleHolders(runId: number | null) {
+  const { addToast } = useGame()
   const [rows, setRows] = useState<HolderRow[]>([])
   const [pending, setPending] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     try {
-      const res = await adminFetch("/api/priprava/role-holders")
+      if (runId === null) return
+      const res = await adminFetch(`/api/priprava/role-holders?run=${runId}`)
       if (res.ok) setRows(await res.json())
     } catch { /* bez sítě zůstane poslední stav */ }
-  }, [])
-  useEffect(() => { void reload() }, [reload, activeRunId])
+  }, [runId])
+  useEffect(() => { void reload() }, [reload])
 
   const assign = useCallback(async (characterId: string, roleId: string | null) => {
     setPending(characterId)
@@ -67,7 +90,7 @@ export function useRoleHolders() {
       const res = await adminFetch("/api/priprava/role-holders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ characterId, roleId, by: getOrganizer() }),
+        body: JSON.stringify({ characterId, roleId, runId, by: getOrganizer() }),
       })
       if (!res.ok) { addToast(res.status === 409 || res.status === 400 ? await res.text() : "Roli se nepodařilo uložit", "error"); return }
       setRows(await res.json())
@@ -76,7 +99,7 @@ export function useRoleHolders() {
     } finally {
       setPending(null)
     }
-  }, [addToast])
+  }, [addToast, runId])
 
   const held = useMemo(() => new Map(rows.map(r => [r.characterId, r.roleId])), [rows])
   const fixed = useMemo(() => new Set(rows.filter(r => r.fixed).map(r => r.characterId)), [rows])

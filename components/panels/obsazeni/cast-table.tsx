@@ -12,14 +12,15 @@ import { TeamIcon } from "@/components/shared/team-icon"
 import { SPECIALIZATION_OPTIONS, ORIGIN_OPTIONS } from "@/lib/setup-options"
 import { fitMark, playerName, type CastCharacter } from "@/lib/cast"
 import type { Character } from "@/lib/types"
+import type { LotteryResult } from "@/lib/lottery"
 import { PlayerSelect, fitOf, suggestFor, type CastBoard } from "./cast"
 
-// Záložka Hráči v Obsazení: kdo hraje kterou postavu, losování (lottery-box.tsx),
-// strojový návrh podle přihlášek ke schválení a zveřejnění obsazení hráčům.
+// Záložka Hráči v Obsazení: kdo hraje kterou postavu, strojový návrh podle
+// skupin z losu a přihlášek ke schválení a zveřejnění obsazení hráčům.
 
 type Group = { key: string; teamId?: string; title: string; label: string; characters: Character[] }
 
-export function CastTable({ groups, board, pending, toCast, characterName, uncastMessage, onAssign, onAssignMany, onPublish, runName, lotteryBox, drawn }: {
+export function CastTable({ groups, board, pending, toCast, characterName, uncastMessage, onAssign, onAssignMany, onPublish, runName, lotteryGroups }: {
   groups: Group[]
   board: CastBoard
   pending: string | null
@@ -30,15 +31,14 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
   onAssignMany: (pairs: { characterId: string; prihlaskaId: number }[]) => Promise<boolean>
   onPublish: (published: boolean) => Promise<boolean>
   runName: string
-  /** losování nad tabulkou */
-  lotteryBox?: React.ReactNode
-  /** náhled losu: postava → vylosovaný hráč */
-  drawn?: ReadonlyMap<string, { name: string; via: string }> | null
+  /** skupiny z použitého losu běhu (návrh podle nich), nebo null */
+  lotteryGroups: LotteryResult["selected"] | null
 }) {
   const { addToast } = useGame()
   const [query, setQuery] = useState("")
   const [onlyEmpty, setOnlyEmpty] = useState(false)
   const [proposal, setProposal] = useState<Map<string, number> | null>(null)
+  const [notes, setNotes] = useState<string[]>([])
   const [confirmPublish, setConfirmPublish] = useState(false)
 
   const all = useMemo(() => groups.flatMap(g => g.characters), [groups])
@@ -47,9 +47,13 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
   const accepted = board.candidates.filter(p => p.status === "accepted").length
 
   const propose = () => {
-    const s = suggestFor(board, all.map(toCast))
-    if (s.size === 0) { addToast("Není co navrhnout: volným hráčům žádná volná postava nesedí", "info"); return }
+    const { assign: s, notes } = suggestFor(board, all.map(toCast), lotteryGroups)
+    if (s.size === 0) {
+      addToast(accepted === 0 ? "Na tenhle běh zatím nikdo není přijatý" : "Není co navrhnout: volným hráčům žádná volná postava nesedí", "info")
+      return
+    }
     setProposal(s)
+    setNotes(notes)
     setOnlyEmpty(false)
   }
   const drop = (characterId: string) => setProposal(p => {
@@ -82,9 +86,9 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
   const q = query.trim().toLowerCase()
   const visible = (c: Character) => {
     const p = playerOf.get(c.id)
-    if (onlyEmpty && (p || proposal?.has(c.id) || drawn?.has(c.id))) return false
+    if (onlyEmpty && (p || proposal?.has(c.id))) return false
     if (!q) return true
-    const who = (p ? playerName(p.data) : drawn?.get(c.id)?.name ?? "").toLowerCase()
+    const who = (p ? playerName(p.data) : "").toLowerCase()
     return c.name.toLowerCase().includes(q) || who.includes(q)
   }
 
@@ -113,7 +117,7 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
           {uncastMessage && <span style={{ display: "block", color: "var(--c-accent)" }}>{uncastMessage}</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {!proposal && !drawn && (
+          {!proposal && (
             <button style={btn} onClick={propose} title="Doplní volné postavy volnými přijatými hráči podle jejich voleb v přihlášce">
               <IconSparkles size={14} /> Navrhnout obsazení
             </button>
@@ -123,8 +127,6 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
             : <button style={btn} disabled={pending === "publish" || playerOf.size === 0 || !!proposal} onClick={() => setConfirmPublish(true)}><IconEye size={14} /> Zveřejnit obsazení</button>}
         </div>
       </div>
-
-      {lotteryBox}
 
       {proposal && proposalStats && (
         <div className="cast-proposal" role="status">
@@ -136,8 +138,10 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
               {proposalStats.left > 0 && <> · bez postavy by zůstalo {proposalStats.left} hráčů</>}
             </span>
             <span style={{ display: "block", fontSize: "0.78rem", color: "var(--c-text-faint)" }}>
+              {lotteryGroups ? "Podle skupin z losu: Nakamura, trojice do týmů podle jejich výběru, pak dospělí a jednotlivci podle preferencí. " : ""}
               Ručně obsazené postavy návrh nemění. Odmítnuté postavy a jiný rod nenavrhuje. Jednotlivé návrhy jde vyškrtnout.
             </span>
+            {notes.map((n, i) => <span key={i} style={{ display: "block", color: "var(--c-accent)" }}>⚠ {n}</span>)}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button style={primary} disabled={pending === "suggest"} onClick={approve}>
@@ -180,22 +184,14 @@ export function CastTable({ groups, board, pending, toCast, characterName, uncas
                 const proposed = proposal?.get(c.id)
                 const pp = proposed !== undefined ? byId.get(proposed) : undefined
                 const ppFit = pp && fitOf(pp, cc)
-                const lot = drawn?.get(c.id)
                 return (
-                  <div key={c.id} id={`postava-${c.id}`} className="cast-row" role="row" data-proposed={pp || lot ? "true" : undefined}>
+                  <div key={c.id} id={`postava-${c.id}`} className="cast-row" role="row" data-proposed={pp ? "true" : undefined}>
                     <span role="cell" style={{ minWidth: 0 }}>
                       <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{c.name}</span>
                       <span className="cast-meta">{characterMeta(c)}</span>
                     </span>
                     <span role="cell" style={{ minWidth: 0 }}>
-                      {lot ? (
-                        <span className="cast-proposed">
-                          <span style={{ minWidth: 0 }}>
-                            <span style={{ fontSize: "0.7rem", letterSpacing: "0.06em", color: "var(--c-accent)", display: "block" }}>LOS · {lot.via}</span>
-                            {lot.name}
-                          </span>
-                        </span>
-                      ) : pp && ppFit ? (
+                      {pp && ppFit ? (
                         <span className="cast-proposed">
                           <span style={{ minWidth: 0 }}>
                             <span style={{ fontSize: "0.7rem", letterSpacing: "0.06em", color: "var(--c-accent)", display: "block" }}>NÁVRH</span>

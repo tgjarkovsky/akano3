@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db"
 import { getActiveRunId } from "@/lib/runs"
+import { requestedRunId, unknownRun } from "@/lib/run-param"
 import { CHARACTERS, CIRCLES, TEAMS, UNITS } from "@/lib/data"
 import { validateConfigBody } from "@/lib/request-validation"
 import { parsePoolRefill } from "@/lib/peer-pool"
@@ -17,7 +18,8 @@ import { getTeamName, getCharName } from "@/lib/utils"
 
 // Obsazení běhu (jednotky, kruhy, specializace, původ) jen z Přípravy s heslem.
 // Tým je vždy v jedné jednotce (placeTeam), postava vždy v jednom kruhu (setCharacterCircle).
-// Doplnění poolu darů volá Velín během hry.
+// Doplnění poolu darů volá Velín během hry (vždy aktivní běh); akce obsazení berou
+// runId z těla (Příprava upravuje kterýkoli běh), bez něj aktivní běh.
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +42,8 @@ export async function POST(req: Request) {
       | { action: "setCharacterCircle"; characterId: string; circleId: string }
       | { action: "refillPeerPool"; amount: number; mode: string }
 
-    const runId = await getActiveRunId()
+    const runId = body.action === "refillPeerPool" ? await getActiveRunId() : await requestedRunId((raw as { runId?: unknown }).runId)
+    if (runId === null) return unknownRun()
     await ensureSetupColumns()
 
     // Pravidla obsazení (Příprava → Pravidla): hodnotu mimo povolené odmítni s vysvětlením.

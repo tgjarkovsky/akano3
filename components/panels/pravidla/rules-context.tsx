@@ -17,7 +17,8 @@ type RulesCtx = {
   loaded: boolean
   pending: string | null
   saveRule: (subjectType: RuleSubject, subjectId: string, property: RuleProperty, allowed: string[] | null) => Promise<boolean>
-  applyFixed: () => Promise<void>
+  /** doplní pevné hodnoty v běhu (bez runId v aktivním); onDone se zavolá po uložení */
+  applyFixed: (runId?: number | null, onDone?: () => void | Promise<void>) => Promise<void>
 }
 
 const Ctx = createContext<RulesCtx | null>(null)
@@ -62,13 +63,15 @@ export function RulesProvider({ children }: { children: React.ReactNode }) {
     }
   }, [addToast])
 
-  const applyFixed = useCallback(async () => {
+  const applyFixed = useCallback(async (runId?: number | null, onDone?: () => void | Promise<void>) => {
     setPending("apply-fixed")
     try {
-      const res = await adminFetch("/api/priprava/rules/apply-fixed", { method: "POST" })
+      const res = await adminFetch("/api/priprava/rules/apply-fixed", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: runId ?? null }),
+      })
       if (!res.ok) { addToast("Pevné hodnoty se nepodařilo doplnit", "error"); return }
       const { applied } = await res.json() as { applied: number }
-      await refreshGameState()
+      await Promise.all([refreshGameState(), onDone?.()])
       addToast(applied === 0 ? "Všechny pevné hodnoty už sedí" : `Doplněno ${applied} pevných hodnot`)
     } catch {
       addToast("Chyba sítě", "error")

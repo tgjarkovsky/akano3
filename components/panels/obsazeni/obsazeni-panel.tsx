@@ -7,7 +7,7 @@ import { getUnitName, getTeamName } from "@/lib/utils"
 import { computeUnitSlots } from "@/lib/unit-slots"
 import { checkAssignment, charactersWithIssues } from "@/lib/assignment-checks"
 import type { Specialization, Origin, Triplet } from "@/lib/types"
-import { useSetupSave, useRoleHolders } from "./shared"
+import { useSetupSave, useRoleHolders, useRunState } from "./shared"
 import { useRules } from "@/components/panels/pravidla/rules-context"
 import { pendingFixedValues } from "@/lib/assignment-rules"
 import { ruleOptionsFor } from "@/lib/rule-options"
@@ -17,33 +17,52 @@ import { CharacterTable } from "./character-table"
 import { ChecksPanel } from "./checks-panel"
 import { useCast, castCharacter, fitOf } from "./cast"
 import { CastTable } from "./cast-table"
-import { LotteryBox, useLottery, VIA_LABEL } from "./lottery-box"
-import type { RunChoice } from "@/lib/prihlaska"
+import { LotteryTab, useLottery } from "./lottery-tab"
+import type { LotteryRuns } from "@/lib/lottery-store"
 import { checkCast, playerName } from "@/lib/cast"
 import type { Character } from "@/lib/types"
 
-// Běhy a obsazení v Přípravě, dvě záložky:
+// Běhy a obsazení v Přípravě, tři záložky:
 // Postavy = nástěnka jednotek a tabulka specializací, původů a kruhů (/api/config),
-// Hráči = kdo hraje kterou postavu, návrh podle přihlášek a zveřejnění (/api/priprava/cast).
-// Kontroly vpravo patří k otevřené záložce. Vše platí pro aktivní běh.
+// Los = kdo jede a v jaké skupině, po fázích (/api/priprava/losovani),
+// Hráči = kdo hraje kterou postavu, návrh podle losu a přihlášek a zveřejnění (/api/priprava/cast).
+// Kontroly vpravo patří k otevřené záložce. Postavy a Hráči platí pro běh vybraný
+// nahoře (RunBar), nezávisle na aktivním běhu: obsazuje se dávno před hraním.
 
-type Tab = "characters" | "players"
+type Tab = "characters" | "lottery" | "players"
+const TABS: readonly Tab[] = ["characters", "lottery", "players"]
 const TAB_KEY = "akano_obsazeni_tab"
+const RUN_KEY = "akano_obsazeni_run"
 
 export function ObsazeniPanel() {
-  const { teams, characters, runs, activeRunId } = useGame()
+  const { runs, activeRunId } = useGame()
   const [tab, setTab] = useState<Tab>("characters")
+  const [picked, setPicked] = useState<number | null>(null)
   useEffect(() => {
-    try { if (localStorage.getItem(TAB_KEY) === "players") setTab("players") } catch { /* bez úložiště zůstane výchozí */ }
+    try {
+      const saved = localStorage.getItem(TAB_KEY) as Tab | null
+      if (saved && TABS.includes(saved)) setTab(saved)
+      const run = Number(localStorage.getItem(RUN_KEY))
+      if (run > 0) setPicked(run)
+    } catch { /* bez úložiště zůstane výchozí */ }
   }, [])
   const pickTab = (t: Tab) => {
     setTab(t)
     try { localStorage.setItem(TAB_KEY, t) } catch { /* nevadí */ }
   }
-  const { save, pending } = useSetupSave()
+  const pickRun = (id: number) => {
+    setPicked(id)
+    try { localStorage.setItem(RUN_KEY, String(id)) } catch { /* nevadí */ }
+  }
+  // Vybraný běh; bez volby aktivní, bez aktivního poslední založený.
+  const runId = (picked !== null && runs.some(r => r.id === picked) ? picked : null) ?? activeRunId ?? runs.at(-1)?.id ?? null
+  const runState = useRunState(runId)
+  const characters = useMemo(() => runState.characters ?? [], [runState.characters])
+  const teams = useMemo(() => runState.teams ?? [], [runState.teams])
+  const { save, pending } = useSetupSave(runId, runState.reload)
   const { index: rules, roles, pending: rulesPending, applyFixed } = useRules()
-  const holders = useRoleHolders()
-  const cast = useCast()
+  const holders = useRoleHolders(runId)
+  const cast = useCast(runId)
   const lottery = useLottery()
 
   const players = useMemo(
@@ -133,8 +152,8 @@ export function ObsazeniPanel() {
   }, [slots, unplacedTeamIds, players, adults])
 
   // Postavy pro losování, jak je vidí shoda s hráčem (stejné jako výběr hráče).
-  const drawLottery = (choice: RunChoice) => lottery.draw(
-    choice,
+  const drawLottery = (map: LotteryRuns) => lottery.draw(
+    map,
     adults.map(c => ({ ...toCast(c), name: c.name })),
     players.map(c => ({ ...toCast(c), name: c.name })),
   )
@@ -143,12 +162,20 @@ export function ObsazeniPanel() {
     if (ok) await cast.reload()
     return ok
   }
-  const drawn = useMemo(() => {
+  const revertLottery = async (id: number) => {
+    const ok = await lottery.revert(id)
+    if (ok) await cast.reload()
+    return ok
+  }
+  // Skupiny z použitého losu pro vybraný běh (návrh obsazení podle nich).
+  const lotteryGroups = useMemo(() => {
     const l = lottery.lottery
-    if (!l || l.appliedAt) return null
-    return new Map(l.result.cast.map(c => [c.characterId, { name: l.people[c.prihlaskaId]?.name ?? `#${c.prihlaskaId}`, via: VIA_LABEL[c.via] }]))
-  }, [lottery.lottery])
-  const runName = runs.find(r => r.id === activeRunId)?.name ?? ""
+    if (!l?.appliedAt) return null
+    const mine = l.result.selected.filter(s => l.runs[s.term] === runId)
+    return mine.length ? mine : null
+  }, [lottery.lottery, runId])
+  const runName = runs.find(r => r.id === runId)?.name ?? ""
+  const goCast = (id: number) => { pickRun(id); pickTab("players") }
 
   const structureIssues = issues.length
   const castIssues = castCheck?.issues ?? []
@@ -160,12 +187,15 @@ export function ObsazeniPanel() {
 
   return (
     <div>
-      <RunBar />
+      <RunBar runId={runId} onRunChange={pickRun} />
       <div role="tablist" aria-label="Části obsazení" className="obsazeni-tabs">
         {tabBtn("characters", <>Postavy {structureIssues > 0 && <span className="obsazeni-tab-badge">{structureIssues}</span>}</>)}
+        {tabBtn("lottery", <>Los {lottery.lottery && <span className="obsazeni-tab-count">{lottery.lottery.appliedAt ? "použitý" : "náhled"}</span>}</>)}
         {tabBtn("players", <>Hráči <span className="obsazeni-tab-count">{cast.playerOf.size}/{players.length + adults.length}</span></>)}
       </div>
-      {tab === "characters" ? (
+      {tab === "characters" && !runState.characters ? (
+        <p style={{ color: "var(--c-text-muted)", fontSize: "0.9rem" }}>Načítám běh…</p>
+      ) : tab === "characters" ? (
         <>
           <div className="obsazeni-checks-narrow"><ChecksPanel issues={issues} compact /></div>
           <div className="obsazeni-grid">
@@ -176,11 +206,14 @@ export function ObsazeniPanel() {
               <CharacterTable slots={slots} unplacedTeamIds={unplacedTeamIds} players={players}
                 withIssues={withIssues} pending={pending}
                 onSpec={setSpec} onOrigin={setOrigin} onCircle={setCircle}
-                rules={rules} roles={roles} held={holders.held} fixedPending={fixedPending} applyingFixed={rulesPending === "apply-fixed"} onApplyFixed={applyFixed} />
+                rules={rules} roles={roles} held={holders.held} fixedPending={fixedPending} applyingFixed={rulesPending === "apply-fixed"} onApplyFixed={() => applyFixed(runId, runState.reload)} />
             </div>
             <aside className="obsazeni-aside"><ChecksPanel issues={issues} /></aside>
           </div>
         </>
+      ) : tab === "lottery" ? (
+        <LotteryTab lottery={lottery.lottery} busy={lottery.busy} runs={runs} defaultRunId={runId}
+          onDraw={drawLottery} onApply={applyLottery} onRevert={revertLottery} onGoCast={goCast} />
       ) : !cast.board ? (
         <p style={{ color: "var(--c-text-muted)", fontSize: "0.9rem" }}>Načítám hráče…</p>
       ) : (
@@ -191,9 +224,7 @@ export function ObsazeniPanel() {
               <CastTable groups={castGroups} board={cast.board} pending={cast.pending} toCast={toCast}
                 characterName={characterName} uncastMessage={castCheck?.uncastMessage ?? null}
                 onAssign={cast.assign} onAssignMany={cast.assignMany} onPublish={cast.publish} runName={runName}
-                drawn={cast.playerOf.size === 0 ? drawn : null}
-                lotteryBox={<LotteryBox lottery={lottery.lottery} busy={lottery.busy} runName={runName}
-                  castCount={cast.playerOf.size} onDraw={drawLottery} onApply={applyLottery} />} />
+                lotteryGroups={lotteryGroups} />
             </div>
             <aside className="obsazeni-aside"><ChecksPanel issues={castIssues} /></aside>
           </div>

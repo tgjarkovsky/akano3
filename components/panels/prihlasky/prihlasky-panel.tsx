@@ -100,9 +100,11 @@ export function PrihlaskyPanel() {
     await postGroups({ link: [ids] })
   }
 
-  const setStatus = async (r: Row, status: CastStatus, runId: number | null) => {
-    const next = { status, runId: statusNeedsRun(status) ? runId ?? activeRunId : null }
-    if (statusNeedsRun(status) && next.runId === null) { addToast("Nejdřív založ běh.", "error"); return }
+  /** runId undefined = aktivní běh; náhradník s null je náhradník pro oba běhy. */
+  const setStatus = async (r: Row, status: CastStatus, runId: number | null | undefined) => {
+    const run = runId === null && status === "substitute" ? null : runId ?? activeRunId
+    const next = { status, runId: statusNeedsRun(status) ? run : null }
+    if (status === "accepted" && next.runId === null) { addToast("Nejdřív založ běh.", "error"); return }
     setBusy(r.id)
     try {
       const res = await adminFetch(`/api/priprava/prihlasky/${r.id}`, {
@@ -252,13 +254,15 @@ export function PrihlaskyPanel() {
                       <td>
                         <span style={{ display: "inline-flex", gap: 6, whiteSpace: "nowrap" }}>
                           <select className="circle-select" style={{ width: "auto" }} value={r.status} disabled={busy === r.id} aria-label={`Stav ${d.firstName} ${d.lastName}`}
-                            onChange={e => setStatus(r, e.target.value as CastStatus, r.runId)}>
+                            onChange={e => setStatus(r, e.target.value as CastStatus, r.runId ?? undefined)}>
                             {CAST_STATUSES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </select>
                           {statusNeedsRun(r.status) && (
                             <select className="circle-select" style={{ width: "auto" }} value={r.runId ?? ""} disabled={busy === r.id} aria-label={`Běh ${d.firstName} ${d.lastName}`}
-                              onChange={e => setStatus(r, r.status, Number(e.target.value))}>
-                              {r.runId === null && <option value="" disabled>Vybrat běh…</option>}
+                              onChange={e => setStatus(r, r.status, e.target.value ? Number(e.target.value) : null)}>
+                              {r.status === "substitute"
+                                ? <option value="">Oba běhy</option>
+                                : r.runId === null && <option value="" disabled>Vybrat běh…</option>}
                               {runs.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
                             </select>
                           )}
