@@ -93,7 +93,7 @@ export function LoginScreen() {
               </p>
               <Separator style={{ margin:"8px 0" }} />
               <p style={{ color:"rgba(244,236,223,0.6)", fontSize:"0.8rem", margin:0 }}>Chceš hrát na dalším běhu?</p>
-              <a href="/prihlaska" className={buttonVariants({ variant: "outline" })} style={{ width:"100%" }}>Přihláška na hru</a>
+              <a href="/prihlaska" className={buttonVariants()} style={{ width:"100%" }}>Přihláška na hru</a>
             </div>
           ) : (<>
           <h2 className="ds-label" style={{ color:"var(--c-text)", fontSize:"1.15rem", marginBottom:6, textAlign:"center" }}>
