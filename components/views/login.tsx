@@ -1,15 +1,33 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { IconUser, IconCircleX } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
+import { IconUser, IconCircleX, IconPlayerPause } from "@tabler/icons-react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useGame } from "@/lib/game-context"
+import { NO_ACTIVE_RUN } from "@/lib/run-status"
+
+/** Hraje se? null = ještě nevíme. Při chybě sítě přihlášení nezamykáme, hru hlídá i server. */
+function usePlaying(): boolean | null {
+  const [playing, setPlaying] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const check = () => fetch("/api/runs")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((runs: { is_active: boolean }[]) => { if (!cancelled) setPlaying(runs.some(r => r.is_active)) })
+      .catch(() => { if (!cancelled) setPlaying(p => p ?? true) })
+    check()
+    // Až organizátoři spustí běh, otevře se přihlášení samo.
+    const t = setInterval(check, 10000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [])
+  return playing
+}
 
 export function LoginScreen() {
   const { login } = useGame()
@@ -17,6 +35,7 @@ export function LoginScreen() {
   const [code,    setCode]    = useState("")
   const [error,   setError]   = useState("")
   const [loading, setLoading] = useState(false)
+  const playing = usePlaying()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +82,20 @@ export function LoginScreen() {
           border:"2px solid var(--c-border-mid)", borderRadius:"var(--radius)",
           padding:32, boxShadow:"var(--shadow-print-lg)",
         }}>
+          {playing === null ? (
+            <p style={{ color:"var(--c-text-muted)", fontSize:"0.85rem", textAlign:"center", margin:0 }}>Načítám…</p>
+          ) : !playing ? (
+            <div role="status" style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12, textAlign:"center" }}>
+              <IconPlayerPause size={36} color="var(--c-text-muted)" aria-hidden />
+              <h2 className="ds-label" style={{ color:"var(--c-text)", fontSize:"1.15rem", margin:0 }}>{NO_ACTIVE_RUN}</h2>
+              <p style={{ color:"var(--c-text-muted)", fontSize:"0.85rem", lineHeight:1.5, margin:0 }}>
+                Přihlášení kódem postavy se otevře, až organizátoři spustí běh.
+              </p>
+              <Separator style={{ margin:"8px 0" }} />
+              <p style={{ color:"rgba(244,236,223,0.6)", fontSize:"0.8rem", margin:0 }}>Chceš hrát na dalším běhu?</p>
+              <a href="/prihlaska" className={buttonVariants({ variant: "outline" })} style={{ width:"100%" }}>Přihláška na hru</a>
+            </div>
+          ) : (<>
           <h2 className="ds-label" style={{ color:"var(--c-text)", fontSize:"1.15rem", marginBottom:6, textAlign:"center" }}>
             Přihlášení
           </h2>
@@ -134,6 +167,7 @@ export function LoginScreen() {
               ))}
             </div>
           </div>
+          </>)}
         </div>
       </div>
     </div>

@@ -15,11 +15,13 @@ import { ToastContainer } from "@/components/shared/toast"
 import { TopBar } from "@/components/shared/top-bar"
 import { ThemeProvider } from "@/lib/theme-context"
 import { ErrorBoundary } from "@/components/shared/error-boundary"
-import { NoActiveRun } from "@/components/shared/no-active-run"
 
 function CharacterRouter() {
-  const { currentUser, noActiveRun } = useGame()
+  const { currentUser, noActiveRun, logout } = useGame()
   const router = useRouter()
+
+  // Hraní skončilo (žádný aktivní běh): odhlásit, úvodní obrazovka ukáže „nehraje se“.
+  useEffect(() => { if (noActiveRun) logout() }, [noActiveRun, logout])
 
   useEffect(() => {
     if (currentUser === null) {
@@ -56,9 +58,7 @@ function CharacterRouter() {
   }, [themeClass])
 
   if (!currentUser) return null
-  // Mimo hraní (žádný aktivní běh) se nehraje: projekce, Velín i hráči jen ukážou stav.
-  // Knihovna na běhu nezávisí, jede dál.
-  if (role === "display") return noActiveRun ? <NoActiveRun fullscreen /> : <DisplayScreen />
+  if (role === "display") return <DisplayScreen />
   if (role === "library") {
     return (
       <div style={{ minHeight:"100vh", backgroundColor:"var(--c-bg)", color:"var(--c-text)" }}>
@@ -69,14 +69,9 @@ function CharacterRouter() {
 
   return (
     <div className={themeClass} style={{ minHeight:"100vh", backgroundColor:"var(--c-bg)", color:"var(--c-text)" }}>
-      {!noActiveRun && <AlarmBannerStrip />}
-      <TopBar showBroadcast={!noActiveRun && ["gm","teacher","ruze"].includes(role ?? "")} ruzeHidden={ruzeHidden} />
-      {noActiveRun ? (
-        <>
-          <NoActiveRun forGm={role === "gm"} />
-          <ToastContainer />
-        </>
-      ) : role === "student" || role === "ruze" ? (
+      <AlarmBannerStrip />
+      <TopBar showBroadcast={["gm","teacher","ruze"].includes(role ?? "")} ruzeHidden={ruzeHidden} />
+      {role === "student" || role === "ruze" ? (
         <>
           {role === "student"
             ? <StudentDashboard />
