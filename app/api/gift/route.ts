@@ -1,7 +1,8 @@
 import { sql } from "@/lib/db"
 import { CHARACTERS } from "@/lib/data"
 import { validateGift } from "@/lib/gift-validation"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +13,8 @@ export async function POST(req: Request) {
     const from = CHARACTERS.find(c => c.id === fromId)!
     const to   = CHARACTERS.find(c => c.id === toId)!
 
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
+    if (runId === null) return noActiveRun()
     const id = `PE${crypto.randomUUID()}`
 
     // Atomická operace: odečti pool + přidej body příjemci + zapiš log v jedné transakci

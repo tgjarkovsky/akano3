@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db"
 import { ALARM_COLORS } from "@/lib/constants"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 import { parseAlarmBody } from "@/lib/alarm-validation"
 
 export async function POST(req: Request) {
@@ -8,7 +9,8 @@ export async function POST(req: Request) {
     const parsed = parseAlarmBody(await req.json())
     if (!parsed.ok) return new Response(parsed.error, { status: 400 })
     const cmd = parsed.value
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
+    if (runId === null) return noActiveRun()
 
     if (cmd.action === "dismiss") {
       await sql`UPDATE alarm_state SET active = false, updated_at = NOW() WHERE run_id = ${runId}`

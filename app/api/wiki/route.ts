@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
 import { requireAdmin } from "@/lib/admin-password"
 import { gateLinks, type RawLink } from "@/lib/wiki-links"
 import { validateWikiArticleInput } from "@/lib/wiki-validation"
@@ -42,8 +42,9 @@ export async function GET(req: Request) {
     if (kaichiParam !== null) {
       kaichiLevel = Math.max(0, Math.min(8, Number(kaichiParam) || 0))
     } else {
-      const runId = await getActiveRunId()
-      const [state] = await sql`
+      // Mimo hraní (žádný aktivní běh) vidí postava jen veřejné články (kaichi 0).
+      const runId = await findActiveRunId()
+      const [state] = runId === null ? [] : await sql`
         SELECT kaichi_level FROM character_state
         WHERE character_id = ${characterId} AND run_id = ${runId}
       `

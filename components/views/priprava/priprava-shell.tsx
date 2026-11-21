@@ -105,7 +105,7 @@ export function PripravaShell({ organizer, onChangeOrganizer, onLogout }: {
               <React.Fragment key={value}>
               {heading && (
                 <p className="priprava-nav-group" style={{ color }}>
-                  {group === "larp" ? "Larp" : <>Běhy{activeRun && <span style={{ color: "var(--c-text-faint)" }}> · {activeRun.name}</span>}</>}
+                  {group === "larp" ? "Larp" : <>Běhy<span style={{ color: "var(--c-text-faint)" }}> · {activeRun ? `hraje se ${activeRun.name}` : "nehraje se"}</span></>}
                 </p>
               )}
               <button onClick={() => go(value)} aria-current={active ? "page" : undefined}
@@ -174,7 +174,7 @@ function Overview({ onGo }: { onGo: (s: Section) => void }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 900 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-        <Stat label="Aktivní běh" value={activeRun?.name ?? "—"} note={activeRun ? `#${activeRun.id} · ${runs.length} běhů celkem` : "Žádný běh není aktivní"} />
+        <Stat label="Aktivní běh" value={activeRun?.name ?? "—"} note={activeRun ? `#${activeRun.id} · ${runs.length} běhů celkem` : `Teď se nehraje · ${runs.length} běhů celkem`} />
         <Stat label="Postavy hráčů" value={String(players)} note={`${teams.length} týmů`} />
         <Stat label="Články knihovny"
           value={articleCount === null ? "…" : articleCount === "error" ? "—" : String(articleCount)}

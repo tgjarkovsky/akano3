@@ -2,7 +2,8 @@ import { sql } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin-password"
 import { TEAMS } from "@/lib/data"
 import { teamMemberIds, splitPointsWeighted } from "@/lib/utils"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +15,8 @@ export async function POST(req: Request) {
   if (denied) return denied
 
   try {
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
+    if (runId === null) return noActiveRun()
 
     const teamRows = await sql`
       SELECT team_id, points FROM team_points WHERE run_id = ${runId}

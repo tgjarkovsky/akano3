@@ -9,6 +9,7 @@ import { teamDeltaOf } from "./point-resolution"
 import type { PoolRefillMode } from "./peer-pool"
 import { adminHeaders } from "./admin-client"
 import { buildCharacters, buildTeams, type CharStateRow, type CircleMemberRow, type TeamUnitRow } from "./run-state"
+import { NO_ACTIVE_RUN } from "./run-status"
 
 
 // V Přípravě s sebou nese heslo, aby prošly akce obsazení a běhů.
@@ -45,8 +46,12 @@ export interface GameCtx {
   /** Načte stav hry hned, bez čekání na další dvousekundový poll. */
   refreshGameState: () => Promise<void>
   activeRunId:   number | null
+  /** Stav hry už je načtený a žádný běh není aktivní: teď se nehraje. */
+  noActiveRun:   boolean
   runs:          RunSummary[]
   setActiveRun:  (runId: number) => Promise<void>
+  /** Ukončí hraní: žádný běh není aktivní, data běhů zůstanou. */
+  deactivateRun: () => Promise<void>
   createRun:     (name: string, startsOn: string, endsOn: string) => Promise<boolean>
   setRunDates:   (runId: number, startsOn: string, endsOn: string) => Promise<boolean>
 }
@@ -57,6 +62,13 @@ export function useGame() {
   const ctx = useContext(GameContext)
   if (!ctx) throw new Error("useGame must be inside GameProvider")
   return ctx
+}
+
+/** Hláška „Teď se nehraje žádný běh“, když server zápis odmítl, protože se nehraje. */
+async function noRunMessage(res: Response): Promise<string | null> {
+  if (res.status !== 409) return null
+  const text = await res.clone().text().catch(() => "")
+  return text === NO_ACTIVE_RUN ? NO_ACTIVE_RUN : null
 }
 
 function parsePointLog(rows: Record<string, unknown>[]): PointEntry[] {
@@ -109,6 +121,7 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
   })
   const [activeRunId,     setActiveRunId]     = useState<number | null>(null)
   const [runs,            setRuns]            = useState<RunSummary[]>([])
+  const [stateLoaded,     setStateLoaded]     = useState(false)
 
   const pollingRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const offlineRef  = useRef(false)
@@ -125,7 +138,8 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     const qr      = data.qrCodes as Record<string, unknown>[]
     const runsRaw = data.runs as { id: number; name: string; is_active: boolean; created_at: string; starts_on: string | null; ends_on: string | null }[]
 
-    setActiveRunId(data.activeRunId as number ?? null)
+    setActiveRunId((data.activeRunId as number | null) ?? null)
+    setStateLoaded(true)
     setRuns(runsRaw?.map(r => ({ id: r.id, name: r.name, isActive: r.is_active, createdAt: new Date(r.created_at),
       startsOn: r.starts_on ?? null, endsOn: r.ends_on ?? null })) ?? [])
     setAlarmState({ active: alarm.active as boolean, type: alarm.type as AlarmState["type"], message: alarm.message as string, color: alarm.color as string })
@@ -156,7 +170,7 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
   const callApi = useCallback(async (url: string, body: unknown, errMsg: string, method?: string): Promise<Response | null> => {
     try {
       const res = await sendJson(url, body, method)
-      if (!res.ok) { addToast(errMsg, "error"); return null }
+      if (!res.ok) { addToast(await noRunMessage(res) ?? errMsg, "error"); return null }
       return res
     } catch {
       addToast("Chyba sítě", "error")
@@ -298,7 +312,7 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     if (!lessonWindowActive) return
     try {
       const res = await sendJson("/api/lesson", { action:"claim", characterId: studentId })
-      if (res.status === 409) { addToast("Body za hodinu už byly uplatněny nebo okno vypršelo", "error"); fetchGameState(); return }
+      if (res.status === 409) { addToast(await noRunMessage(res) ?? "Body za hodinu už byly uplatněny nebo okno vypršelo", "error"); fetchGameState(); return }
       if (!res.ok) { addToast("Chyba", "error"); return }
       setCharacters(prev => prev.map(c => c.id === studentId ? { ...c, lessonClaimedThisWindow: true } : c))
       addToast("Body za hodinu přidány!")
@@ -315,6 +329,12 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
   const setActiveRun = useCallback(async (runId: number) => {
     if (!await callApi("/api/runs", { action:"setActive", runId }, "Chyba při přepínání běhu", "PATCH")) return
     addToast("Aktivní běh přepnut")
+    fetchGameState()
+  }, [callApi, addToast, fetchGameState])
+
+  const deactivateRun = useCallback(async () => {
+    if (!await callApi("/api/runs", { action:"deactivate" }, "Chyba při ukončení hraní", "PATCH")) return
+    addToast("Hraní ukončeno, žádný běh není aktivní")
     fetchGameState()
   }, [callApi, addToast, fetchGameState])
 
@@ -339,13 +359,13 @@ export function GameProvider({ children, initialUserId }: { children: React.Reac
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
     toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast,
     refreshGameState: fetchGameState,
-    activeRunId, runs, setActiveRun, createRun, setRunDates,
+    activeRunId, noActiveRun: stateLoaded && activeRunId === null, runs, setActiveRun, deactivateRun, createRun, setRunDates,
   }), [teams, characters, pointLog, alarmState, broadcastActive,
     lessonWindowActive, lessonWindowEnd, qrCodes, toasts, currentUser,
     login, logout, assignPoints, updateKaichi,
     triggerAlarm, dismissAlarm, setBroadcast, generateQR,
     toggleLesson, giftPoints, claimLesson, refillPeerPools, addToast, fetchGameState,
-    activeRunId, runs, setActiveRun, createRun, setRunDates])
+    activeRunId, stateLoaded, runs, setActiveRun, deactivateRun, createRun, setRunDates])
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
 }

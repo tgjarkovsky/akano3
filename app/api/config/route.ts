@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 import { requestedRunId, unknownRun } from "@/lib/run-param"
 import { CHARACTERS, CIRCLES, TEAMS, UNITS } from "@/lib/data"
 import { validateConfigBody } from "@/lib/request-validation"
@@ -42,8 +43,8 @@ export async function POST(req: Request) {
       | { action: "setCharacterCircle"; characterId: string; circleId: string }
       | { action: "refillPeerPool"; amount: number; mode: string }
 
-    const runId = body.action === "refillPeerPool" ? await getActiveRunId() : await requestedRunId((raw as { runId?: unknown }).runId)
-    if (runId === null) return unknownRun()
+    const runId = body.action === "refillPeerPool" ? await findActiveRunId() : await requestedRunId((raw as { runId?: unknown }).runId)
+    if (runId === null) return body.action === "refillPeerPool" ? noActiveRun() : unknownRun()
     await ensureSetupColumns()
 
     // Pravidla obsazení (Příprava → Pravidla): hodnotu mimo povolené odmítni s vysvětlením.

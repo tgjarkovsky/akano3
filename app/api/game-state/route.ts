@@ -1,13 +1,20 @@
 import { sql } from "@/lib/db"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { idleGameState } from "@/lib/run-status"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
     await ensureSetupColumns()
+
+    // Mimo hraní (žádný aktivní běh) jen seznam běhů a výchozí prázdný stav.
+    if (runId === null) {
+      const runs = await sql`SELECT id, name, is_active, created_at, to_char(starts_on, 'YYYY-MM-DD') AS starts_on, to_char(ends_on, 'YYYY-MM-DD') AS ends_on FROM runs ORDER BY id ASC`
+      return Response.json(idleGameState(runs))
+    }
 
     const [alarm, config, characterPoints, charState, circleMembers, teamUnits, pointLog, qrCodes, runs] =
       await Promise.all([

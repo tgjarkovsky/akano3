@@ -1,7 +1,8 @@
 import { sql } from "@/lib/db"
 import { resolveTargetCharacters, teamsOfChars } from "@/lib/utils"
 import { reversalCredits, REVERSAL_PREFIX, type RunMapping } from "@/lib/point-resolution"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 import type { PointEntry } from "@/lib/types"
 
 async function loadRunMapping(targetType: string, runId: number): Promise<RunMapping | undefined> {
@@ -28,7 +29,8 @@ export async function POST(req: Request) {
       return new Response("Ruze may only assign ±5 points to individual students", { status: 400 })
     }
 
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
+    if (runId === null) return noActiveRun()
 
     let resolvedCharacterIds: string[]
     let resolvedTeamIds: string[]

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { IconPlayerPlay, IconPlus, IconDownload, IconChevronDown, IconCalendar, IconCheck, IconX } from "@tabler/icons-react"
+import { IconPlayerPlay, IconPlayerStop, IconPlus, IconDownload, IconChevronDown, IconCalendar, IconCheck, IconX } from "@tabler/icons-react"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -17,7 +17,7 @@ import type { RunSummary } from "@/lib/types"
 // obsazuje se dávno před hraním), nový běh, export, termíny a aktivace běhů.
 
 export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChange: (id: number) => void }) {
-  const { runs, activeRunId, setActiveRun, createRun, setRunDates, characters, teams } = useGame()
+  const { runs, activeRunId, setActiveRun, deactivateRun, createRun, setRunDates, characters, teams } = useGame()
   const [open, setOpen] = useState(false)
   const [newName, setNewName] = useState("")
   const [newStart, setNewStart] = useState("")
@@ -25,6 +25,7 @@ export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChan
   const [editing, setEditing] = useState<{ id: number; start: string; end: string } | null>(null)
   const [creating, setCreating] = useState(false)
   const [confirmRun, setConfirmRun] = useState<RunSummary | null>(null)
+  const [confirmStop, setConfirmStop] = useState<RunSummary | null>(null)
   const active = runs.find(r => r.id === activeRunId)
   const shown = runs.find(r => r.id === runId)
 
@@ -115,7 +116,10 @@ export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChan
                     </button>
                   )}
                   {r.isActive
-                    ? <span style={{ fontSize: "0.75rem", color: "var(--c-success)", fontWeight: 700 }}>aktivní</span>
+                    ? <>
+                        <span style={{ fontSize: "0.75rem", color: "var(--c-success)", fontWeight: 700 }}>aktivní</span>
+                        <button style={btn} onClick={() => setConfirmStop(r)}><IconPlayerStop size={13} /> Ukončit hraní</button>
+                      </>
                     : <button style={btn} onClick={() => setConfirmRun(r)}><IconPlayerPlay size={13} /> Aktivovat</button>}
                 </span>
               </li>
@@ -138,7 +142,7 @@ export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChan
             </button>
           </form>
           <p style={{ fontSize: "0.75rem", color: "var(--c-text-faint)", margin: "8px 0 0", lineHeight: 1.45 }}>
-            Termín od–do je povinný (běh je vždy vícedenní), píše se hráčům do spisu. Nový běh převezme celé obsazení aktivního běhu (jednotky, specializace, původy, kruhy), ne hráče na postavách. Body, kaichi a alarm začínají od nuly.
+            Termín od–do je povinný (běh je vždy vícedenní), píše se hráčům do spisu. Nový běh převezme celé obsazení aktivního běhu, mimo hraní posledního založeného (jednotky, specializace, původy, kruhy), ne hráče na postavách. Body, kaichi a alarm začínají od nuly.
           </p>
         </div>
       )}
@@ -156,6 +160,24 @@ export function RunBar({ runId, onRunChange }: { runId: number | null; onRunChan
             <AlertDialogCancel>Zrušit</AlertDialogCancel>
             <AlertDialogAction onClick={() => { if (confirmRun) setActiveRun(confirmRun.id); setConfirmRun(null) }}>
               Aktivovat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmStop !== null} onOpenChange={o => { if (!o) setConfirmStop(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ukončit hraní {confirmStop?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Velín, hráči i projekce přestanou hrát a ukážou „Teď se nehraje žádný běh“. Body, alarm ani lekce
+              nepůjdou zadávat. Data běhu {confirmStop?.name} zůstanou uložená a běh jde znovu aktivovat.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { deactivateRun(); setConfirmStop(null) }}>
+              Ukončit hraní
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

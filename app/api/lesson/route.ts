@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db"
-import { getActiveRunId } from "@/lib/runs"
+import { findActiveRunId } from "@/lib/runs"
+import { noActiveRun } from "@/lib/run-status"
 import { CHARACTERS } from "@/lib/data"
 import { canClaimLesson, LESSON_POINTS } from "@/lib/lesson-claim"
 import { parseDurationMin, validateLessonBody } from "@/lib/request-validation"
@@ -13,7 +14,8 @@ export async function POST(req: Request) {
       | { action: "toggle"; active: boolean; durationMin?: number }
       | { action: "claim"; characterId: string }
 
-    const runId = await getActiveRunId()
+    const runId = await findActiveRunId()
+    if (runId === null) return noActiveRun()
 
     if (body.action === "toggle") {
       const end = body.active

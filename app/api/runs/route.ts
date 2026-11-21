@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db"
 import { CHARACTERS } from "@/lib/data"
-import { getActiveRunId } from "@/lib/runs"
+import { findTemplateRunId } from "@/lib/runs"
 import { ensureSetupColumns } from "@/lib/setup-schema"
 import { requireAdmin } from "@/lib/admin-password"
 import { isIsoDate } from "@/lib/character-doc"
@@ -27,11 +27,13 @@ export async function POST(req: Request) {
     const dates = checkDates(startsOn, endsOn)
     if (typeof dates === "string") return new Response(dates, { status: 400 })
 
-    const oldRunId = await getActiveRunId()
+    // Rozvržení se přebírá z aktivního běhu, mimo hraní z posledního založeného.
+    // Úplně první běh (žádný předchozí) začíná bez rozvržení.
+    const oldRunId = await findTemplateRunId()
     await ensureSetupColumns()
 
     // Copy team→unit mapping (včetně trojice A/B) from current run
-    const teamUnitRows = await sql`
+    const teamUnitRows = oldRunId === null ? [] : await sql`
       SELECT team_id, unit_id, triplet FROM team_units WHERE run_id = ${oldRunId}
     ` as { team_id: string; unit_id: string; triplet: string | null }[]
 
@@ -42,16 +44,16 @@ export async function POST(req: Request) {
     const newRunId = newRun.id as number
 
     // Obsazení postav (specializace, původ, kruhy) se přebírá jako výchozí bod
-    const prevStateRows = await sql`
+    const prevStateRows = oldRunId === null ? [] : await sql`
       SELECT character_id, specialization, origin FROM character_state WHERE run_id = ${oldRunId}
     ` as { character_id: string; specialization: string | null; origin: string | null }[]
     const prevState = new Map(prevStateRows.map(r => [r.character_id, r]))
-    const circleRows = await sql`
+    const circleRows = oldRunId === null ? [] : await sql`
       SELECT circle_id, character_id FROM circle_members WHERE run_id = ${oldRunId}
     ` as { circle_id: string; character_id: string }[]
 
     // Rozdělení rolí jednotek (lib/role-holders.ts) taky
-    const holderRows = await sql`
+    const holderRows = oldRunId === null ? [] : await sql`
       SELECT role_id, character_id FROM role_holders WHERE run_id = ${oldRunId}
     ` as { role_id: number; character_id: string }[]
 
@@ -101,6 +103,13 @@ export async function PATCH(req: Request) {
     const body = await req.json() as
       | { action: "setActive"; runId: number }
       | { action: "setDates"; runId: number; startsOn?: string; endsOn?: string }
+      | { action: "deactivate" }
+
+    // Konec hraní: žádný běh není aktivní, data běhů zůstávají.
+    if (body.action === "deactivate") {
+      await sql`UPDATE runs SET is_active = FALSE WHERE is_active = TRUE`
+      return new Response(null, { status: 204 })
+    }
     if (body.action !== "setActive" && body.action !== "setDates") return new Response("Bad request", { status: 400 })
 
     const [existing] = await sql`SELECT id FROM runs WHERE id = ${body.runId}`
