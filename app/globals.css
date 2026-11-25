@@ -486,6 +486,19 @@ tr:nth-child(n+41) .mask-blip-rose { animation:none; }
 .alarm-overlay    { animation: alarm-pulse 1.2s ease-in-out infinite; }
 .alarm-flash-text { animation: alarm-flash 0.8s step-end infinite; }
 
+@keyframes score-row-flash {
+  0%   { box-shadow:0 0 0 0 var(--flash-color); filter:brightness(1.8); }
+  100% { box-shadow:0 0 0 0 transparent; filter:brightness(1); }
+}
+@keyframes score-delta-rise {
+  0%   { transform:translateY(8px) scale(.7); opacity:0; }
+  10%  { transform:translateY(0) scale(1.15); opacity:1; }
+  80%  { transform:translateY(-6px) scale(1); opacity:1; }
+  100% { transform:translateY(-14px) scale(1); opacity:0; }
+}
+.score-row-flash   { animation: score-row-flash 1.6s ease-out; }
+.score-delta-float { animation: score-delta-rise 4s ease-out forwards; }
+
 @keyframes slide-in-right {
   from { transform:translateX(100%); opacity:0; }
   to   { transform:translateX(0);   opacity:1; }

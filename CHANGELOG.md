@@ -1,4 +1,5 @@
 ## [2026-11-26] - Přihláška: bez animovaného pozadí (javorové listy, vítr a zlato odstraněny); v úvodu odkaz na web akano.rolling.cz; v kroku Tým upozornění, ať se trojice shodne na běhu
+## [2026-11-25] - Projekce: hráči, kterému se mezi aktualizacemi změnily body, zabliká řádek v barvě týmu a vedle skóre se na 4 s objeví „+N“ (u ztráty „−N“); po otevření projekce neblikají všichni
 
 ## [2026-11-21] - Mimo hraní nemusí být aktivní žádný běh: v Obsazení → Všechny běhy u aktivního běhu „Ukončit hraní“ (s potvrzením, data běhu zůstanou, běh jde znovu aktivovat); bez aktivního běhu úvodní přihlášení kódem postavy nejde použít: ukáže „Teď se nehraje žádný běh“ a odkaz na přihlášku na hru, kdo byl přihlášený, je po ukončení hraní odhlášen na tuto obrazovku; po spuštění běhu se přihlášení samo otevře; herní zápisy (body, alarm, lekce, dary, kaichi, doplnění poolu) bez aktivního běhu odmítnou s 409 „Teď se nehraje žádný běh“, /api/game-state vrátí activeRunId null a výchozí stav; nový běh přebírá rozvržení z aktivního běhu, mimo hraní z posledního založeného; Příprava ukazuje „Běhy · nehraje se“
 
