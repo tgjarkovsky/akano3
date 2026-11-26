@@ -83,8 +83,7 @@ export function PlayerRun({ token, info }: { token: string; info: PlayerRunInfo 
 
   return (
     <section className="pr-sheet pr-run" aria-labelledby="pr-run-title">
-      <div className="pr-kicker"><span>Tvůj běh</span><span>{info.runName}{info.runDate ? ` · ${info.runDate}` : ""}</span></div>
-      <div className="pr-rule2" />
+      <h2 style={{ fontSize: "1.6rem", color: "var(--p-desk)", marginBottom: 16 }}>Tvůj běh: {info.runName}{info.runDate ? `, ${info.runDate}` : ""}</h2>
       <div className="pr-run-grid">
         <div style={{ minWidth: 0 }}>
           <p className="pr-label">Tvoje postava</p>

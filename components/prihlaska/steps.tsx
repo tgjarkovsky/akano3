@@ -13,10 +13,8 @@ import { PrefCard, Motto, usePr } from "./parts"
 
 type StepProps = { draft: Draft; update: (fn: (d: Draft) => Draft) => void }
 
-export function Head({ kicker, title, lead }: { kicker: string; title: string; lead?: React.ReactNode }) {
+export function Head({ title, lead }: { title: string; lead?: React.ReactNode }) {
   return <>
-    <div className="pr-kicker"><span>{kicker}</span></div>
-    <div className="pr-rule2" />
     <h1>{title}</h1>
     {lead && <p className="pr-lead">{lead}</p>}
   </>
@@ -26,8 +24,8 @@ const until = new Date(EDIT_UNTIL).toLocaleDateString("cs-CZ", { day: "numeric",
 
 export function Intro() {
   return <>
-    <Head kicker="22.–25. 7. a 29. 7.–1. 8. 2027" title="Přihláška na Akano3"
-      lead="Přihláška slouží k registraci i k výběru postavy. Medailonky postav, týmů, jednotek a kruhů čteš přímo tady." />
+    <Head title="Přihláška na Akano3"
+      lead="Hrajeme dva běhy: 22.–25. 7. a 29. 7.–1. 8. 2027. Přihláška slouží k registraci i k výběru postavy. Medailonky postav, týmů, jednotek a kruhů čteš přímo tady." />
     <p className="pr-hint">O hře, světě a organizaci se dočteš na webu <a href="https://akano.rolling.cz" target="_blank" rel="noreferrer">akano.rolling.cz</a>.</p>
     <details className="pr-note"><summary>Jak přidělujeme postavy</summary>
       Losujeme 6 lidí na dospělé role a 30 na studentské. Z vylosovaných nejdřív sestavíme kompletní trojice, které se hlásily jako tým (nejvýš 5 týmů). Dvojicím doplníme jejich třetího. Zbytek obsadíme podle preferencí. Nakamuru přednostně dostane člověk se zrakovým postižením, když se jich přihlásí víc, losujeme mezi nimi.
@@ -107,7 +105,7 @@ export function Person({ draft: d, update }: StepProps) {
       onChange={e => { const v = e.target.value; update(x => ({ ...x, [k]: v })) }} />
   )
   return <>
-    <Head kicker="Krok 1" title="Základní údaje" lead={<>Pole s <span className="pr-req">*</span> jsou povinná.</>} />
+    <Head title="Základní údaje" lead={<>Pole s <span className="pr-req">*</span> jsou povinná.</>} />
     <Question title="Kontakt">
       <form className="pr-fields pr-fields-2" autoComplete="on" onSubmit={e => e.preventDefault()}>
         <Field id="pr-firstName" label="Jméno" required>{text("firstName", "given-name")}</Field>
@@ -164,7 +162,7 @@ export function Paths({ draft: d, update }: StepProps) {
   }))
   const next = activeSteps(d).slice(3, -1).map(s => s.label)
   return <>
-    <Head kicker="Krok 2" title="Za co se hlásíš?" lead={<>Zaškrtni aspoň jednu možnost, klidně všechny, které tě lákají. Každá volba přidá do přihlášky vlastní krok.<span className="pr-req"> *</span></>} />
+    <Head title="Za co se hlásíš?" lead={<>Zaškrtni aspoň jednu možnost, klidně všechny, které tě lákají. Každá volba přidá do přihlášky vlastní krok.<span className="pr-req"> *</span></>} />
     <div className="pr-paths">
       {path("student", "Studentská postava, sólo", "Hlásíš se sám za sebe. U každé postavy řekneš, jestli ji chceš hrát.", "30 postav")}
       {path("team", "Studentská postava, jako tým", "Hlásíte se ve třech na celý tým. Každý vyplní vlastní přihlášku a vybere, koho z týmu by hrál.", "10 týmů")}
@@ -186,7 +184,7 @@ export function Adults({ draft: d, update, howTo }: StepProps & { howTo?: boolea
   const list = adults.map(a => a.id)
   const nakamura = catalog.adults.find(a => a.name === "Nakamura")
   return <>
-    <Head kicker="Dospělí a monstra" title="Dospělé postavy" lead="Postavy s pevným genderem, Nakamura je nebinární. Část hry každá z nich tráví jako monstrum." />
+    <Head title="Dospělé postavy" lead="Postavy s pevným genderem, Nakamura je nebinární. Část hry každá z nich tráví jako monstrum." />
     {howTo && <HowToChoose />}
     <div className="pr-grid pr-grid-wide" style={{ marginTop: 20 }}>
       {adults.map(a => (
@@ -224,7 +222,7 @@ export function Team({ draft: d, update }: StepProps) {
   const count = Object.keys(t.picks).length
   const other = d.genderPref === "f" || d.genderPref === "m" ? GENDER_WORD[d.genderPref] : null
   return <>
-    <Head kicker="Tým" title="Hlásíme se jako tým" lead="Vybrat můžete i víc týmů, jen se domluvte, kdo bude hrát koho. Každý z trojice vyplní svou přihlášku." />
+    <Head title="Hlásíme se jako tým" lead="Vybrat můžete i víc týmů, jen se domluvte, kdo bude hrát koho. Každý z trojice vyplní svou přihlášku." />
     <div className="pr-fields">
       <Field id="pr-mates" label="S kým se hlásíš (jména a příjmení obou)" required wide>
         <input id="pr-mates" className="pr-input" value={t.mates} disabled={readOnly} onChange={e => setTeam({ mates: e.target.value })} />
@@ -298,7 +296,7 @@ export function Characters({ howTo }: { howTo?: boolean }) {
   const bulk = (teamId: string, v: Pref) => shown.filter(c => c.teamId === teamId).forEach(c => setPref("character", c.id, v))
   const which = genderPref === "f" ? "ženské postavy" : genderPref === "m" ? "mužské postavy" : null
   return <>
-    <Head kicker="Studentstvo" title="Studentské postavy"
+    <Head title="Studentské postavy"
       lead={<>Postavy jsou po týmech{which && <>; vybírat můžeš jen {which}, ostatní členy týmů si můžeš přečíst</>}. ◆ označuje prvky, které má postava dané pevně.</>} />
     {howTo && <HowToChoose />}
     {catalog.teams.map(team => {
@@ -360,7 +358,7 @@ const GROUPS: { kind: PrefKind; title: string; hint: string }[] = [
 export function Elements({ howTo }: { howTo?: boolean }) {
   const { catalog, prefs, genderPref } = usePr()
   return <>
-    <Head kicker="Povinně volitelné prvky" title="Jednotky, kruhy a specializace"
+    <Head title="Jednotky, kruhy a specializace"
       lead="Tyhle prvky se mění běh od běhu. Když volba vyloučí postavu, kterou chceš, upozorníme tě. Při křížení s předchozími kroky přidělujeme hlavně podle týmů a postav." />
     {howTo && <HowToChoose />}
     <Conflicts />
@@ -414,7 +412,7 @@ export function Sensitive({ draft: d, update, goTo }: StepProps & { goTo: (s: St
   // „šikana, u někoho pasivně, u někoho aktivně“: upřesnění za čárkou do přehledu nepatří
   const edit = (s: StepId) => <a href={`#${s}`} onClick={e => { e.preventDefault(); goTo(s) }}>Upravit</a>
   return <>
-    <Head kicker="Než odešleš" title="Citlivá témata" />
+    <Head title="Citlivá témata" />
     {SENSITIVE_INTRO.map((p, i) => <p key={i} className="pr-lead">{p}</p>)}
     <div className="pr-section"><h2>Co tě podle tvých voleb čeká</h2></div>
     <p className="pr-hint" style={{ marginTop: -4 }}>Počítá se všechno, co máš na „★ Chci moc“ nebo „Klidně“{picked.size > 0 && ", a postavy, které jste si vybrali v týmu"}. Když ti něco nesedí, vrať se a dej tomu „✕ Nechci“.</p>
@@ -457,7 +455,7 @@ export function Summary({ draft: d, update, goTo }: StepProps & { goTo: (s: Step
   const wanted = findConflicts(prefs, catalog.limits).filter(c => c.wanted && shownChars.has(c.characterId))
   const run = RUN_CHOICES.find(o => o.value === d.run)?.label ?? "—"
   return <>
-    <Head kicker="Souhrn" title="Zkontroluj a odešli" />
+    <Head title="Zkontroluj a odešli" />
     <dl className="pr-sum">
       <div><dt>Ty</dt><dd>{d.firstName} {d.lastName}{d.nickname && ` („${d.nickname}“)`} · {d.email} · {d.phone}</dd>{edit("udaje")}</div>
       <div><dt>Běh</dt><dd>{run}</dd>{edit("udaje")}</div>

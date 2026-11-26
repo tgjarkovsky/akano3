@@ -1,3 +1,5 @@
+## [2026-11-26] - Přihláška: bez nadpisků nad nadpisy kroků (Krok 1, Studentstvo …) a dvojité linky pod nimi; termíny běhů přesunuty do úvodního textu, Tvůj běh má běh a datum přímo v nadpisu
+
 ## [2026-11-26] - Přihláška: tlačítko Zpět (i gesto na telefonu) zavře otevřený medailonek místo přechodu na předchozí krok; na mobilu už horní lišta nepřekrývá křížek medailonku
 
 ## [2026-11-26] - Přihláška v designu webu akano.rolling.cz: pergamenový list na bordó stole, písmo Gentium Book Plus, kulaté logo „3“ v záhlaví, vybrané volby a primární tlačítka tyrkysové, ★ v cihlové; rozložení kroků a lišt beze změny

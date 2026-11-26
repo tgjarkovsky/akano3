@@ -229,7 +229,7 @@ function Done({ token, edited, name }: { token: string; edited: boolean; name: s
     <div className="pr">
       <div className="pr-desk">
         <main className="pr-sheet" style={{ maxWidth: 720 }}>
-          <Head kicker={edited ? "Uloženo" : "Odesláno"} title={edited ? "Změny jsou uložené" : "Přihláška je u nás"}
+          <Head title={edited ? "Změny jsou uložené" : "Přihláška je u nás"}
             lead={edited ? "Díky, přihlášku jsme aktualizovali." : `Díky${name ? `, ${name}` : ""}. Přihláška platí.`} />
           <p className="pr-label" style={{ marginTop: 22 }}>Tvůj odkaz pro úpravy</p>
           <div className="pr-linkbox">
