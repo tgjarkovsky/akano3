@@ -28,6 +28,7 @@ export function Intro() {
   return <>
     <Head kicker="22.–25. 7. a 29. 7.–1. 8. 2027" title="Přihláška na Akano3"
       lead="Přihláška slouží k registraci i k výběru postavy. Medailonky postav, týmů, jednotek a kruhů čteš přímo tady." />
+    <p className="pr-hint">O hře, světě a organizaci se dočteš na webu <a href="https://akano.rolling.cz" target="_blank" rel="noreferrer">akano.rolling.cz</a>.</p>
     <details className="pr-note"><summary>Jak přidělujeme postavy</summary>
       Losujeme 6 lidí na dospělé role a 30 na studentské. Z vylosovaných nejdřív sestavíme kompletní trojice, které se hlásily jako tým (nejvýš 5 týmů). Dvojicím doplníme jejich třetího. Zbytek obsadíme podle preferencí. Nakamuru přednostně dostane člověk se zrakovým postižením, když se jich přihlásí víc, losujeme mezi nimi.
     </details>
@@ -228,6 +229,11 @@ export function Team({ draft: d, update }: StepProps) {
       <Field id="pr-mates" label="S kým se hlásíš (jména a příjmení obou)" required wide>
         <input id="pr-mates" className="pr-input" value={t.mates} disabled={readOnly} onChange={e => setTeam({ mates: e.target.value })} />
       </Field>
+    </div>
+    <div className="pr-warns">
+      <p className="pr-warn"><span className="pr-warn-tag">Důležité</span>
+        <span>Před odesláním se v týmu domluvte na běhu. Buď si všichni tři vyberete stejný běh, nebo všichni zvolíte „Je mi to jedno, mohu oba“. Když se volby budou lišit, je to trapné.</span>
+      </p>
     </div>
     <div className="pr-section"><h2>Když vylosují jen tebe</h2></div>
     <p className="pr-hint" style={{ marginTop: -4, marginBottom: 10 }}>
