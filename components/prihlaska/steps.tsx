@@ -397,9 +397,11 @@ const ALWAYS = ["smrt", "toxické vztahy", "násilí", "krev"]
 
 /** Citlivá témata u všeho, co hráč nechal otevřené (★ nebo Klidně) a u postav vybraných v týmu. */
 export function Sensitive({ draft: d, update, goTo }: StepProps & { goTo: (s: StepId) => void }) {
-  const { catalog, prefs, genderPref, readOnly } = usePr()
+  const { catalog, prefs, genderPref, readOnly, setPref } = usePr()
   const STEP_OF: Partial<Record<PrefKind, StepId>> = { adult: "dospeli", character: "postavy", unit: "prvky", circle: "prvky" }
   const picked = new Set(d.paths.team ? Object.values(d.team.picks) : [])
+  // Postavu vybranou v týmu ✕ neodstraní (zůstává kvůli týmu), proto u ní není.
+  const canDrop = (kind: PrefKind, id: string) => !readOnly && !(kind === "character" && picked.has(id))
   const groups = (["adult", "character", "unit", "circle"] as const)
     .filter(k => shownKinds(d).includes(k) || (k === "character" && picked.size > 0))
     .map(k => {
@@ -415,7 +417,7 @@ export function Sensitive({ draft: d, update, goTo }: StepProps & { goTo: (s: St
     <Head title="Citlivá témata" />
     {SENSITIVE_INTRO.map((p, i) => <p key={i} className="pr-lead">{p}</p>)}
     <div className="pr-section"><h2>Co tě podle tvých voleb čeká</h2></div>
-    <p className="pr-hint" style={{ marginTop: -4 }}>Počítá se všechno, co máš na „★ Chci moc“ nebo „Klidně“{picked.size > 0 && ", a postavy, které jste si vybrali v týmu"}. Když ti něco nesedí, vrať se a dej tomu „✕ Nechci“.</p>
+    <p className="pr-hint" style={{ marginTop: -4 }}>Počítá se všechno, co máš na „★ Chci moc“ nebo „Klidně“{picked.size > 0 && ", a postavy, které jste si vybrali v týmu"}. Když ti něco nesedí, vyřaď to křížkem ✕ v řádku. Vrátit to jde v příslušném kroku.</p>
     <dl className="pr-sum pr-sens-sum">
       <div><dt>Vždy na hře</dt><dd>{ALWAYS.join(", ")}</dd><span /></div>
       <div><dt>Navíc u tvých voleb</dt><dd>{topics.length ? <b>{topics.join(", ")}</b> : "nic dalšího"}</dd><span /></div>
@@ -428,7 +430,11 @@ export function Sensitive({ draft: d, update, goTo }: StepProps & { goTo: (s: St
             {g.withTopics.map(e => (
               <div key={e.id}>
                 <dt>{prefOf(prefs, g.kind, e.id) === "yes" && <span className="pr-sum-yes">★ </span>}{e.name}</dt>
-                <dd>{e.sensitive}</dd><span />
+                <dd>{e.sensitive}</dd>
+                {canDrop(g.kind, e.id)
+                  ? <button type="button" className="pr-sens-x" onClick={() => setPref(g.kind, e.id, "no")}
+                      aria-label={`Nechci: ${e.name}`} title="Nechci">✕</button>
+                  : <span />}
               </div>
             ))}
           </dl>

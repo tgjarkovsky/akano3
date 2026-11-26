@@ -1,3 +1,5 @@
+## [2026-11-26] - Přihláška, Citlivá témata: u každé postavy, dospělé postavy, jednotky a kruhu s citlivými tématy je křížek ✕, který ji vyřadí (nastaví „Nechci“) přímo z tohoto kroku; postavy vybrané v týmu křížek nemají
+
 ## [2026-11-26] - Přihláška: bez nadpisků nad nadpisy kroků (Krok 1, Studentstvo …) a dvojité linky pod nimi; termíny běhů přesunuty do úvodního textu, Tvůj běh má běh a datum přímo v nadpisu
 
 ## [2026-11-26] - Přihláška: tlačítko Zpět (i gesto na telefonu) zavře otevřený medailonek místo přechodu na předchozí krok; na mobilu už horní lišta nepřekrývá křížek medailonku
