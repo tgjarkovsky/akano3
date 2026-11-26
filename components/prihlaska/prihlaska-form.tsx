@@ -127,9 +127,23 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true, above 
     })
   }, [update])
 
+  // Otevřený medailonek má vlastní záznam v historii: tlačítko Zpět (i gesto na
+  // telefonu) ho zavře, místo aby přeskočilo na předchozí krok.
   const openReader = useCallback((kind: PrefKind, id: string, list?: string[]) => {
+    if (!window.history.state?.reader) window.history.pushState({ ...window.history.state, reader: true }, "")
     setReader(r => ({ kind, id, list: list ?? (r?.kind === kind ? r.list : visibleEntries(catalog, kind, draft.genderPref).map(e => e.id)) }))
   }, [catalog, draft.genderPref])
+
+  // Křížek, Esc i klik vedle zavírají přes historii, ať v ní nezůstane mrtvý záznam.
+  const closeReader = useCallback(() => {
+    if (window.history.state?.reader) window.history.back(); else setReader(null)
+  }, [])
+
+  useEffect(() => {
+    const onPop = () => { if (!window.history.state?.reader) setReader(null) }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
 
   const ctx = useMemo<PrCtx>(() => ({ catalog, prefs: draft.prefs, genderPref: draft.genderPref, setPref, openReader, readOnly }), [catalog, draft.prefs, draft.genderPref, setPref, openReader, readOnly])
 
@@ -148,7 +162,7 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true, above 
         <header className="pr-top">
           <div className="pr-top-in">
             <div className="pr-top-row">
-              <span className="pr-brand"><b>Akano3</b> · {token ? "Úprava přihlášky" : "Přihláška na hru 2027"}</span>
+              <span className="pr-brand"><img src="/akano3-kruh.png" alt="" width={40} height={42} /><span><b>Akano3</b> · {token ? "Úprava přihlášky" : "Přihláška na hru 2027"}</span></span>
               <span className="pr-saved" aria-live="polite">{readOnly ? "Přihlašování skončilo, jen pro čtení" : saved}</span>
             </div>
             <nav className="pr-steps" aria-label="Kroky přihlášky">
@@ -183,8 +197,8 @@ export function PrihlaskaForm({ catalog, initial, token, editable = true, above 
             {error && <div className="pr-warns" role="alert"><div className="pr-warn"><span className="pr-warn-tag">Chybí</span><span>{error}</span></div></div>}
           </main>
           {reader && <>
-            <div className="pr-scrim" onClick={() => setReader(null)} />
-            <Reader state={reader} onClose={() => setReader(null)}
+            <div className="pr-scrim" onClick={closeReader} />
+            <Reader state={reader} onClose={closeReader}
               onMove={(id, kind, list) => setReader(r => r && ({ kind: kind ?? r.kind, id, list: list ?? r.list }))} />
           </>}
         </div>

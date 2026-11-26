@@ -1,3 +1,7 @@
+## [2026-11-26] - Přihláška: tlačítko Zpět (i gesto na telefonu) zavře otevřený medailonek místo přechodu na předchozí krok; na mobilu už horní lišta nepřekrývá křížek medailonku
+
+## [2026-11-26] - Přihláška v designu webu akano.rolling.cz: pergamenový list na bordó stole, písmo Gentium Book Plus, kulaté logo „3“ v záhlaví, vybrané volby a primární tlačítka tyrkysové, ★ v cihlové; rozložení kroků a lišt beze změny
+
 ## [2026-11-26] - Přihláška: bez animovaného pozadí (javorové listy, vítr a zlato odstraněny); v úvodu odkaz na web akano.rolling.cz; v kroku Tým upozornění, ať se trojice shodne na běhu
 
 ## [2026-11-21] - Mimo hraní nemusí být aktivní žádný běh: v Obsazení → Všechny běhy u aktivního běhu „Ukončit hraní“ (s potvrzením, data běhu zůstanou, běh jde znovu aktivovat); bez aktivního běhu úvodní přihlášení kódem postavy nejde použít: ukáže „Teď se nehraje žádný běh“ a odkaz na přihlášku na hru, kdo byl přihlášený, je po ukončení hraní odhlášen na tuto obrazovku; po spuštění běhu se přihlášení samo otevře; herní zápisy (body, alarm, lekce, dary, kaichi, doplnění poolu) bez aktivního běhu odmítnou s 409 „Teď se nehraje žádný běh“, /api/game-state vrátí activeRunId null a výchozí stav; nový běh přebírá rozvržení z aktivního běhu, mimo hraní z posledního založeného; Příprava ukazuje „Běhy · nehraje se“

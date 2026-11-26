@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Oswald, Spectral, Space_Mono, Rock_Salt } from "next/font/google";
+import { Oswald, Spectral, Space_Mono, Rock_Salt, Gentium_Book_Plus } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers"
@@ -28,6 +28,14 @@ const rockSalt = Rock_Salt({
   subsets: ["latin"], // Rock Salt: no latin-ext; brush accent only, no Czech running copy
 });
 
+// Písmo webu akano.rolling.cz, jen pro přihlášku
+const gentium = Gentium_Book_Plus({
+  variable: "--font-gentium",
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  subsets: ["latin", "latin-ext"],
+});
+
 export const metadata: Metadata = {
   title: "AKANO",
   description: "AKANO",
@@ -41,7 +49,7 @@ export default function RootLayout({
   return (
     <html
       lang="cs"
-      className={`${oswald.variable} ${spectral.variable} ${spaceMono.variable} ${rockSalt.variable} h-full antialiased`}
+      className={`${oswald.variable} ${spectral.variable} ${spaceMono.variable} ${rockSalt.variable} ${gentium.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
