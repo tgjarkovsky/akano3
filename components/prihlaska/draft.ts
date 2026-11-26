@@ -130,7 +130,7 @@ export function visibleEntries(c: Catalog, kind: PrefKind, pref: Draft["genderPr
   const all = entriesOf(c, kind)
   if (kind === "character") return all.filter(e => fitsGender(pref, e.gender))
   if (kind === "adult") return all.filter(e => fitsGender(pref, adultGender(e)))
-  // kruh jen pro druhý rod (Kuči-Kuči, Rituální) hráč nedostane
+  // kruh jen pro druhý rod (J-pop, Rituální) hráč nedostane
   if (kind === "circle") return all.filter(e => fitsGender(pref, CIRCLE_ONLY_GENDER[e.id]))
   return all
 }

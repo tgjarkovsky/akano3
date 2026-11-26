@@ -1,3 +1,5 @@
+## [2026-11-27] - Jednotka U4 se jmenuje VIRA místo zastaralého V.I.R.A. a kruhy podle dokumentu Web: J-pop (dřív Kuči-Kuči), Kaligrafický (dřív Kaligrafie), Sportovní (dřív Akano Šóko-dan), v přihlášce i ve hře
+
 ## [2026-11-26] - Přihláška, Citlivá témata: u každé postavy, dospělé postavy, jednotky a kruhu s citlivými tématy je křížek ✕, který ji vyřadí (nastaví „Nechci“) přímo z tohoto kroku; postavy vybrané v týmu křížek nemají
 
 ## [2026-11-26] - Přihláška: bez nadpisků nad nadpisy kroků (Krok 1, Studentstvo …) a dvojité linky pod nimi; termíny běhů přesunuty do úvodního textu, Tvůj běh má běh a datum přímo v nadpisu

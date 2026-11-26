@@ -34,16 +34,16 @@ export const UNITS: Unit[] = [
   { id:"U1", name:"Murakami", teamIds:["T01","T02"] },
   { id:"U2", name:"Hagakure", teamIds:["T03","T04"] },
   { id:"U3", name:"Hvězdy",   teamIds:["T07","T08"] },
-  { id:"U4", name:"V.I.R.A.", teamIds:["T09","T10"] },
+  { id:"U4", name:"VIRA",     teamIds:["T09","T10"] },
   { id:"U5", name:"Ucuro",   teamIds:["T05","T06"] },
 ]
 
 export const CIRCLES: Circle[] = [
-  { id:"C1", name:"Kuči-Kuči",     memberIds:["S003","S009","S015","S021","S026"] },
-  { id:"C2", name:"Kaligrafie",      memberIds:["S016","S017","S018","S006","S012"] },
+  { id:"C1", name:"J-pop",         memberIds:["S003","S009","S015","S021","S026"] },
+  { id:"C2", name:"Kaligrafický",    memberIds:["S016","S017","S018","S006","S012"] },
   { id:"C3", name:"Vědecký",         memberIds:["S030","S002","S008","S011","S020"] },
   { id:"C4", name:"Rituální",        memberIds:["S023","S001","S010","S019","S024"] },
-  { id:"C5", name:"Akano Šóko-dan", memberIds:["S025","S026","S027","S004","S013"] },
+  { id:"C5", name:"Sportovní",      memberIds:["S025","S026","S027","S004","S013"] },
   { id:"C6", name:"Literární",       memberIds:["S007","S014","S022","S028","S029","S005"] },
 ]
 
