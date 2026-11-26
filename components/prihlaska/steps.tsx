@@ -113,7 +113,7 @@ export function Person({ draft: d, update }: StepProps) {
         <Field id="pr-email" label="E-mail" required>{text("email", "email", "email")}</Field>
         <Field id="pr-phone" label="Telefon" required>{text("phone", "tel", "tel")}</Field>
         <Field id="pr-nickname" label="Jméno do seznamů hráčů (nepovinné)" wide
-          help="Když tě lidi znají jinak než podle občanského jména. Uveď i příjmení, ať je jasné, o koho jde.">{text("nickname", "nickname", "text", "off")}</Field>
+          help="Když tě lidi znají jinak než podle občanského jména.">{text("nickname", "nickname", "text", "off")}</Field>
       </form>
     </Question>
     <Question title="Na který běh chceš jet?" required>
