@@ -1243,7 +1243,7 @@ button.kn-tile { width: 100%; height: 100%; text-align: left; cursor: pointer; f
 .pr-step-warn .pr-step-n { border-color: var(--p-warn); background: var(--p-warn-soft); color: var(--p-warn); font-weight: 700; }
 .pr-desk { max-width: 1240px; margin: 0 auto; padding: 18px 16px 120px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .pr-sheet { background: var(--p-page) linear-gradient(rgba(221,181,126,.35), rgba(221,181,126,0) 140px); box-shadow: 0 0 0 1px #c9a978, 0 14px 30px rgba(0,0,0,.35); padding: clamp(20px, 4vw, 44px); min-width: 0; }
-.pr-sheet h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; color: var(--p-desk); }
+.pr-sheet h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; color: var(--p-ink); }
 .pr-lead { max-width: 64ch; color: var(--p-ink2); margin: 10px 0 0; }
 .pr-section { margin: 30px 0 12px; padding-bottom: 6px; border-bottom: 1px dotted #8a6a3a; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .pr-section h2 { font-size: 1.35rem; font-weight: 700; }
