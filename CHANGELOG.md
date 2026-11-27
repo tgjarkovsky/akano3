@@ -1,3 +1,5 @@
+## [2026-11-27] - Bez plovoucí berušky bugfinderu; hlášení chyby otevře Ctrl+Shift+B
+
 ## [2026-11-27] - Přihláška podle vizuálního manuálu Akano3 (docs/vizualni-manual.md): jen pět barev manuálu, písma Inria Serif a Inknut Antiqua místo Gentium, ostré rohy, bez stínů a přechodů, písmo nejméně 12 px, bez barev týmů
 
 ## [2026-11-27] - Přihláška: hlavní nadpis kroku černě místo bordó

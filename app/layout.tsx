@@ -63,6 +63,8 @@ export default function RootLayout({
         <Script
           src="https://bugfinder-khaki.vercel.app/widget.js"
           data-project="akano3"
+          // bez plovoucí berušky; hlášení chyby otevře Ctrl+Shift+B
+          data-icon="off"
           strategy="afterInteractive"
         />
       </body>
