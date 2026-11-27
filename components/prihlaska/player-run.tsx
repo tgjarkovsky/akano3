@@ -83,7 +83,7 @@ export function PlayerRun({ token, info }: { token: string; info: PlayerRunInfo 
 
   return (
     <section className="pr-sheet pr-run" aria-labelledby="pr-run-title">
-      <h2 style={{ fontSize: "1.6rem", color: "var(--p-desk)", marginBottom: 16 }}>Tvůj běh: {info.runName}{info.runDate ? `, ${info.runDate}` : ""}</h2>
+      <h2 style={{ fontSize: "1.5rem", marginBottom: 16 }}>Tvůj běh: {info.runName}{info.runDate ? `, ${info.runDate}` : ""}</h2>
       <div className="pr-run-grid">
         <div style={{ minWidth: 0 }}>
           <p className="pr-label">Tvoje postava</p>
@@ -97,7 +97,7 @@ export function PlayerRun({ token, info }: { token: string; info: PlayerRunInfo 
           <p className="pr-label" style={{ marginTop: 18 }}>Platba</p>
           <p style={{ margin: "4px 0 0" }}>
             {paid
-              ? <b style={{ color: "var(--p-ok)" }}>Zaplaceno {paid}. Díky!</b>
+              ? <b>✓ Zaplaceno {paid}. Díky!</b>
               : <>Platbu zatím neevidujeme. Jestli už jsi zaplatil(a), napiš na <a href={`mailto:${MAIL_CONTACT}`}>{MAIL_CONTACT}</a>.</>}
           </p>
         </div>
@@ -117,7 +117,7 @@ export function PlayerRun({ token, info }: { token: string; info: PlayerRunInfo 
             </button>
             {photoAt && <button type="button" className="pr-btn" disabled={busy} onClick={remove}>Smazat</button>}
           </div>
-          {error && <p role="alert" style={{ color: "var(--p-accent)", margin: "8px 0 0", fontSize: "0.9rem" }}>{error}</p>}
+          {error && <p role="alert" className="pr-warn" style={{ margin: "8px 0 0" }}>{error}</p>}
         </div>
       </div>
     </section>

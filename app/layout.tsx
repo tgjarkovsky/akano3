@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Oswald, Spectral, Space_Mono, Rock_Salt, Gentium_Book_Plus } from "next/font/google";
+import { Oswald, Spectral, Space_Mono, Rock_Salt, Inria_Serif, Inknut_Antiqua } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers"
@@ -28,11 +28,18 @@ const rockSalt = Rock_Salt({
   subsets: ["latin"], // Rock Salt: no latin-ext; brush accent only, no Czech running copy
 });
 
-// Písmo webu akano.rolling.cz, jen pro přihlášku
-const gentium = Gentium_Book_Plus({
-  variable: "--font-gentium",
+// Písma vizuálního manuálu (docs/vizualni-manual.md), zatím jen pro přihlášku:
+// Inria Serif na text a nadpisy h3+, Inknut Antiqua (jen regular) na h1, h2 a tlačítka.
+const inria = Inria_Serif({
+  variable: "--font-inria",
   weight: ["400", "700"],
   style: ["normal", "italic"],
+  subsets: ["latin", "latin-ext"],
+});
+
+const inknut = Inknut_Antiqua({
+  variable: "--font-inknut",
+  weight: ["400"],
   subsets: ["latin", "latin-ext"],
 });
 
@@ -49,7 +56,7 @@ export default function RootLayout({
   return (
     <html
       lang="cs"
-      className={`${oswald.variable} ${spectral.variable} ${spaceMono.variable} ${rockSalt.variable} ${gentium.variable} h-full antialiased`}
+      className={`${oswald.variable} ${spectral.variable} ${spaceMono.variable} ${rockSalt.variable} ${inria.variable} ${inknut.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>

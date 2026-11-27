@@ -252,7 +252,7 @@ export function Team({ draft: d, update }: StepProps) {
         return (
           <article key={team.id} className={`pr-trow${on ? " pr-trow-on" : ""}${fits.length ? "" : " pr-trow-off"}`}>
             <div className="pr-trow-text">
-              <h3><i className="pr-dot" style={{ background: team.color }} />{team.name}</h3>
+              <h3>{team.name}</h3>
               <Motto motto={team.motto} />
               {team.body ? <SpisText body={team.body} /> : <p className="pr-hint">Medailonek zatím chybí.</p>}
               {team.themes.length > 0 && <p className="pr-themes">Témata: {team.themes.join(", ")}</p>}
@@ -310,7 +310,7 @@ export function Characters({ howTo }: { howTo?: boolean }) {
       return (
         <section key={team.id} className="pr-team">
           <div className="pr-team-head">
-            <h3><i className="pr-dot" style={{ background: team.color }} />{team.name}</h3>
+            <h3>{team.name}</h3>
             <Motto motto={team.motto} />
             {!readOnly && (allNo
               ? <button type="button" className="pr-mini" onClick={() => bulk(team.id, "ok")}>Vrátit tým na klidně</button>

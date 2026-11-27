@@ -91,7 +91,7 @@ export function PrefCard({ kind, entry, list, inactive, shared, children }: {
   const lead = excerpt(entry.body, 220) || entry.facts.filter(([k]) => k !== "Gender").map(([k, x]) => `${k}: ${x}`).join(" · ")
   const chips = (team || fixed.length > 0 || role || only) && (
     <div className="pr-chips">
-      {team && <span className="pr-chip"><i className="pr-dot" style={{ background: team.color }} />{team.name}</span>}
+      {team && <span className="pr-chip">{team.name}</span>}
       {role && <span className="pr-chip">{role}</span>}
       {only && <span className="pr-chip pr-chip-fixed">{ONLY[only]}</span>}
       {fixed.map(f => <span key={f} className="pr-chip pr-chip-fixed" title="Pevně dané">◆ {f}</span>)}
