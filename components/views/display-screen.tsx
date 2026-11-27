@@ -8,6 +8,7 @@ import {
 } from "recharts"
 import { useGame } from "@/lib/game-context"
 import { teamTimeline, formatTimeOnly } from "@/lib/team-timeline"
+import { diffScores } from "@/lib/score-flash"
 import { rankShifts, formatShift } from "@/lib/rank-shift"
 import { TEAM_ICONS } from "@/lib/data"
 import { TeamIcon } from "@/components/shared/team-icon"
@@ -37,6 +38,8 @@ function ClockDisplay() {
   }, [])
   return <span style={{ color:"rgba(255,255,255,0.55)", fontSize:"0.8rem", fontFamily:"var(--font-mono)" }}>{time}</span>
 }
+
+const FLASH_MS = 4000
 
 const VIEWS = ["studentScores", "teamChart"] as const
 type View = typeof VIEWS[number]
@@ -73,6 +76,22 @@ export function DisplayScreen() {
   const students = useMemo(() =>
     characters.filter(c => c.role === "student" || c.role === "ruze").sort((a,b) => b.points - a.points)
   , [characters])
+
+  const prevPoints = useRef<Record<string, number>>({})
+  const [flashes, setFlashes] = useState<Record<string, { delta: number; key: number }>>({})
+  useEffect(() => {
+    const changed = diffScores(prevPoints.current, students)
+    prevPoints.current = Object.fromEntries(students.map(s => [s.id, s.points]))
+    if (changed.length === 0) return
+    const key = Date.now()
+    setFlashes(f => ({ ...f, ...Object.fromEntries(changed.map(c => [c.id, { delta: c.delta, key }])) }))
+    const t = setTimeout(() => setFlashes(f => {
+      const rest = { ...f }
+      for (const c of changed) if (rest[c.id]?.key === key) delete rest[c.id]
+      return rest
+    }), FLASH_MS)
+    return () => clearTimeout(t)
+  }, [students])
 
   const shifts = useMemo(
     () => rankShifts(students, pointLog, "students", new Date(Date.now() - 30 * 60000)),
@@ -151,9 +170,11 @@ export function DisplayScreen() {
             <div style={{ maxWidth:1500, width:"100%", margin:"0 auto", columnCount:2, columnGap:24 }}>
               {students.map((s, i) => {
                 const accent = teamColor(s.teamId)
+                const flash = flashes[s.id]
                 return (
-                  <div key={s.id} style={{
-                    breakInside:"avoid", marginBottom:6,
+                  <div key={flash ? `${s.id}-${flash.key}` : s.id} className={flash ? "score-row-flash" : undefined} style={{
+                    ["--flash-color" as string]: accent,
+                    breakInside:"avoid", marginBottom:6, position:"relative",
                     display:"flex", alignItems:"center", gap:16,
                     padding:"clamp(4px,0.9vh,10px) 22px",
                     backgroundColor: `${accent}1f`,      // team tint
@@ -182,6 +203,13 @@ export function DisplayScreen() {
                       fontSize:"clamp(0.9rem,1.7vw,1.7rem)",
                       color:"rgba(255,255,255,0.92)", letterSpacing:"0.05em",
                     }}>{s.points}</span>
+                    {flash && (
+                      <span className="score-delta-float" style={{
+                        position:"absolute", right:"calc(22px + 4.5ch)", top:"50%", marginTop:"-0.6em", pointerEvents:"none",
+                        fontFamily:"var(--font-mono)", fontWeight:900, fontSize:"clamp(1.4rem,3vw,3rem)",
+                        color: flash.delta > 0 ? "#5fd0c0" : "#ff8a80", textShadow:"0 0 14px rgba(0,0,0,0.7)",
+                      }}>{flash.delta > 0 ? "+" : "−"}{Math.abs(flash.delta)}</span>
+                    )}
                   </div>
                 )
               })}
