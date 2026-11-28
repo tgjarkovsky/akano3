@@ -45,10 +45,10 @@ export function SpisPrintScreen({ job, onClose }: { job: PrintJob; onClose: () =
         {docs && docs.length > 0 && <PrintButton label={job.characterId ? "Vytisknout / uložit PDF" : `Vytisknout všech ${docs.length}`} />}
       </div>
       <p className="spis-hint">
-        Náhled ukazuje i neschválené texty se žlutou poznámkou; ta se netiskne.
+        Náhled ukazuje i neschválené texty s rudou poznámkou; ta se netiskne.
         {docs && docs[0] && <> Běh: {docs[0].runName}{docs[0].runDate ? `, ${docs[0].runDate}` : " (bez termínu, doplň ho v Obsazení)"}.</>}
       </p>
-      {error && <p className="spis-hint" role="alert" style={{ color: "#a40000" }}>{error}</p>}
+      {error && <p className="spis-hint spis-alert" role="alert">{error}</p>}
       {docs?.map(d => (
         <div key={d.character.id} className="spis-sheet">
           <SpisDocument doc={d} showStatus />

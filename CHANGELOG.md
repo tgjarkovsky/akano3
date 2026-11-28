@@ -1,3 +1,5 @@
+## [2026-11-27] - Spis hráče podle vizuálního manuálu, ale jinak než přihláška: bílý list na okrové ploše (spis je dokument), petrolejová jako barva spisu (jméno, nadpisy kapitol, římská čísla, štítek Jen ty), pás s japonským vzorem seigaiha na titulní straně a nástěnce, karta „Já“ v petrolejové; jen pět barev, Inria Serif a Inknut Antiqua, ostré rohy, bez stínů a šedých; tisk na bílý papír s barvou jen v nadpisech a štítcích, drobné písmo v tisku nejméně 9 pt; neschválený text v náhledu Přípravy rudě místo žlutě
+
 ## [2026-11-27] - Bez plovoucí berušky bugfinderu; hlášení chyby otevře Ctrl+Shift+B
 
 ## [2026-11-27] - Přihláška podle vizuálního manuálu Akano3 (docs/vizualni-manual.md): jen pět barev manuálu, písma Inria Serif a Inknut Antiqua místo Gentium, ostré rohy, bez stínů a přechodů, písmo nejméně 12 px, bez barev týmů

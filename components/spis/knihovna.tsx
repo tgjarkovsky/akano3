@@ -7,6 +7,7 @@ import { Members, SpisBlock, SpisDocument } from "./spis-document"
 import { SpisText, WithNames } from "./spis-text"
 import { PrintButton } from "./print-button"
 import { PeekTile } from "./peek-tile"
+import { SeigaihaBand } from "./pattern"
 
 // Osobní knihovna hráče. Nahoře všechno, co je hráčovo: on sám a jeho skupiny
 // (tým, jednotka, kruh) jako karty s vlastní stránkou. Pod tím ostatní skupiny
@@ -81,6 +82,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
 
   return (
     <div className="spis-sheet kn-home">
+      <SeigaihaBand />
       <div className="spis-cover-top">
         <span>Akademie Akano</span>
         <span>{[doc.runName, doc.runDate].filter(Boolean).join(" · ")}</span>
@@ -90,7 +92,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
       <p className="kn-facts">{[h.team, h.unit && `jednotka ${h.unit}${h.role ? ` (${h.role})` : ""}`, h.circle && `kruh ${h.circle}`].filter(Boolean).join(" · ")}</p>
 
       <section aria-labelledby="kn-ty">
-        <h2 id="kn-ty" className="spis-label kn-section kn-section-first">Ty a tvoje skupiny</h2>
+        <h2 id="kn-ty" className="kn-section kn-section-first">Ty a tvoje skupiny</h2>
         <div className="kn-mine">
           {doc.chapters.map(c => (
             <a key={c.key} href={hrefOfChapter(c)} className={c.key === "core" ? "kn-card kn-card-self" : "kn-card"}>
@@ -109,7 +111,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
         if (list.length === 0) return null
         return (
           <section key={kind} aria-labelledby={`kn-${kind}`}>
-            <h2 id={`kn-${kind}`} className="spis-label kn-section">{KIND_LABEL[kind].others}</h2>
+            <h2 id={`kn-${kind}`} className="kn-section">{KIND_LABEL[kind].others}</h2>
             <div className="kn-grid">
               {list.map(e => <GroupTile key={e.id} entry={e} roster={doc.roster} />)}
             </div>

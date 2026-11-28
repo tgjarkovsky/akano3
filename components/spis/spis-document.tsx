@@ -4,8 +4,10 @@ import { DOC_LEVEL, DOC_LEVEL_LABELS, type CharacterDoc, type DocBlock, type Doc
 import { SpisText, WithNames } from "./spis-text"
 import { parseRelationships } from "@/lib/relationships"
 import { RelationshipCards, RelationshipTiles } from "./relationships"
+import { SeigaihaBand } from "./pattern"
 
-// Spis postavy: titulní strana a kapitoly. Černobílý, na bílý papír A4.
+// Spis postavy: titulní strana a kapitoly. Bílý papír A4, černý text,
+// petrolejová jen v nadpisech, štítcích a pásu se vzorem (vizuální manuál).
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
 
 const LEVEL_ORDER: DocLevel[] = ["self", "group", "public"]
@@ -31,6 +33,7 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
   return (
     <article className="spis" lang="cs">
       <section className="spis-cover">
+        <SeigaihaBand />
         <div className="spis-cover-top">
           <span>Akademie Akano</span>
           <span>{[doc.runName, doc.runDate].filter(Boolean).join(" · ")}</span>

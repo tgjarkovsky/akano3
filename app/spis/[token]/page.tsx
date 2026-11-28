@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
 // Čísla stránek jen u jednoho spisu; při hromadném tisku by běžela přes všechny.
 const PAGE_NUMBERS = `@media print {
-  @page { @bottom-center { content: counter(page); font: 9pt serif; color: #5a534b; } }
+  @page { @bottom-center { content: counter(page); font: 9pt serif; color: #060606; } }
   @page :first { @bottom-center { content: none; } }
 }`
 
