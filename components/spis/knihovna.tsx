@@ -82,7 +82,6 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
 
   return (
     <div className="spis-sheet kn-home">
-      <SeigaihaBand />
       <div className="spis-cover-top">
         <span>Akademie Akano</span>
         <span>{[doc.runName, doc.runDate].filter(Boolean).join(" · ")}</span>
@@ -118,6 +117,7 @@ function Home({ doc, academy }: { doc: CharacterDoc; academy: AcademyEntry[] }) 
           </section>
         )
       })}
+      <SeigaihaBand />
     </div>
   )
 }

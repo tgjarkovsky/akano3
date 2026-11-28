@@ -6,8 +6,8 @@ import { parseRelationships } from "@/lib/relationships"
 import { RelationshipCards, RelationshipTiles } from "./relationships"
 import { SeigaihaBand } from "./pattern"
 
-// Spis postavy: titulní strana a kapitoly. Bílý papír A4, černý text,
-// petrolejová jen v nadpisech, štítcích a pásu se vzorem (vizuální manuál).
+// Spis postavy: titulní strana a kapitoly. Bílý papír A4, černý text i nadpisy,
+// rudá v hřbetu, římských číslech a pásu se vzorem v patce (vizuální manuál).
 // Stejná komponenta slouží hráčům (/spis/[odkaz]) i náhledu a tisku v Přípravě.
 
 const LEVEL_ORDER: DocLevel[] = ["self", "group", "public"]
@@ -33,7 +33,6 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
   return (
     <article className="spis" lang="cs">
       <section className="spis-cover">
-        <SeigaihaBand />
         <div className="spis-cover-top">
           <span>Akademie Akano</span>
           <span>{[doc.runName, doc.runDate].filter(Boolean).join(" · ")}</span>
@@ -72,6 +71,7 @@ export function SpisDocument({ doc, showStatus = false }: { doc: CharacterDoc; s
             ))}
           </ul>
         </div>
+        <SeigaihaBand />
       </section>
 
       {doc.chapters.map((c, i) => (

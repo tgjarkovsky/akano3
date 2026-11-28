@@ -1,3 +1,5 @@
+## [2026-11-28] - Spis hráče jako úřední spis: bílý list s rudým hřbetem na okrové ploše, nadpisy černě, rudá v římských číslech, iniciále, kartě „Já“ a tiskovém tlačítku, pás se vzorem seigaiha (okrová na rudé) v patce titulní strany a na konci nástěnky; petrolejová jen na štítku Jen ty; v tisku rudý hřbet jen na titulní straně
+
 ## [2026-11-27] - Spis hráče podle vizuálního manuálu, ale jinak než přihláška: bílý list na okrové ploše (spis je dokument), petrolejová jako barva spisu (jméno, nadpisy kapitol, římská čísla, štítek Jen ty), pás s japonským vzorem seigaiha na titulní straně a nástěnce, karta „Já“ v petrolejové; jen pět barev, Inria Serif a Inknut Antiqua, ostré rohy, bez stínů a šedých; tisk na bílý papír s barvou jen v nadpisech a štítcích, drobné písmo v tisku nejméně 9 pt; neschválený text v náhledu Přípravy rudě místo žlutě
 
 ## [2026-11-27] - Bez plovoucí berušky bugfinderu; hlášení chyby otevře Ctrl+Shift+B
